@@ -71,28 +71,80 @@ def rtmpl4(rows, rng):
 
 TMPL = {'4': rtmpl4}
 
+
+def build_total(VV, rng, nset=2, target=90):
+    """朗讀總表（第99套）＝ 把各課已產好的朗讀輪流抽出來混合。
+    這樣每一行都已經有音檔，而且保證每一課都被涵蓋
+    （2026-08-23 稽核時，舊的第99套還留著「6時から 4時までです」這種時間倒著走的句子）。
+    以「A: 問／B: 答」為一個區塊，不會把對話拆散。"""
+    def blocks(text):
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        out, i = [], 0
+        while i < len(lines):
+            if lines[i].startswith('A:') and i + 1 < len(lines) and lines[i + 1].startswith('B:'):
+                out.append(lines[i:i + 2])
+                i += 2
+            else:
+                out.append([lines[i]])
+                i += 1
+        return out
+
+    per = {}
+    for k in sorted(VV.get('reading', {})):
+        if k == '99':
+            continue
+        bs = []
+        for t in VV['reading'][k]:
+            bs += blocks(t)
+        if bs:
+            per[k] = bs
+    assert per, '沒有任何課的朗讀可以拿來混合'
+    sets = []
+    for s_i in range(nset):
+        lines, used = [], set()
+        idx = {k: s_i for k in per}
+        guard = 0
+        while len(lines) < target and guard < 400:
+            for k in sorted(per):
+                if len(lines) >= target:
+                    break
+                bs = per[k]
+                for _ in range(len(bs)):
+                    blk = bs[idx[k] % len(bs)]
+                    idx[k] += 1
+                    key = '|'.join(blk)
+                    if key not in used:
+                        used.add(key)
+                        lines += blk
+                        break
+            guard += 1
+        sets.append('\n'.join(lines))
+    return sets
+
 h = open(HTML, encoding='utf-8').read()
 vd = json.loads(re.search(r'<script[^>]*id="vocab-data"[^>]*>(.*?)</script>', h, re.S).group(1))
 m = re.search(r'(<script[^>]*id="vv-data"[^>]*>)(.*?)(</script>)', h, re.S)
 VV = json.loads(m.group(2))
 
-assert LES in TMPL, '第%s課還沒有朗讀樣板' % LES
-rows = vd['lessons'].get(LES, [])
 rng = random.Random(SEED)
-T = TMPL[LES](rows, rng)
-assert T, '第%s課沒有足夠的單字' % LES
-
-sets = []
-for s in range(NSET):
-    lines = []
-    guard = 0
-    while len(lines) < 22 and guard < 25:      # 一套約 22 行
-        for f in T:
-            if len(lines) >= 22:
-                break
-            lines += f()
-        guard += 1
-    sets.append('\n'.join(lines))
+if LES == '99':
+    sets = build_total(VV, rng, NSET if len(sys.argv) > 2 else 2)
+else:
+    assert LES in TMPL, '第%s課還沒有朗讀樣板' % LES
+    rows = vd['lessons'].get(LES, [])
+    T = TMPL[LES](rows, rng)
+    assert T, '第%s課沒有足夠的單字' % LES
+    sets = []
+    for s in range(NSET):
+        lines = []
+        guard = 0
+        while len(lines) < 22 and guard < 25:      # 一套約 22 行
+            for f in T:
+                if len(lines) >= 22:
+                    break
+                lines += f()
+            guard += 1
+        sets.append('\n'.join(lines))
 
 old = VV.get('reading', {}).get(LES, [])
 VV.setdefault('reading', {})[LES] = sets
