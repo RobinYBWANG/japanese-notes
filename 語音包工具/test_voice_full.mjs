@@ -97,6 +97,20 @@ ok('掀開答案顯示日文', gq.sample.shown && /[ぁ-んァ-ン一-鿿]/.test
 ok('題目是中文', /[一-鿿]/.test(gq.sample.zh) && !/[ぁ-んァ-ン]/.test(gq.sample.zh));
 ok('沒有內容的課顯示提示', /還沒有文法小考/.test(gq.empty || ''));
 
+// 文法小考的「只聽發音」模式：掀開要同時有日文與中文
+const gqListen = await page.evaluate(() => {
+  switchLesson(2); switchSection('grammar');
+  gqMode = 'listen'; gqPick(); gqRender();
+  const hasPlay = !!document.querySelector('#gq-q .aq-play');
+  gqReveal();
+  const a = document.getElementById('gq-a').textContent;
+  gqMode = 'zh2jp';
+  return { hasPlay, a, zh: gqRow.zh, jp: gqRow.jp };
+});
+ok('聽力模式有再聽一次按鈕', gqListen.hasPlay);
+ok('聽力模式掀開同時顯示日文與中文',
+  gqListen.a.includes(gqListen.jp) && gqListen.a.includes(gqListen.zh));
+
 // 動詞總表（總學習）
 const verbTable = await page.evaluate(() => {
   switchLesson(14); switchSection('allverb');

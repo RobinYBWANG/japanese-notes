@@ -456,7 +456,7 @@
 </div>
 
 <div id="panel-grammar" style="display: none;">
-  <div id="gram-quiz"><button class="aq-collapse" title="收合／展開小抽考">▲</button><span class="aq-mini-label">📝 文法小考（點右邊 ▼ 展開）</span><div class="aq-modes"><span class="gq-label">看中文 → 說日文</span><span class="gq-g" id="gq-g"></span><span class="aq-count" id="gq-count"></span><button id="gq-next" title="下一題">下一題 ▶</button><button id="gq-restart" title="全部重新出題，從第一題開始">🔁 重考</button></div><div class="aq-body"><div class="aq-q" id="gq-q">—</div><div class="aq-a masked" id="gq-a" title="點一下看答案／再點發音"></div></div></div>
+  <div id="gram-quiz"><button class="aq-collapse" title="收合／展開小抽考">▲</button><span class="aq-mini-label">📝 文法小考（點右邊 ▼ 展開）</span><div class="aq-modes"><button class="aq-mode on" data-mode="zh2jp">看中文→說日文</button><button class="aq-mode" data-mode="listen">只聽發音</button><span class="gq-g" id="gq-g"></span><span class="aq-count" id="gq-count"></span><button id="gq-next" title="下一題">下一題 ▶</button><button id="gq-restart" title="全部重新出題，從第一題開始">🔁 重考</button></div><div class="aq-body"><div class="aq-q" id="gq-q">—</div><div class="aq-a masked" id="gq-a" title="點一下看答案／再點發音"></div></div></div>
   <div class="ghint">📘 文法　·　點例句的 🔊 可聽發音。每一課各自獨立。</div>
   <div id="grammar-body" contenteditable="true"></div>
 </div>
@@ -501,7 +501,7 @@ B: はい、学生です。
 
 <div id="panel-gram" style="display:none">
 <div class="gram-wrap">
-<div id="allgram-quiz"><button class="aq-collapse" title="收合／展開小抽考">▲</button><span class="aq-mini-label">📝 文法小考（點右邊 ▼ 展開）</span><div class="aq-modes"><span class="gq-label">看中文 → 說日文</span><span class="gq-g" id="ag-g"></span><span class="aq-count" id="ag-count"></span><button id="ag-next" title="下一題">下一題 ▶</button><button id="ag-restart" title="全部重新出題，從第一題開始">🔁 重考</button></div><div class="aq-body"><div class="aq-q" id="ag-q">—</div><div class="aq-a masked" id="ag-a" title="點一下看答案／再點發音"></div></div></div>
+<div id="allgram-quiz"><button class="aq-collapse" title="收合／展開小抽考">▲</button><span class="aq-mini-label">📝 文法小考（點右邊 ▼ 展開）</span><div class="aq-modes"><button class="aq-mode on" data-mode="zh2jp">看中文→說日文</button><button class="aq-mode" data-mode="listen">只聽發音</button><span class="gq-g" id="ag-g"></span><span class="aq-count" id="ag-count"></span><button id="ag-next" title="下一題">下一題 ▶</button><button id="ag-restart" title="全部重新出題，從第一題開始">🔁 重考</button></div><div class="aq-body"><div class="aq-q" id="ag-q">—</div><div class="aq-a masked" id="ag-a" title="點一下看答案／再點發音"></div></div></div>
 <div class="ghint">📖 <b>文法總表</b>：目前已學課程的文法整理（唯讀參考）。點 🔊 可聽例句發音。</div>
 <div id="gram-body"></div>
 </div></div>
@@ -4866,7 +4866,7 @@ function setAllVerbQuizH(){const q=document.getElementById('allverb-quiz');if(q)
    前端不即時組句 —— 這樣句子都先人工看過，音檔也對得上。
    只有一種玩法：顯示中文 → 點一下掀開日文並發音。 */
 const GQUIZ=(function(){try{return JSON.parse(document.getElementById('gquiz-data').textContent);}catch(e){return {};}})();
-let gqRow=null,gqLesson=null,gqQueue=[];
+let gqRow=null,gqLesson=null,gqQueue=[],gqMode='zh2jp';
 function gqPool(){return (GQUIZ[String(lesson)]||[]);}
 function gqPick(){
   const q=document.getElementById('gq-q'),a=document.getElementById('gq-a');if(!q||!a)return;
@@ -4881,16 +4881,24 @@ function gqPick(){
   gqRender();}
 function gqRestart(){gqQueue=[];gqRow=null;gqPick();}
 function gqRender(){const q=document.getElementById('gq-q'),a=document.getElementById('gq-a');if(!q||!a||!gqRow)return;
+  if(gqMode==='listen'){q.innerHTML='<button class="aq-play">🔊 再聽一次</button>';a.className='aq-a masked';a.innerHTML='';
+    aqSay(function(){speak(gqRow.say||gqRow.jp,q.querySelector('.aq-play')||q);});return;}
   q.textContent=gqRow.zh;a.className='aq-a masked';a.innerHTML='';}
 function gqReveal(){const a=document.getElementById('gq-a');if(!a||!gqRow)return;
-  if(!a.classList.contains('shown')){a.className='aq-a shown';a.innerHTML='<b>'+esc(gqRow.jp)+'</b>';}
+  if(!a.classList.contains('shown')){a.className='aq-a shown';
+    a.innerHTML='<b>'+esc(gqRow.jp)+'</b>'+(gqMode==='listen'?'　<span style="color:#8a95a1">'+esc(gqRow.zh)+'</span>':'');}
   speak(gqRow.say||gqRow.jp,a);}
 (function(){const a=document.getElementById('gq-a');if(a)a.addEventListener('click',gqReveal);
-  const n=document.getElementById('gq-next');if(n)n.addEventListener('click',gqPick);
-  const rs=document.getElementById('gq-restart');if(rs)rs.addEventListener('click',gqRestart);})();
+  const n=document.getElementById('gq-next');if(n)n.addEventListener('click',aqUser(gqPick));
+  const rs=document.getElementById('gq-restart');if(rs)rs.addEventListener('click',aqUser(gqRestart));
+  const qq=document.getElementById('gq-q');if(qq)qq.addEventListener('click',function(e){
+    if(e.target.closest('.aq-play')&&gqRow)speak(gqRow.say||gqRow.jp,e.target.closest('.aq-play'));});
+  document.querySelectorAll('#gram-quiz .aq-mode').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('#gram-quiz .aq-mode').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');gqMode=b.dataset.mode;aqUser(function(){if(gqRow)gqRender();else gqPick();})();});});})();
 function setGramQuizH(){const q=document.getElementById('gram-quiz');if(q)document.documentElement.style.setProperty('--gramquiz-h',q.offsetHeight+'px');}
 /* 文法總表的小考：題庫是所有課的文法題合起來（各課那個只出該課的） */
-let agRow=null,agQueue=[];
+let agRow=null,agQueue=[],agMode='zh2jp';
 function agPool(){const out=[];for(const k in GQUIZ)(GQUIZ[k]||[]).forEach(q=>out.push(Object.assign({les:k},q)));return out;}
 function agPick(){
   const q=document.getElementById('ag-q'),a=document.getElementById('ag-a');if(!q||!a)return;
@@ -4904,13 +4912,21 @@ function agPick(){
   agRender();}
 function agRestart(){agQueue=[];agRow=null;agPick();}
 function agRender(){const q=document.getElementById('ag-q'),a=document.getElementById('ag-a');if(!q||!a||!agRow)return;
+  if(agMode==='listen'){q.innerHTML='<button class="aq-play">🔊 再聽一次</button>';a.className='aq-a masked';a.innerHTML='';
+    aqSay(function(){speak(agRow.say||agRow.jp,q.querySelector('.aq-play')||q);});return;}
   q.textContent=agRow.zh;a.className='aq-a masked';a.innerHTML='';}
 function agReveal(){const a=document.getElementById('ag-a');if(!a||!agRow)return;
-  if(!a.classList.contains('shown')){a.className='aq-a shown';a.innerHTML='<b>'+esc(agRow.jp)+'</b>';}
+  if(!a.classList.contains('shown')){a.className='aq-a shown';
+    a.innerHTML='<b>'+esc(agRow.jp)+'</b>'+(agMode==='listen'?'　<span style="color:#8a95a1">'+esc(agRow.zh)+'</span>':'');}
   speak(agRow.say||agRow.jp,a);}
 (function(){const a=document.getElementById('ag-a');if(a)a.addEventListener('click',agReveal);
-  const n=document.getElementById('ag-next');if(n)n.addEventListener('click',agPick);
-  const rs=document.getElementById('ag-restart');if(rs)rs.addEventListener('click',agRestart);})();
+  const n=document.getElementById('ag-next');if(n)n.addEventListener('click',aqUser(agPick));
+  const rs=document.getElementById('ag-restart');if(rs)rs.addEventListener('click',aqUser(agRestart));
+  const qq=document.getElementById('ag-q');if(qq)qq.addEventListener('click',function(e){
+    if(e.target.closest('.aq-play')&&agRow)speak(agRow.say||agRow.jp,e.target.closest('.aq-play'));});
+  document.querySelectorAll('#allgram-quiz .aq-mode').forEach(function(b){b.addEventListener('click',function(){
+    document.querySelectorAll('#allgram-quiz .aq-mode').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');agMode=b.dataset.mode;aqUser(function(){if(agRow)agRender();else agPick();})();});});})();
 function setAllGramQuizH(){const q=document.getElementById('allgram-quiz');if(q)document.documentElement.style.setProperty('--allgramquiz-h',q.offsetHeight+'px');}
 window.addEventListener('resize',setAllGramQuizH);
 window.addEventListener('resize',setGramQuizH);
@@ -5485,7 +5501,6 @@ renderHead();renderTabs();renderSubtabs();render();applySection();
 setTopbarH();
 setDirty(false);
 </script>
-<div style="text-align:center;font-size:11px;color:#8a97a5;padding:10px 0 16px">音声：VOICEVOX（四国めたん／ずんだもん／春日部つむぎ／玄野武宏／青山龍星／冥鳴ひまり）｜找不到預錄音檔的內容會改用瀏覽器語音</div>
 <script>
 /* ===== 唯讀模式：停用編輯功能，但開放「備註」與「單字總表排序」 =====
    兩者都只存在訪客自己的瀏覽器（localStorage），不會寫回檔案，
