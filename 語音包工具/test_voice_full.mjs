@@ -73,6 +73,30 @@ ok('單字/假名全覆蓋', vocabCover.length === 0);
 
 // 五十音已於 2026-08-22 獨立成 kana.html，覆蓋率由 test_kana.mjs 驗
 
+// 各課文法小考
+const gq = await page.evaluate(() => {
+  const out = { counts: {}, miss: [], sample: null, empty: null };
+  for (let n = 1; n <= 4; n++) {
+    switchLesson(n); switchSection('grammar');
+    out.counts[n] = gqPool().length;
+    for (const q of gqPool()) if (!vvClip(q.say || q.jp, 'A')) out.miss.push(q.say || q.jp);
+  }
+  switchLesson(1); switchSection('grammar');
+  gqPick();
+  const q = document.getElementById('gq-q').textContent;
+  gqReveal();
+  out.sample = { zh: q, jp: document.getElementById('gq-a').textContent,
+    shown: document.getElementById('gq-a').classList.contains('shown') };
+  switchLesson(5); switchSection('grammar');
+  out.empty = document.getElementById('gq-q').textContent;
+  return out;
+});
+ok('第1〜4課都有文法小考題目', [1, 2, 3, 4].every(n => gq.counts[n] > 10));
+ok('文法小考句子全有音檔', gq.miss.length === 0);
+ok('掀開答案顯示日文', gq.sample.shown && /[ぁ-んァ-ン一-鿿]/.test(gq.sample.jp));
+ok('題目是中文', /[一-鿿]/.test(gq.sample.zh) && !/[ぁ-んァ-ン]/.test(gq.sample.zh));
+ok('沒有內容的課顯示提示', /還沒有文法小考/.test(gq.empty || ''));
+
 // 動詞總表（總學習）
 const verbTable = await page.evaluate(() => {
   switchLesson(14); switchSection('allverb');

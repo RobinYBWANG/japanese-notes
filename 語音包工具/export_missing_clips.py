@@ -49,6 +49,7 @@ def block(idv, required=True):
 # 這支同時吃兩種頁面：minna-notes（vocab-data）與 kana.html（kana-data）。
 vd = block('vocab-data', required=False)
 kana = block('kana-data', required=False)
+gquiz = block('gquiz-data', required=False)      # 文法小考的題目（gen_grammar_quiz.py 產）
 if vd is None and kana is None:
     sys.exit('這個 HTML 既沒有 vocab-data 也沒有 kana-data，不知道要合成什麼')
 VV = block('vv-data')
@@ -82,6 +83,20 @@ if vd:
                 stem = ka[:-2]
                 for s in VERB_SUFS:
                     add(stem + s)
+# C. 朗讀套組（vv-data.reading）—— 以前這批是另一條管線（gen_full_manifest）產的，
+#    這支掃不到，所以改了朗讀就會缺音檔。行首的「A:／B:」要去掉，跟前端 parseRead 一致。
+for _txt in [t for v in VV.get('reading', {}).values() for t in (v if isinstance(v, list) else [v])]:
+    for _ln in str(_txt).splitlines():
+        _ln = _ln.strip()
+        if not _ln:
+            continue
+        _m = re.match(r'^[ABＡＢ]\s*[:：]\s*(.*)$', _ln)
+        add(_m.group(1) if _m else _ln)
+
+if gquiz:
+    for qs in gquiz.values():
+        for q in qs:
+            add(q.get('say') or q.get('jp'))
 if kana:
     for r in kana:
         add(r.get('hira'))
