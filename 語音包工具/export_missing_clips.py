@@ -21,8 +21,6 @@ HTML = sys.argv[1] if len(sys.argv) > 1 else 'minna-notes.html'
 OUT = sys.argv[2] if len(sys.argv) > 2 else 'new-clips.json'
 VOICES = [2, 11, 13]          # 2=四国めたん(聲音A) / 11=玄野武宏(聲音B) / 13=青山龍星
 VERB_SUFS = ['ます', 'ません', 'ました', 'ませんでした']
-SAY_FORCE_KANA = {'水餃', '車', '何', '薬', '家', '百', '千', '101', '眼鏡', '梅酒', '夜市',
-                  '元', '何階', '木', '鈴', '時', '分', '今', '昼', '明日'}
 BASE = 'http://127.0.0.1:50021'
 TMP = os.path.join(tempfile.gettempdir(), '_exportclip')   # Windows 上 /tmp 不存在
 
@@ -35,6 +33,12 @@ norm = lambda t: STRIP.sub('', str(t or '')).replace('　', ' ').strip()
 aid = lambda text, sp: hashlib.md5((str(sp) + '|' + text).encode()).hexdigest()[:12]
 
 h = open(HTML, encoding='utf-8').read()
+
+# sayForceKana 以 HTML 裡的 JS 為準 —— 以前這裡另外硬編碼一份，兩邊會漂移：
+# 新加進 JS 的字（例如 1日→ついたち）這支不知道，就會拿漢字去合成，唸出來是錯的。
+_m = re.search(r'sayForceKana\s*=\s*new Set\(\[(.*?)\]\)', h, re.S)
+SAY_FORCE_KANA = set(re.findall(r"'([^']+)'", _m.group(1))) if _m else set()
+print('sayForceKana：從 HTML 讀到 %d 個字' % len(SAY_FORCE_KANA))
 
 
 def block(idv, required=True):
