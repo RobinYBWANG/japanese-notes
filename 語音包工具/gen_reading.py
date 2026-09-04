@@ -104,7 +104,7 @@ def rtmpl5(rows, rng):
 TMPL = {'4': rtmpl4, '5': rtmpl5}
 
 
-def build_total(VV, rng, nset=2, target=90):
+def build_total(VV, rng, nset=2, target=150):
     """朗讀總表（第99套）＝ 把各課已產好的朗讀輪流抽出來混合。
     這樣每一行都已經有音檔，而且保證每一課都被涵蓋
     （2026-08-23 稽核時，舊的第99套還留著「6時から 4時までです」這種時間倒著走的句子）。

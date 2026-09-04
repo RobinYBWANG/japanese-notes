@@ -118,6 +118,17 @@ const verbTable = await page.evaluate(() => {
   return { rows: document.querySelectorAll('#allverb-tbody tr').length,
     cells: tds.length, miss: tds.filter(td => !vvClip(td.dataset.say, 'A')).map(td => td.dataset.say) };
 });
+// 總學習：朗讀總表 150 句、測驗 50 題
+const tot = await page.evaluate(() => {
+  switchLesson(14); switchSection('allread');
+  const lines = parseRead(VV_READING['99'][0]);
+  switchSection('quiz'); buildTotalQuiz();
+  return { 朗讀: lines.length, 朗讀缺音檔: lines.filter(l => !vvClip(l.jp, l.role === 'B' ? 'B' : 'A')).length,
+    測驗: quiz.length, 文法題: quiz.filter(q => q.grammar).length };
+});
+ok('朗讀總表約 150 句且全有音檔', tot.朗讀 >= 140 && tot.朗讀缺音檔 === 0);
+ok('總測驗 50 題（含文法題）', tot.測驗 === 50 && tot.文法題 > 0);
+
 ok('動詞總表有內容', verbTable.rows > 0 && verbTable.cells === verbTable.rows * 4);
 ok('動詞總表四種變化全有音檔', verbTable.miss.length === 0);
 
