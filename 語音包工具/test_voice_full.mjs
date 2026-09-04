@@ -170,6 +170,21 @@ const tqOK = await page.evaluate(() => {
   return allCovered;
 });
 ok('時間小考拼讀單位全覆蓋(30抽)', tqOK);
+// 月份與日期表（renderTime 執行時才產生，export 掃不到，特別驗）
+const md = await page.evaluate(() => {
+  switchLesson(13); switchSection('time');
+  const miss = [];
+  for (let m = 1; m <= 12; m++) if (!vvClip(monthKana(m), 'A')) miss.push(m + '月');
+  for (let d = 1; d <= 31; d++) if (!vvClip(dateKana(d), 'A')) miss.push(d + '日');
+  return { miss, 月表: document.querySelectorAll('#time-body .timecol')[0].querySelectorAll('tbody tr').length,
+    日表: document.querySelectorAll('#time-body .timecol')[1].querySelectorAll('tbody tr').length,
+    月標色: document.querySelectorAll('#time-body .timecol')[0].querySelectorAll('tr.tok-hl').length,
+    日標色: document.querySelectorAll('#time-body .timecol')[1].querySelectorAll('tr.tok-hl').length };
+});
+ok('月份與日期全有音檔', md.miss.length === 0);
+ok('月表 13 列／日表 32 列', md.月表 === 13 && md.日表 === 32);
+ok('特殊唸法標色（月3／日13）', md.月標色 === 3 && md.日標色 === 13);
+
 await page.click('#tq-say');
 await page.waitForTimeout(600);
 ok('時間小考按發音不噴錯', errors.length === 0);

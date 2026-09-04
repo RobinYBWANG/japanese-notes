@@ -97,6 +97,31 @@ for _txt in [t for v in VV.get('reading', {}).values() for t in (v if isinstance
         _m = re.match(r'^[ABＡＢ]\s*[:：]\s*(.*)$', _ln)
         add(_m.group(1) if _m else _ln)
 
+# D. 執行時才產生的表格與小考（月份、日期）——「數字→時間」那頁的表格是 renderTime() 用
+#    innerHTML 產的，data-say 不在靜態 HTML 裡，這支掃不到（跟朗讀當年一樣的坑）。
+#    這裡的唸法必須與 HTML 裡的 monthKana()／dateKana() 一致。
+_MONTH = ['いちがつ', 'にがつ', 'さんがつ', 'しがつ', 'ごがつ', 'ろくがつ',
+          'しちがつ', 'はちがつ', 'くがつ', 'じゅうがつ', 'じゅういちがつ', 'じゅうにがつ']
+_D1 = ['ついたち', 'ふつか', 'みっか', 'よっか', 'いつか', 'むいか', 'なのか', 'ようか', 'ここのか', 'とおか']
+_TEN = ['', 'じゅう', 'にじゅう', 'さんじゅう']
+_ONE = ['', 'いち', 'に', 'さん', 'よ', 'ご', 'ろく', 'しち', 'はち', 'く']
+
+
+def _date_kana(d):
+    if d <= 10:
+        return _D1[d - 1]
+    if d == 14:
+        return 'じゅうよっか'
+    if d == 20:
+        return 'はつか'
+    if d == 24:
+        return 'にじゅうよっか'
+    return _TEN[d // 10] + (_ONE[d % 10] if d % 10 else '') + 'にち'
+
+
+for _t in _MONTH + [_date_kana(d) for d in range(1, 32)] + ['なんがつ', 'なんにち']:
+    add(_t)
+
 if gquiz:
     for qs in gquiz.values():
         for q in qs:
