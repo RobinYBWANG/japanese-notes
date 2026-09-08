@@ -5,7 +5,7 @@ import fs from 'fs';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const page = await browser.newPage();
 page.on('dialog', d => d.dismiss());
-await page.goto('file:///mnt/user-data/uploads/日文學習/japanese-notes/minna-notes.html');
+await page.goto('file:///mnt/user-data/uploads/日文學習/docs/minna-notes.html');
 await page.waitForTimeout(800);
 
 const texts = new Set();

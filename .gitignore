@@ -1,3 +1,15 @@
+# 跨機同步用的 repo(Windows + Mac)。網站只發布 docs/。
+.DS_Store
+Thumbs.db
+desktop.ini
+*.icloud
+*.tmp
 __pycache__/
 *.pyc
 node_modules/
+.claude/settings.local.json
+
+# 交付區與暫存區不上 git(裡面會有個人資料、照片)
+output/
+input/
+_to_delete/

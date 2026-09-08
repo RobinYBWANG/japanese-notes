@@ -5,7 +5,7 @@ VOICES = [2, 11, 13]
 SETS_PER_LESSON = 3   # L1-L3 朗讀套數
 TOTAL_SETS = 2        # 總朗讀套數
 
-src = open('/mnt/user-data/uploads/日文學習/japanese-notes/minna-notes.html', encoding='utf-8').read()
+src = open('/mnt/user-data/uploads/日文學習/docs/minna-notes.html', encoding='utf-8').read()
 wb = json.loads(re.search(r'<script[^>]*id="vocab-data"[^>]*>(.*?)</script>', src, re.S).group(1))
 dom_says = json.load(open('/home/claude/full/dom_says.json', encoding='utf-8'))
 

@@ -5,7 +5,7 @@
 
 ## 現況（2026-08-21）
 
-- **筆記檔＝ `japanese-notes/minna-notes.html`（唯一一份，17.4MB）**。
+- **筆記檔＝ `docs/minna-notes.html`（唯一一份，17.4MB）**。
   2026-08-21 已移除根目錄的中文檔名母版（在 `_to_delete/母版-0821/`）——
   本機用 `file://` 開就是完整編輯模式，從網址開才是唯讀，同一個檔案兩種模式。
 - 三角色：Chloe=四国めたん(speaker 2，聲音A預設)、Uncle Ben=青山龍星(13)、
@@ -16,7 +16,7 @@
 
 ## 增量更新流程（新增單字/文法/課文後）
 
-1. Stage `japanese-notes/minna-notes.html` 進雲端容器
+1. Stage `docs/minna-notes.html` 進雲端容器
 2. **抽回舊快取**（免重新合成）：解析 `vv-data` JSON，
    把 `audio` map 的每個 `id → base64` 解碼寫成 `opus16/{id}.ogg`
 3. 裝 VOICEVOX engine（見下）
@@ -30,7 +30,7 @@
    ⚠️ 舊的 `build_voice_html.py`（母版→語音版的整套外科替換）**已作廢並移出本資料夾**：
    筆記檔本身早就是語音版，那些 assert 一跑就炸。
 9. `node test_voice_full.mjs` 全過才交付
-10. SendUserFile ＋ `device_commit_files` 覆蓋回 `japanese-notes/minna-notes.html`
+10. SendUserFile ＋ `device_commit_files` 覆蓋回 `docs/minna-notes.html`
     （<20MB 才能 commit，目前 17.4MB）
 11. 檔案在 repo 裡 → 照 `CLAUDE.md` 的分支流程 commit（工作分支不 push）
 
@@ -41,8 +41,7 @@
 
 ```
 python 語音包工具\本機補音檔.py                      # 預設處理 ..\minna-notes.html
-python 語音包工具\本機補音檔.py ..
-5-vocab.html
+python 語音包工具\本機補音檔.py ..\n5-vocab.html
 python 語音包工具\本機補音檔.py --engine-only        # 只把引擎叫起來
 ```
 
@@ -55,7 +54,7 @@ un.exe`（無介面、約 4 秒、之後常駐）→ `export_missing_clips.py`
 驗證：
 
 ```
-node 語音包工具	est_voice_full.mjs [要驗的 html]
+node 語音包工具\test_voice_full.mjs [要驗的 html]
 ```
 
 ### 新增一個聲音的成本（2026-08-22 實測，Emily 試作後放棄）
@@ -117,10 +116,10 @@ un.exe`（不是 `Programs\`） |
 python3 export_missing_clips.py <staged 的 minna-notes.html> new-clips.json
 
 # 2) SendUserFile + device_commit_files 把 new-clips.json 送到使用者電腦
-#    （放進 japanese-notes\ 底下即可，合併完再 mv 進 _to_delete\）
+#    （放進 docs\ 底下即可，合併完再 mv 進 _to_delete\）
 
 # 3) 使用者電腦（device_bash）：就地併進 vv-data
-python3 語音包工具/merge_clips.py japanese-notes/minna-notes.html new-clips.json
+python3 語音包工具/merge_clips.py docs/minna-notes.html new-clips.json
 ```
 
 實測：`merge_clips.py` 在使用者電腦上處理 17.9MB 的檔案**0.87 秒**跑完，

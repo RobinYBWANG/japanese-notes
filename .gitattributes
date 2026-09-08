@@ -1,0 +1,2 @@
+# 兩台電腦(Windows autocrlf=true / Mac 無轉換)共用:repo 內一律 LF,簽出時各自照平台。
+* text=auto

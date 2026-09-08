@@ -1,13 +1,16 @@
 // 回歸測試：小抽考的自動發音只能由使用者動作觸發（2026-08-22 修好的 bug，別再退化）
 // 驗證：切課／切分頁不得自動發音；按下一題／重考／切模式才發音
 import { chromium } from 'playwright';
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const HTML = path.resolve(process.argv[2] || path.join(HERE, '..', 'minna-notes.html'));
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
 const errs = [];
 p.on('dialog', d => d.dismiss());
 p.on('pageerror', e => errs.push(String(e)));
-await p.goto(pathToFileURL('C:/Users/User/Documents/Claude/Projects/日文學習/japanese-notes/minna-notes.html').href, { timeout: 90000 });
+await p.goto(pathToFileURL(HTML).href, { timeout: 90000 });
 await p.waitForTimeout(1800);
 await p.evaluate(() => {
   window.__plays = 0;

@@ -5,7 +5,7 @@
 # 所以：一律用 g 下指令，上線一律用 publish（不切分支）。
 #
 # 用法（每個 device_bash call 都要先 source，shell 不延續）：
-#   source "$(ls -d $HOME/mnt/日文學習)/japanese-notes/工具/git-wrap.sh"
+#   source "$(ls -d $HOME/mnt/日文學習)/docs/工具/git-wrap.sh"
 #   g status -sb
 #   g add -- minna-notes.html
 #   g commit -m '第5課單字'
@@ -14,7 +14,7 @@
 # 鐵律：絕不直接下 raw git，絕不 git checkout 切分支。
 
 _GW_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-_GW_REPO="$_GW_ROOT/japanese-notes"
+_GW_REPO="$_GW_ROOT"   # 2026-09-08 起整個專案資料夾就是 repo,網站檔在 docs/
 _GW_NAME='RobinYBWang'
 _GW_MAIL='46957897+RobinYBWang@users.noreply.github.com'
 

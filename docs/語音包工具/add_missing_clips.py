@@ -6,7 +6,7 @@
 #       這支是 add_verb_clips.py 的超集（動詞活用形也含）。
 #
 # 前置（雲端 session）：VOICEVOX engine 已在 127.0.0.1:50021 跑起來；ffmpeg 可用。
-# 執行：  python3 add_missing_clips.py "/path/to/japanese-notes/minna-notes.html"
+# 執行：  python3 add_missing_clips.py "/path/to/docs/minna-notes.html"
 #
 import json, re, os, sys, hashlib, base64, subprocess, urllib.parse, urllib.request
 
