@@ -349,6 +349,19 @@ ode_modules`)。
   - clips 5876 / texts 1959,minna-notes **26.16MB**(音檔外置越來越該做)。
   - 三個測試 32 / 19 / 12 全 PASS;origin/main = `c0c4a5d`。
 
+## 2026-09-04〜09-06 — 第5課補字與月份、時間頁月／日表、文法⑨〜⑫、朗讀150／測驗50、手機版小考版面
+- `40321dc`(09-04):第5課單字補「同事」與 1〜12 月;「數字→時間」頁最前面加 1〜12 月、1〜31 日兩張表
+  (特殊唸法用 `tok-hl` 上色,同 よじ),小考多「月」「日」兩個選項;`export_missing_clips.py` 補掃執行時才產生的
+  月日唸法(表格是 renderTime() 用 innerHTML 產的,靜態掃 data-say 掃不到 —— 跟朗讀當年同一個坑)。
+- `4022320`(09-04):第5課文法 ④ 改寫成「時間加不加に」三分類;新增 ⑨［人］と、⑩ 誰と、⑪ 何月何日／いつ、⑫ 語順
+  (第5課共 12 點);測驗補 11 題(第5課 31 題);朗讀總表 `gen_reading.py 99` 改 2 套×150 行;
+  總學習測驗 30→50 題(15 文法＋35 單字)。文法小考題庫 355 題(33/42/37/93/150)。
+- `dbb1d74`(09-04)＋`38aab75`(09-06):使用者用 iPhone 回報小考每題高度不一 → 600px 以下 `.aq-body` 改
+  display:block、答案框滿版、文法點標籤獨立一行。第二次修:`#id .aq-body` 的權重蓋過 `.aq-min .aq-body{display:none}`,
+  收合後題目還在 → 六個選擇器加 `:not(.aq-min)`。教訓:加 id 選擇器前先找有沒有會被它蓋掉的狀態規則。
+- 問答(沒改碼):手機版預覽按鈕 → 不做(DevTools Ctrl+Shift+M 就夠;27.8MB 的頁用 iframe 再載一次不划算);
+  軟體公司分不分手機/桌機版 → 主流是單一響應式,只在使用情境真的不同時換元件,獨立 m. 站已淘汰。
+
 ## 2026-09-08 — 整個專案資料夾合併成 git repo(在 Windows 上做),網站改從 /docs 發布
 - Why:要讓 Windows + 新 MacBook 兩台靠 git 同步全部內容(含 CLAUDE.md、_context/);Mac 那邊也要離開 iCloud(iCloud 會弄壞 .git)。
 - 調查結論:這台 Windows 的資料夾不在 iCloud、是最新的活資料;Pages 原本是 main / root;repo Public;
@@ -364,3 +377,5 @@ ode_modules`)。
 - Skill `tidy-japanese-notes` 的 SKILL.md(在 %APPDATA%\Claude 的 skills 快取,不在 repo)寫死 Windows 路徑與母版舊制,已改;
   若之後被帳號同步蓋回去,要到 app 的 Skills 介面改。
 - 踩坑:Bash 工具的 heredoc 會把 `\\` 縮成 `\`,含反斜線的 Python 一律用 Write 寫成檔案再跑(見 toolchain)。
+- 收尾:第二步 commit `365998d`;Pages 切到 /docs 後線上 6 頁全 200、首頁 md5 與本機一致、`/CLAUDE.md` 404;
+  `git log --follow docs/minna-notes.html` 一路 34 筆到第一個 commit。同日 session-wrap。

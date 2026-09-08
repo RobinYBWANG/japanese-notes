@@ -173,6 +173,10 @@ un.exe`（無介面、約 4 秒、之後常駐）
   **per-origin**，本機 `file://` 和線上各自獨立，這是正常的。
 - 本機 stop hook 會建議把 commit email 改成 `noreply@anthropic.com`，**不要照做**。
 
+- **Bash 工具的 heredoc 會把 `\\` 縮成 `\`**(2026-09-08 踩到:regex `[\\/]` 變成只剩 `/`,替換沒生效也不報錯;
+  多檔替換腳本又在後面才 assert,前面的檔已經寫下去了)。含反斜線的 Python 一律用 Write 寫成 .py 再 `python 檔名` 跑,
+  不要 `python - <<EOF`;多檔替換先全部算完、最後一起寫。
+
 ---
 
 ## 6. 兩台電腦同步（2026-09-08 起整個專案資料夾就是 repo）
