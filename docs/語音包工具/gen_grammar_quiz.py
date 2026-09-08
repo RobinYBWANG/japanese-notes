@@ -1,0 +1,398 @@
+# gen_grammar_quiz.py —— 產生各課「文法小考」的題目，寫進 <script id="gquiz-data">
+#
+# 題型只有一種：**顯示中文 → 掀開看日文 → 發音**（2026-08-23 使用者定案，不做打字判分）。
+#
+# 為什麼在 build 時展開，而不是前端即時組合：
+#   1. 每一句我都能先印出來檢查，不會在畫面上生出不合文法的句子。
+#   2. 音檔要能精準補齊 —— 前端即時組合的句子不會出現在 HTML 裡，
+#      export_missing_clips.py 就掃不到（時間／數字小考當年就是踩這個，才要另一條管線）。
+#
+# 單字或詞性有變動時重跑這支，然後跑 本機補音檔.py 補新句子的音檔。
+#
+# 執行：python gen_grammar_quiz.py [minna-notes.html]
+#
+import json, os, re, sys
+
+HTML = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), '..', 'minna-notes.html')
+HTML = os.path.normpath(HTML)
+CAP = 6          # 每個有替換槽的樣板產幾句（音檔成本 = 句數 × 3 個聲音）
+
+BAD = re.compile(r'[〜～\[\]［］\n]')
+
+
+def pool_of(rows, pos):
+    """該課某個詞性可用來替換的字；帶〜［］或換行的（如「[お]国」「〜時」）不收。"""
+    out = []
+    for r in rows:
+        if r.get('pos') != pos:
+            continue
+        w, k, m = (r.get('word') or r.get('kana') or ''), (r.get('kana') or ''), (r.get('mean') or '')
+        if not w or not k or BAD.search(w) or BAD.search(k):
+            continue
+        zh = m.split('、')[0].split('（')[0].split('(')[0].strip()
+        if not zh:
+            continue
+        out.append({'w': w, 'k': k, 'zh': zh})
+    return out
+
+
+def pool_all(rows):
+    """不分詞性的字庫 —— 給「指定假名清單」用（例如交通工具跨越 n／place 等詞性）。"""
+    out = []
+    for r in rows:
+        w, k, mm = (r.get('word') or r.get('kana') or ''), (r.get('kana') or ''), (r.get('mean') or '')
+        if not w or not k or BAD.search(w) or BAD.search(k):
+            continue
+        zh = mm.split('、')[0].split('（')[0].split('(')[0].strip()
+        if zh:
+            out.append({'w': w, 'k': k, 'zh': zh})
+    return out
+
+
+# 時刻不是單字表裡的字（表裡只有「〜時」這種接尾），所以內建一小組。
+HOURS = [{'w': '6時', 'k': 'ろくじ', 'zh': '6點'}, {'w': '7時', 'k': 'しちじ', 'zh': '7點'},
+         {'w': '8時', 'k': 'はちじ', 'zh': '8點'}, {'w': '9時', 'k': 'くじ', 'zh': '9點'},
+         {'w': '10時', 'k': 'じゅうじ', 'zh': '10點'}, {'w': '12時', 'k': 'じゅうにじ', 'zh': '12點'}]
+VERB_FORMS = {'': ('ます', ''), 'ta': ('ました', ''), 'nai': ('ません', ''), 'nakatta': ('ませんでした', '')}
+
+# 動詞分兩類 —— 配錯句型會產生不合文法的題目（課本第4課⑦自己就有這個對照：
+#   ✗ 10時に 勉強しました → ○ 10時から 勉強しました）。
+#   瞬間動作：可以「○時に」                 持續動作：配「○時から／まで」
+VERB_POINT = ['おきます', 'ねます', 'しゅっぱつします', 'おわります']
+# 主語是「我」的時候不能用 終わります（結束的是事情，不是人）
+VERB_POINT_SELF = ['おきます', 'ねます', 'しゅっぱつします']
+ASK = ['あなた', 'あのひと']   # 問句的主語不會是自己（「我是老師嗎？」很怪）
+VERB_DUR = ['はたらきます', 'べんきょうします', 'やすみます', 'のみます']
+# 「何時から何時まで〜」這種時段句用「喝」很怪，另外收一組
+VERB_SPAN = ['はたらきます', 'べんきょうします', 'やすみます']
+KLASS = {'w': 'クラス', 'k': 'クラス', 'zh': '這堂課'}
+DAYS7 = ['げつようび', 'かようび', 'すいようび', 'もくようび', 'きんようび', 'どようび', 'にちようび']
+VERB_SELF = ['おきます', 'ねます', 'はたらきます', 'やすみます', 'べんきょうします', 'のみます', 'しゅっぱつします']
+
+# 某一課的槽可以跨課取材（使用者要求：第5課的句子順便複習前幾課的場所與時間）。
+# 順序有意義 —— 前面的課先被輪到，所以該課自己的字仍會優先出現。
+SCOPE = {5: ['5', '3', '4']}
+MOVE = ['いきます', 'きます', 'かえります']          # へ 只接移動動詞
+TRIDE = ['でんしゃ', 'バス', 'タクシー', 'ちかてつ']            # 中文說「搭」
+TBIKE = ['じてんしゃ', 'バイク']                                # 中文說「騎」
+TFAR = ['しんかんせん', 'ひこうき', 'ふね']                      # 長途，配城市
+CITY = ['ニューヨーク', 'ペキン', 'ロサンゼルス', 'ロンドン']
+# 目的地只收「會特地過去的地方」——第3課的場所有教室／廁所／電梯這種建築物內部空間，
+# 配上交通工具就會變成「搭公車去廁所」。
+DEST = ['がっこう', 'じゅく', 'じっか', 'かいしゃ', 'えき', 'ぎんこう', 'ゆうびんきょく', 'としょかん',
+        'えいがかん', 'どうぶつえん', 'すいぞくかん', 'びじゅつかん', 'こうえん', 'デパート', 'スーパー',
+        'ほんや', 'レストラン', 'きっさてん', 'いざかや', 'ホテル', 'くうこう', 'たいいくかん', 'プール',
+        'よいち', 'びよういん', 'ジム', 'こうばん', 'べっそう']
+WHO = [{'w': '友達', 'k': 'ともだち', 'zh': '朋友'}, {'w': '家族', 'k': 'かぞく', 'zh': '家人'},
+       {'w': '同僚', 'k': 'どうりょう', 'zh': '同事'}]
+MONTH12 = [{'w': str(i) + '月', 'k': k, 'zh': str(i) + '月'} for i, k in enumerate(
+    ['いちがつ', 'にがつ', 'さんがつ', 'しがつ', 'ごがつ', 'ろくがつ', 'しちがつ', 'はちがつ',
+     'くがつ', 'じゅうがつ', 'じゅういちがつ', 'じゅうにがつ'], 1)]
+DATE10 = [{'w': str(i) + '日', 'k': k, 'zh': str(i) + '號'} for i, k in enumerate(
+    ['ついたち', 'ふつか', 'みっか', 'よっか', 'いつか', 'むいか', 'なのか', 'ようか', 'ここのか', 'とおか'], 1)]
+VACATION = [{'w': '夏休み', 'k': 'なつやすみ', 'zh': '暑假'}, {'w': '冬休み', 'k': 'ふゆやすみ', 'zh': '寒假'},
+            {'w': '春休み', 'k': 'はるやすみ', 'zh': '春假'}, {'w': 'お正月', 'k': 'おしょうがつ', 'zh': '過年'}]
+NINZU = [{'w': '2人', 'k': 'ふたり', 'zh': '兩個人'}, {'w': '3人', 'k': 'さんにん', 'zh': '三個人'},
+         {'w': '4人', 'k': 'よにん', 'zh': '四個人'}]
+HOLIDAY = [{'w': 'お正月', 'k': 'おしょうがつ', 'zh': '過年'}, {'w': 'クリスマス', 'k': 'クリスマス', 'zh': '聖誕節'},
+           {'w': '誕生日', 'k': 'たんじょうび', 'zh': '生日'}]
+# 時間詞一定要跟動詞時態配對 —— 混在同一個槽裡會生出「昨日 実家へ 帰ります」這種錯句
+# （2026-08-30 使用者在小考裡抓到）。未來／過去分開放。
+WHEN_F = [{'w': '明日', 'k': 'あした', 'zh': '明天'}, {'w': '週末', 'k': 'しゅうまつ', 'zh': '週末'},
+          {'w': 'あとで', 'k': 'あとで', 'zh': '等一下'}, {'w': '今日', 'k': 'きょう', 'zh': '今天'}]
+WHEN_P = [{'w': '昨日', 'k': 'きのう', 'zh': '昨天'}, {'w': '先週', 'k': 'せんしゅう', 'zh': '上週'},
+          {'w': 'おととい', 'k': 'おととい', 'zh': '前天'}]
+
+# 樣板。tokens：{job} {country} {n} {n2} {person} {place} {verb} {timeabs} {timeabs2} {timerel} {hour} {hour2}
+#   jp 用漢字形、say 用假名形、zh 用詞義 —— 同一個 token 三種投影，picks 一次決定。
+#   {verb.ta} 之類是動詞變化形（只影響 jp/say，中文由樣板自己寫）。
+#   pick 可以指定專屬字庫（詞性不夠細時用）。
+T = {
+    1: [
+        ('① 現在肯定句', '{person}是{job}', '{person}は {job}です', None),
+        ('② 現在否定句', '{person}不是{job}', '{person}は {job}じゃ ありません', None),
+        ('③ 疑問句', '{person}是{job}嗎？', '{person}は {job}ですか', {'person': ASK}),
+        ('④ 疑問詞「何」', '您叫什麼名字？', 'お名前は 何ですか', None),
+        ('⑤ 名詞＋の＋名詞', '是{country}的{n}', '{country}の {n}です',
+         {'n': [{'w': '大学', 'k': 'だいがく', 'zh': '大學'}, {'w': '病院', 'k': 'びょういん', 'zh': '醫院'},
+                {'w': '会社', 'k': 'かいしゃ', 'zh': '公司'}]}),
+        ('⑥ 名詞＋も', '{person}也是{job}', '{person}も {job}です', None),
+        ('⑦ 問年齡', '{person}幾歲？', '{person}は 何歳ですか', {'person': ASK}),
+    ],
+    2: [
+        ('① これ／それ／あれ', '這是{n}', 'これは {n}です', None),
+        ('① これ／それ／あれ', '那也是{n}', 'あれも {n}です', None),
+        ('② この＋名詞', '這個{n}是我的', 'この {n}は わたしのです',
+         {'n': ['かぎ', 'とけい', 'かさ', 'カード', 'カメラ']}),
+        ('③「〜は 何ですか」', '這是什麼？', 'これは 何ですか', None),
+        ('⑤ 選擇疑問', '那是{n}還是{n2}？', 'それは {n}ですか、それとも {n2}ですか', None),
+        ('⑥ 誰の〜', '這是誰的{n}？', 'これは 誰の {n}ですか', None),
+        ('⑥ 誰の〜', '那是我的{n}', 'それは わたしの {n}です', None),
+        ('⑦ 何の〜', '這是什麼樣的{n}？', 'これは 何の {n}ですか', None),
+    ],
+    3: [
+        ('① 場所代名詞', '這裡是{place}', 'ここは {place}です', None),
+        ('② ここは何ですか', '那裡是什麼地方？', 'あそこは 何ですか', None),
+        ('③ 〜は どこですか', '{place}在哪裡？', '{place}は どこですか', None),
+        ('③ 〜は どこですか', '{place}在那裡', '{place}は あそこです', None),
+        ('④ こちら／どちら', '您是哪國人？', 'お国は どちらですか', None),
+        ('⑤ どこの＋名詞', '這是哪裡的{n}？', 'これは どこの {n}ですか',
+         {'n': ['くつ', 'ネクタイ', 'ワイン', 'シャツ', 'タブレット', 'でんわ']}),
+        ('⑤ どこの＋名詞', '是{country}的{n}', '{country}の {n}です',
+         {'n': ['くつ', 'ネクタイ', 'ワイン', 'シャツ', 'タブレット']}),
+        ('⑥ いくらですか', '這個{n}多少錢？', 'この {n}は いくらですか',
+         {'n': ['くつ', 'ネクタイ', 'ワイン', 'シャツ', 'タブレット']}),
+    ],
+    4: [
+        ('①〜は 動詞ます', '我要{verb}', 'わたしは {verb}', {'verb': VERB_SELF}),
+        ('①〜は 名詞です', '{timeabs}是休假', '{timeabs}は 休みです', None),
+        ('② 〜から〜まで', '從{hour}到{hour2}', '{hour}から {hour2}までです', None,
+         lambda c: HOURS.index(c['hour']) < HOURS.index(c['hour2'])),
+        ('② 〜から〜まで', '{hour}開始{verb}', '{hour}から {verb}', {'verb': VERB_DUR}),
+        ('③ 名詞と名詞', '假日是{timeabs}和{timeabs2}', '休みは {timeabs}と {timeabs2}です', {'timeabs': DAYS7}),
+        ('④ 大変', '真辛苦呀', '大変ですね', None),
+        ('⑤ 句尾助詞 ね／よ', '很好吃吧', 'おいしいですね', None),
+        ('⑤ 句尾助詞 ね／よ', '很好吃喔', 'おいしいですよ', None),
+        ('⑥ 問星期・時間', '今天星期幾？', '今日は 何曜日ですか', None),
+        ('⑥ 問星期・時間', '現在幾點？', '今 何時ですか', None),
+        ('⑥ 問星期・時間', '{timerel}是星期幾？', '{timerel}は 何曜日ですか',
+         {'timerel': [{'w': '明日', 'k': 'あした', 'zh': '明天'}, {'w': 'あさって', 'k': 'あさって', 'zh': '後天'},
+                      {'w': '昨日', 'k': 'きのう', 'zh': '昨天'}]}),
+        ('⑥ 問星期・時間', '{n}幾點開始？', '{n}は 何時からですか',
+         {'n': ['かいぎ', 'しけん', 'えいが', 'ひるやすみ']}),
+        ('⑥ 問星期・時間', '這堂課幾點開始？', 'クラスは 何時からですか', None),
+        ('⑦ 時間＋に＋動作', '我{hour}{verb}了', 'わたしは {hour}に {verb.ta}', {'verb': VERB_POINT_SELF}),
+        ('⑦ 時間＋に＋動作', '{timerel}幾點{verb}？', '{timerel} 何時に {verb}か',
+         {'verb': VERB_POINT,
+          'timerel': [{'w': '今日', 'k': 'きょう', 'zh': '今天'}, {'w': '明日', 'k': 'あした', 'zh': '明天'},
+                      {'w': '毎日', 'k': 'まいにち', 'zh': '每天'}]}),
+        ('⑧ 何時から何時まで', '{n}從幾點到幾點？', '{n}は 何時から 何時までですか',
+         {'n': ['かいぎ', 'しけん', 'ひるやすみ', 'えいが', 'ぎんこう']}),
+        ('⑧ 何時から何時まで', '這堂課從幾點到幾點？', 'クラスは 何時から 何時までですか', None),
+        ('⑧ 何時から何時まで', '{timerel}從幾點到幾點{verb}？', '{timerel} 何時から 何時まで {verb.ta}か',
+         {'verb': VERB_DUR,
+          'timerel': [{'w': '昨日', 'k': 'きのう', 'zh': '昨天'}, {'w': '今朝', 'k': 'けさ', 'zh': '今天早上'},
+                      {'w': 'おととい', 'k': 'おととい', 'zh': '前天'}]}),
+        ('⑧ 何時から何時まで', '昨天從幾點到幾點唸日文？', '昨日 日本語を 何時から 何時まで 勉強しましたか', None),
+        ('⑧ 何時から何時まで', '從幾點到幾點{verb}？', '何時から 何時まで {verb}か', {'verb': VERB_SPAN}),
+        ('⑧ 何時から何時まで', '{hour}到{hour2}{verb}', '{hour}から {hour2}まで {verb}', {'verb': VERB_SPAN},
+         lambda c: HOURS.index(c['hour']) < HOURS.index(c['hour2'])),
+        ('⑧ 何時から何時まで', '昨天{verb}到{hour}', '昨日 {hour}まで {verb.ta}', {'verb': VERB_DUR}),
+        ('⑧ 何時から何時まで', '昨天加班到{hour}', '昨日 {hour}まで 残業しました', None),
+        ('⑨ 動詞四種形', '{timerel}{verb}了嗎？', '{timerel} {verb.ta}か',
+         {'verb': VERB_DUR,
+          'timerel': [{'w': '昨日', 'k': 'きのう', 'zh': '昨天'}, {'w': '今朝', 'k': 'けさ', 'zh': '今天早上'},
+                      {'w': 'おととい', 'k': 'おととい', 'zh': '前天'}]}),
+        ('⑨ 動詞四種形', '不，沒有{verb}', 'いいえ、{verb.nakatta}', {'verb': VERB_DUR}),
+    ],
+    5: [
+        ('② ［場所］へ 行きます', '我去{dest}', 'わたしは {dest}へ 行きます', {'dest': DEST}),
+        ('② ［場所］へ 行きます', '朋友來{dest}了', '友達が {dest}へ 来ました', {'dest': DEST}),
+        ('② ［場所］へ 行きます', '我回老家了', 'わたしは 実家へ 帰りました', None),
+        ('② ［場所］へ 行きます', '{whenf}回老家', '{whenf} 実家へ 帰ります', {'whenf': WHEN_F}),
+        ('② ［場所］へ 行きます', '{whenp}回老家了', '{whenp} 実家へ 帰りました', {'whenp': WHEN_P}),
+        ('③ どこへ 行きますか', '{whenf}要去哪裡？', '{whenf} どこへ 行きますか', {'whenf': WHEN_F}),
+        ('③ どこへ 行きますか', '{whenp}去了哪裡？', '{whenp} どこへ 行きましたか', {'whenp': WHEN_P}),
+        ('⑥ ［交通工具］で', '搭{tride}去{dest}', '{tride}で {dest}へ 行きます',
+         {'tride': TRIDE, 'dest': DEST}),
+        ('⑥ ［交通工具］で', '騎{tbike}去{dest}', '{tbike}で {dest}へ 行きます',
+         {'tbike': TBIKE, 'dest': DEST}),
+        ('⑥ ［交通工具］で', '搭飛機去{city}', '飛行機で {city}へ 行きます', {'city': CITY}),
+        ('⑥ ［交通工具］で', '搭{tfar}回去', '{tfar}で 帰ります', {'tfar': TFAR}),
+        ('⑥ ［交通工具］で', '走路去{dest}', '歩いて {dest}へ 行きます', {'dest': DEST}),
+        ('⑦ 何で 行きますか', '你怎麼來{dest}的？', 'あなたは 何で {dest}へ 来ましたか', {'dest': DEST}),
+        ('⑦ 何で 行きますか', '我搭{tride}來的', 'わたしは {tride}で 来ました', {'tride': TRIDE}),
+        ('⑦ 何で 行きますか', '我騎{tbike}來的', 'わたしは {tbike}で 来ました', {'tbike': TBIKE}),
+        ('⑧ で／に／を 的分工', '用手吃', '手で 食べます', None),
+        ('⑧ で／に／を 的分工', '用卡片買', 'カードで 買います', None),
+        ('⑧ で／に／を 的分工', '搭公車', 'バスに 乗ります', None),
+        ('⑧ で／に／を 的分工', '搭電車', '電車に 乗ります', None),
+        ('⑧ で／に／を 的分工', '使用螺絲起子', 'ドライバーを 使います', None),
+        ('⑧ で／に／を 的分工', '修理計程車', 'タクシーを 修理します', None),
+        ('⑧ で／に／を 的分工', '用刀子殺', 'ナイフで 殺します', None),
+        ('① 人數・範圍＋で', '來了{ninzu}（單純講人數）', '{ninzu} 来ました', {'ninzu': NINZU}),
+        ('① 人數・範圍＋で', '{ninzu}一起來了', '{ninzu}で 来ました', {'ninzu': NINZU}),
+        ('① 人數・範圍＋で', '來了一個人', '一人 来ました', None),
+        ('① 人數・範圍＋で', '大家都來了', 'みんな 来ました', None),
+        ('① 人數・範圍＋で', '每一樣都 5000 日圓', '全部 5000円です', None),
+        ('① 人數・範圍＋で', '{ninzu}一起去{dest}', '{ninzu}で {dest}へ 行きます',
+         {'ninzu': NINZU, 'dest': DEST}),
+        ('① 人數・範圍＋で', '大家一起去{dest}', 'みんなで {dest}へ 行きます', {'dest': DEST}),
+        ('① 人數・範圍＋で', '全部加起來 5000 日圓', '全部で 5000円です', None),
+        ('① 人數・範圍＋で', '一個人回去', '一人で 帰ります', None),
+        ('④ 時間＋場所へ', '{whenf}去{dest}', '{whenf} {dest}へ 行きます', {'whenf': WHEN_F, 'dest': DEST}),
+        ('④ 時間＋場所へ', '{whenp}去了{dest}', '{whenp} {dest}へ 行きました', {'whenp': WHEN_P, 'dest': DEST}),
+        ('④ 時間＋場所へ', '{holiday}回老家', '{holiday}に 実家へ 帰ります', {'holiday': HOLIDAY}),
+        ('⑤ へ 只接移動動詞', '我去補習班', 'わたしは 塾へ 行きます', None),
+        ('⑨ ［人］と', '和{who}一起去{dest}', '{who}と {dest}へ 行きます', {'who': WHO, 'dest': DEST}),
+        ('⑨ ［人］と', '和{who}一起回老家', '{who}と 実家へ 帰ります', {'who': WHO}),
+        ('⑨ ［人］と', '林先生和陳先生都去了日本', '林さんと 陳さんは 日本へ 行きました', None),
+        ('⑩ 誰と', '{whenf}要和誰去？', '{whenf} 誰と 行きますか', {'whenf': WHEN_F}),
+        ('⑩ 誰と', '{whenp}和誰去了{dest}？', '{whenp} 誰と {dest}へ 行きましたか',
+         {'whenp': WHEN_P, 'dest': DEST}),
+        ('⑩ 誰と', '和{who}一起去', '{who}と 行きます', {'who': WHO}),
+        ('⑪ 何月何日／いつ', '生日是幾月幾號？', '誕生日は 何月何日ですか', None),
+        ('⑪ 何月何日／いつ', '是{month}{date}', '{month}{date}です', {'month': MONTH12, 'date': DATE10}),
+        ('⑪ 何月何日／いつ', '{vac}是什麼時候？', '{vac}は いつですか', {'vac': VACATION}),
+        ('⑫ 語順', '我{whenf}和{who}搭{tride}去{dest}', 'わたしは {whenf} {who}と {tride}で {dest}へ 行きます',
+         {'whenf': WHEN_F, 'who': WHO, 'tride': TRIDE, 'dest': DEST}),
+    ],
+}
+
+TOKEN = re.compile(r'\{(\w+?)(\d?)(?:\.(\w+))?\}')
+
+
+def expand(les, rows, item):
+    """把一條樣板展開成最多 CAP 句。同名 token（{n}/{n2}）取不同字。"""
+    label, zh_t, jp_t, picks = item[0], item[1], item[2], item[3]
+    check = item[4] if len(item) > 4 else None
+    names = [(m.group(1), m.group(2)) for m in TOKEN.finditer(jp_t + zh_t)]
+    uniq = []
+    for nm in names:
+        if nm not in uniq:
+            uniq.append(nm)
+    pools = {}
+    for base, idx in uniq:
+        if picks and base in picks:
+            v = picks[base]
+            # picks 可以是現成的字庫，也可以是「假名清單」＝ 從該課該詞性裡挑這幾個
+            # 假名清單：不分詞性去全表找（交通工具就跨了 n／place 好幾種詞性）
+            pools[(base, idx)] = ([c for c in pool_all(rows) if c['k'] in v]
+                                  if v and isinstance(v[0], str) else v)
+        elif base == 'hour':
+            pools[(base, idx)] = HOURS
+        else:
+            pools[(base, idx)] = pool_of(rows, base)
+    if not uniq:
+        return [{'g': label, 'zh': zh_t, 'jp': jp_t, 'say': jp_t}]
+    if any(not v for v in pools.values()):
+        empty = [k for k, v in pools.items() if not v]
+        print('  ⚠ 略過（沒有可用的字 %s）：%s' % (empty, zh_t))
+        return []
+    out, seen = [], set()
+    for i in range(CAP * 3):
+        if len(out) >= CAP:
+            break
+        chosen, ok = {}, True
+        used = set()
+        for j, (base, idx) in enumerate(uniq):
+            p = pools[(base, idx)]
+            cand = None
+            for step in range(len(p)):
+                c = p[(i * (j + 1) + step) % len(p)]
+                if c['w'] not in used:
+                    cand = c
+                    break
+            if not cand:
+                ok = False
+                break
+            used.add(cand['w'])
+            chosen[(base, idx)] = cand
+        if not ok:
+            continue
+
+        def sub(text, field):
+            def f(m):
+                base, idx, form = m.group(1), m.group(2), m.group(3)
+                c = chosen[(base, idx)]
+                if field == 'zh':
+                    return c['zh']
+                v = c['w'] if field == 'jp' else c['k']
+                if base == 'verb':
+                    suf = VERB_FORMS.get(form or '', ('ます', ''))[0]
+                    v = re.sub(r'ます$', '', v) + suf
+                return v
+            return TOKEN.sub(f, text)
+
+        if check and not check({b: c for (b, i2), c in chosen.items()} |
+                               {b + i2: c for (b, i2), c in chosen.items()}):
+            continue
+        jp, say, zh = sub(jp_t, 'jp'), sub(jp_t, 'say'), sub(zh_t, 'zh')
+        if jp in seen:
+            continue
+        seen.add(jp)
+        out.append({'g': label, 'zh': zh, 'jp': jp, 'say': say})
+    return out
+
+
+h = open(HTML, encoding='utf-8').read()
+vd = json.loads(re.search(r'<script[^>]*id="vocab-data"[^>]*>(.*?)</script>', h, re.S).group(1))
+
+data, total = {}, 0
+for les in sorted(T):
+    rows = []
+    for k in SCOPE.get(les, [str(les)]):
+        rows += vd['lessons'].get(k, [])
+    qs = []
+    print('=== 第%d課 ===' % les)
+    for item in T[les]:
+        got = expand(les, rows, item)
+        for q in got:
+            print('   %-22s %-24s %s' % (q['g'][:22], q['zh'][:24], q['jp']))
+        qs += got
+    data[str(les)] = qs
+    total += len(qs)
+    print('   → %d 題\n' % len(qs))
+
+print('總共 %d 題' % total)
+
+# say 的假名版本（給 vvClip 對音檔用）。日文樣板裡的漢字要換成假名，
+# 但固定句（沒有槽的）本來就是漢字，這裡補上人工對照。
+FIXED_SAY = {
+    'お名前は 何ですか': 'おなまえは なんですか',
+    'これは 何ですか': 'これは なんですか',
+    'あそこは 何ですか': 'あそこは なんですか',
+    'お国は どちらですか': 'おくには どちらですか',
+    '大変ですね': 'たいへんですね',
+    'おいしいですね': 'おいしいですね',
+    'おいしいですよ': 'おいしいですよ',
+    '今日は 何曜日ですか': 'きょうは なんようびですか',
+    '今 何時ですか': 'いま なんじですか',
+}
+REPL = [('誰の', 'だれの'), ('何の', 'なんの'), ('何歳', 'なんさい'), ('何時', 'なんじ'),
+        ('飛行機で', 'ひこうきで'), ('電車に', 'でんしゃに'), ('友達が', 'ともだちが'),
+        ('先週', 'せんしゅう'), ('行きました', 'いきました'), ('行きましたか', 'いきましたか'),
+        ('誕生日は', 'たんじょうびは'), ('何月何日ですか', 'なんがつ なんにちですか'),
+        ('林さんと', 'りんさんと'), ('陳さんは', 'ちんさんは'), ('日本へ', 'にほんへ'),
+        ('誰と', 'だれと'), ('家族', 'かぞく'), ('同僚', 'どうりょう'), ('友達', 'ともだち'),
+        ('全部 ', 'ぜんぶ '), ('一人 ', 'ひとり '), ('帰りました', 'かえりました'), ('帰ります', 'かえります'),
+        ('行きます', 'いきます'), ('行きましたか', 'いきましたか'), ('来ましたか', 'きましたか'),
+        ('来ました', 'きました'), ('歩いて', 'あるいて'), ('何で', 'なんで'), ('手で', 'てで'),
+        ('食べます', 'たべます'), ('買います', 'かいます'), ('乗ります', 'のります'),
+        ('使います', 'つかいます'), ('修理します', 'しゅうりします'), ('殺します', 'ころします'),
+        ('全部で', 'ぜんぶで'), ('5000円です', 'ごせんえんです'), ('一人で', 'ひとりで'),
+        ('実家', 'じっか'), ('塾', 'じゅく'), ('わたしは', 'わたしは'),
+        ('残業しました', 'ざんぎょうしました'), ('日本語を', 'にほんごを'),
+        ('勉強しましたか', 'べんきょうしましたか'), ('何曜日', 'なんようび'), ('昨日', 'きのう'),
+        ('明日', 'あした'), ('今朝', 'けさ'), ('会議', 'かいぎ'), ('試験', 'しけん'),
+        ('昼休み', 'ひるやすみ'), ('映画', 'えいが'), ('銀行', 'ぎんこう'),
+        ('わたしのです', 'わたしのです'), ('休みです', 'やすみです'), ('休みは', 'やすみは'),
+        ('大変', 'たいへん'), ('今日', 'きょう'), ('今 ', 'いま '), ('私', 'わたし')]
+for les, qs in data.items():
+    for q in qs:
+        s = FIXED_SAY.get(q['say'], q['say'])
+        for a, b in REPL:
+            s = s.replace(a, b)
+        q['say'] = s
+
+bad = [q for qs in data.values() for q in qs if re.search(r'[一-鿿]', q['say'])]
+if bad:
+    print('\n⚠ 這些題目的 say 還有漢字（音檔會對不上，要補進 FIXED_SAY／REPL）：')
+    for q in bad[:20]:
+        print('   ', q['say'])
+
+blob = json.dumps(data, ensure_ascii=False)
+assert '</script' not in blob
+tag = '<script id="gquiz-data" type="application/json">'
+if tag in h:
+    h = re.sub(r'<script id="gquiz-data" type="application/json">.*?</script>', tag + blob + '</script>', h, flags=re.S)
+else:
+    anchor = '<script id="vv-data" type="application/json">'
+    assert h.count(anchor) == 1, '找不到 vv-data 當錨點'
+    h = h.replace(anchor, tag + blob + '</script>\n' + anchor)
+
+fd = os.open(HTML, os.O_WRONLY | os.O_TRUNC)
+os.write(fd, h.encode('utf-8'))
+os.fsync(fd)
+os.close(fd)
+print('\n已寫入 <script id="gquiz-data">（%.1fKB）' % (len(blob) / 1024))
