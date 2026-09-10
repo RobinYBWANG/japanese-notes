@@ -186,6 +186,9 @@ un.exe`（無介面、約 4 秒、之後常駐）
 - 換行：Windows 這台 system 層級 `core.autocrlf=true`、Mac 不設；root `.gitattributes` 的 `* text=auto` 讓 repo 內一律 LF。
 - 日文資料夾名（語音包工具／工具）：兩台都 `git config --global core.precomposeunicode true`（Mac 必要、Windows 無害）。
 - **新 clone 之後**：`cd docs/語音包工具 && npm ci && npx playwright install chromium`（node_modules 與 Chromium 不在 repo）。
-- Mac 上 `本機補音檔.py` 的 `find_engine()` / `ensure_ffmpeg()` 只認 Windows 的 WinGet 路徑；要在 Mac 補音檔得另裝
-  VOICEVOX engine + ffmpeg 並改這兩個函式（目前只在 Windows 產音檔）。
-- Claude Code 的 project 狀態（`~/.claude/projects/<路徑 key>`）綁絕對路徑；Windows 這台維持原路徑不要搬。
+- **Mac 這台已備妥（2026-09-10）**：repo 在 `~/Robin/Claude/日文學習/japanese-notes`（HTTPS remote，push 走 osxkeychain）；
+  Homebrew 6 → node v26.8 / ffmpeg 9.0.1（含 libopus）；Playwright Chromium 已裝；`test_voice_full.mjs`、`test_kana.mjs` 全 PASS。
+  Python 是系統內建 3.9（Windows 3.11），遇到新語法再 `brew install python`。
+- Mac 上 `本機補音檔.py` 的 `find_engine()` / `ensure_ffmpeg()` 只認 Windows 的 WinGet 路徑；ffmpeg 已在 PATH，
+  但 VOICEVOX engine 未裝（1.7GB）且兩個函式要改才能用（目前仍只在 Windows 產音檔）。
+- Claude Code 的 project 狀態（`~/.claude/projects/<路徑 key>`）綁絕對路徑，session 不跨機器；兩台各開各的 session，靠 git 同步。
