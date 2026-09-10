@@ -32,12 +32,17 @@ except Exception:
     pass
 
 # winget 的 VOICEVOX.CPU 是「解壓縮型」套件，裝在 WinGet\Packages 底下（不是 Programs\）。
+# Mac 是 GitHub release 的 voicevox_engine-macos-arm64-*.7z 解壓到 ~/Applications/voicevox_engine/（2026-09-10）。
 ENGINE_GLOBS = [
     os.path.expandvars(p) for p in (
         r'%LOCALAPPDATA%\Microsoft\WinGet\Packages\*VOICEVOX*\VOICEVOX\vv-engine\run.exe',
         r'%LOCALAPPDATA%\Programs\VOICEVOX\vv-engine\run.exe',
         r'%PROGRAMFILES%\VOICEVOX\vv-engine\run.exe',
     )
+] if os.name == 'nt' else [
+    os.path.expanduser('~/Applications/voicevox_engine/*/run'),
+    os.path.expanduser('~/Applications/voicevox_engine/run'),
+    '/Applications/VOICEVOX.app/Contents/Resources/vv-engine/run',
 ]
 
 
@@ -65,7 +70,7 @@ def ensure_ffmpeg():
             os.environ['PATH'] = os.path.dirname(hits[0]) + os.pathsep + os.environ['PATH']
             print('ffmpeg 不在 PATH 上，改用 %s' % hits[0])
             return
-    sys.exit('找不到 ffmpeg。裝法：winget install --id Gyan.FFmpeg -e')
+    sys.exit('找不到 ffmpeg。裝法：Windows `winget install --id Gyan.FFmpeg -e`；Mac `brew install ffmpeg`')
 
 
 def engine_alive(timeout=2):
@@ -79,7 +84,7 @@ def engine_alive(timeout=2):
 def start_engine(wait=240):
     exe = find_engine()
     if not exe:
-        sys.exit('找不到 VOICEVOX 引擎（vv-engine\\run.exe）。找過：\n  ' +
+        sys.exit('找不到 VOICEVOX 引擎（Windows：vv-engine\\run.exe；Mac：解壓 release 的 macos-arm64 7z 到 ~/Applications/voicevox_engine/）。找過：\n  ' +
                  '\n  '.join(ENGINE_GLOBS))
     print('啟動引擎：%s' % exe)
     # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP：跟本行程脫鉤，之後常駐

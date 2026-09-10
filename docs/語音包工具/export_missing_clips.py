@@ -119,8 +119,11 @@ def _date_kana(d):
     return _TEN[d // 10] + (_ONE[d % 10] if d % 10 else '') + 'にち'
 
 
-for _t in _MONTH + [_date_kana(d) for d in range(1, 32)] + ['なんがつ', 'なんにち']:
-    add(_t)
+# 只有真的有 monthKana() 的頁面（minna-notes）才需要；kana.html／n5-vocab.html 沒有，
+# 之前無條件加會讓 kana.html 多合成 45×3 個用不到的 clip（2026-09-10 Mac 首跑踩到）。
+if 'monthKana(' in h:
+    for _t in _MONTH + [_date_kana(d) for d in range(1, 32)] + ['なんがつ', 'なんにち']:
+        add(_t)
 
 if gquiz:
     for qs in gquiz.values():

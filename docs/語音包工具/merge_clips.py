@@ -64,9 +64,15 @@ h2 = open(HTML, encoding='utf-8').read()
 VV2 = json.loads(re.search(r'<script[^>]*id="vv-data"[^>]*>(.*?)</script>', h2, re.S).group(1))
 missing = [cid for cid in p_audio if cid not in VV2['audio']]
 assert not missing, '合併後仍缺 %d 個 clip' % len(missing)
-vd2 = re.search(r'<script[^>]*id="vocab-data"[^>]*>(.*?)</script>', h2, re.S).group(1)
-json.loads(vd2)
-assert vd2.count('\n') > 1000, 'vocab-data 的縮排被壓掉了，這會讓 git diff 無法 review'
+# minna-notes 是 vocab-data、kana.html 是 kana-data；只驗頁面實際有的那個
+# （之前寫死 vocab-data，對 kana.html 會在寫完檔之後才炸 exit 1；2026-09-10 修）
+_vd = re.search(r'<script[^>]*id="vocab-data"[^>]*>(.*?)</script>', h2, re.S)
+_kd = re.search(r'<script[^>]*id="kana-data"[^>]*>(.*?)</script>', h2, re.S)
+if _vd:
+    json.loads(_vd.group(1))
+    assert _vd.group(1).count('\n') > 1000, 'vocab-data 的縮排被壓掉了，這會讓 git diff 無法 review'
+elif _kd:
+    json.loads(_kd.group(1))
 assert h2.rstrip().endswith('</html>'), '檔案結尾不對'
 
 sz = os.path.getsize(HTML) / 1e6

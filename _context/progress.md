@@ -8,6 +8,7 @@
 ## Now
 - 檔案配置:**整個專案資料夾就是 git repo**(2026-09-08 合併,F17);網站檔全在 `docs\`(Pages = main /docs),CLAUDE.md、_context/ 也在 git 裡,Windows／Mac 兩台靠 git 同步。
 - git:**直接在 main 上做、不開分支**;**開工先 `git pull`**(另一台可能推過)。repo 合併步驟見 journal 2026-09-08。
+- **MacBook 已建好(2026-09-10)**:筆記、補音檔、Playwright 驗證都能做,與 Windows 等價;細節 toolchain §6、journal 2026-09-10。
 - 筆記內容:第1課〜第12課架構,**L1〜L5 完整**(單字/文法/小考/朗讀/測驗)+數字/量詞/時間表。
 - **五十音已獨立成 `kana.html`(2.0MB,2026-08-22)**,首頁第一張卡;minna-notes 當時瘦到 16.3MB,現在又長到 27.8MB。
 - `n5-vocab.html`:**892 字**,全面改用 VOICEVOX 冥鳴ひまり(14)預錄音檔(1725 clips,6.8MB),
@@ -23,7 +24,6 @@
 - 聲音仍是三個(Chloe/Uncle Ben/Darren);加第四個的成本見 toolchain.md,已評估過不划算。
 
 ## Next (1–3)
-- MacBook:`git clone git@github.com:RobinYBWang/japanese-notes.git`(不要放 iCloud),之後照 toolchain.md §6。
 - **音檔外置**(建議先做,見 todo):27.8MB 裡約 27MB 是內嵌音檔,每加一課還會再漲。
 - 第6課起依課本進度建置(單字→文法→小考→朗讀→測驗,照 CLAUDE.md「課程更新的連帶工作」)。
 - 手機版:實機再看一次小考版面與收合(09-04、09-06 各修一次)。

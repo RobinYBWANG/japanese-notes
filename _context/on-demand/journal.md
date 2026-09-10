@@ -379,3 +379,17 @@ ode_modules`)。
 - 踩坑:Bash 工具的 heredoc 會把 `\\` 縮成 `\`,含反斜線的 Python 一律用 Write 寫成檔案再跑(見 toolchain)。
 - 收尾:第二步 commit `365998d`;Pages 切到 /docs 後線上 6 頁全 200、首頁 md5 與本機一致、`/CLAUDE.md` 404;
   `git log --follow docs/minna-notes.html` 一路 34 筆到第一個 commit。同日 session-wrap。
+
+## 2026-09-10 — MacBook 環境建好(在 Mac 上做),Mac 也能產音檔;順手修 kana.html 補音檔的兩個舊 bug
+- Why:使用者要在咖啡廳用 Mac 接著做。結論:Claude Code 的本機 session 綁機器與絕對路徑,Windows 關機後 Mac 接不到那個 session;
+  改成兩台各開各的 session、靠 git 同步(雲端 session 也可但每次看檔要 push/pull 一輪,不適合改 HTML 為主的工作)。
+- 環境:Homebrew 6 → node 26.8 / ffmpeg 9.0.1(libopus)/ 7zip;`npm ci` + Playwright Chromium;repo 內 user.name/email 設同 Windows;
+  `core.precomposeunicode=true`。`4a75ad2` 先記到 toolchain §6。
+- VOICEVOX:release 的 macos-arm64 0.25.2 7z(1.8GB)解到 `~/Applications/voicevox_engine/macos-arm64/`,`xattr -dr com.apple.quarantine`;
+  `本機補音檔.py` 的 `ENGINE_GLOBS` 非 Windows 時改找那裡。四個 speaker id 都在,「水餃→ミズ」與 Windows 一致。
+- 踩到兩個舊 bug(Windows 上對 kana.html 跑也會中):
+  1. `export_missing_clips.py` 第 D 段(月份/日期 45 個文本)無條件加 → kana.html 多合成 135 個 clip、胖 336KB。改成頁面有 `monthKana(` 才加。
+  2. `merge_clips.py` 寫後驗證寫死找 `vocab-data`,kana.html 是 `kana-data` → 寫完檔才 exit 1。改成依頁面有哪個區塊各自驗。
+  kana.html 已 `git checkout` 還原;修完三頁重跑皆缺 0、HTML 沒動;merge 修正用副本+假 clip 實測。
+- 驗證:test_voice_full 37/0、test_kana 19/0(Mac)。
+- 未裝:pillow-heif(要看 HEIC 手寫照才需要);Python 用系統 3.9(Windows 3.11),目前所有腳本可跑。
