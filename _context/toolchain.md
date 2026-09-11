@@ -141,6 +141,8 @@ un.exe`（無介面、約 4 秒、之後常駐）
 - **n5-mock-easy.html 的音檔是獨立一套**（2026-09-11）：`mock_audio.py` 一步跑完。key 是「角色|文本」，F/M/N = speaker 2/11/13；
   readChoices 的題目每個選項也要「N|1ばん。選項」。坑：把 JS 字面值交給 node 轉 JSON 時 stdin 要 `setEncoding("utf8")`，
   否則分塊邊界切到日文字會變亂碼、合成出壞 clip。漢字唸錯（如 何まい→ナニマイ）直接把對白改成假名，沒有 sayForceKana。
+  題庫欄位：`img`＋`fixed:true` = 四格圖片題（c 固定 1〜4、a = 正解格−1）；`scene:{img}` = 發話表現場景圖；圖放 `docs/img/mock/`
+  （ChatGPT 產的合圖用 Pillow 偵測黑格線切開、灰階 16 色 PNG，四格題約 80KB、場景 20KB）。
 - **三個頁面各有測試**：`test_voice_full.mjs`（minna-notes）、`test_kana.mjs`（kana.html，19 項）、`test_mock.mjs`（n5-mock，19 項）。
   `本機補音檔.py` 兩個頁面都吃（export 會自己判斷是 `vocab-data` 還是 `kana-data`）。
 - 驗證：`node docs\語音包工具\test_voice_full.mjs [html]`（預設 minna-notes.html）。

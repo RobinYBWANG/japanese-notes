@@ -32,10 +32,14 @@ NODE_EVAL = ('const vm=require("vm");let s="";process.stdin.setEncoding("utf8");
 bank = json.loads(subprocess.run(['node', '-e', NODE_EVAL], input=m.group(1),
                                  capture_output=True, text=True, check=True).stdout)
 
+# 與前端 audioLines() 同步：課題理解／ポイント理解（問題1・2）由旁白在對話前後各唸一次題目；
+# readChoices 的題目每個選項唸「1ばん。選項」
 need = []
 for q in bank:
     if not q.get('audio'):
         continue
+    if re.match(r'問題[12]　', q['type']):
+        need.append(('N', q['q']))
     for line in q['audio']:
         need.append((line['r'], line['t']))
     if q.get('readChoices'):
