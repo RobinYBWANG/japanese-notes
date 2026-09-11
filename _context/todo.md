@@ -23,10 +23,11 @@
 - [ ] 舊分支 `working`(本機唯一剩的)要不要砍 — 已確認是 main 的祖先、0 個獨有 commit,`git branch -d working` 即可
 - [ ] minna-notes 第2課「ルイスウトン」是誤植，正確為「ルイ・ヴィトン／ルイヴィトン」— 另開 session 修正（n5-vocab 已決定不收品牌字）
 - [ ] n5-vocab 分類原則(已定案,續用):不收品牌名;專有名詞如 101／グランドホテル 保留(課本已學過)
-- [ ] **Mac 補音檔**:`本機補音檔.py` 的 `find_engine()`/`ensure_ffmpeg()` 只認 Windows WinGet 路徑;要在 Mac 產音檔得裝 VOICEVOX + ffmpeg 並加 macOS 分支(toolchain §6)
 - [ ] `tidy-japanese-notes` skill 的 SKILL.md 改在本機快取(去掉寫死路徑、母版舊制);若被帳號同步蓋回,到 app 的 Skills 介面改
 
 ## Archive
+- 2026-09-10:Mac 補音檔(VOICEVOX 引擎裝好、本機補音檔.py 加 macOS 路徑)-> journal.md 2026-09-10
+- 2026-09-11:N5 模擬考題庫化 150 題＋配額抽題＋上次考卷回看、mock_audio.py、test_mock.mjs -> journal.md 2026-09-11
 - 2026-09-08:整個專案資料夾合併成 git repo、Pages 改 main /docs、output/input/_to_delete 不上 git、test_autoplay 改相對路徑 -> journal.md 2026-09-08
 - 2026-09-08:手機版預覽按鈕 → 不做(DevTools 就夠);軟體公司分不分手機/桌機版 → 已答 -> journal.md 2026-09-04〜09-06
 - 2026-09-04〜06:第5課補同事/月份、時間頁月日表、文法⑨〜⑫、朗讀150/測驗50、手機版小考版面兩修 -> journal.md 2026-09-04〜09-06

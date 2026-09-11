@@ -9,6 +9,8 @@
 - 檔案配置:**整個專案資料夾就是 git repo**(2026-09-08 合併,F17);網站檔全在 `docs\`(Pages = main /docs),CLAUDE.md、_context/ 也在 git 裡,Windows／Mac 兩台靠 git 同步。
 - git:**直接在 main 上做、不開分支**;**開工先 `git pull`**(另一台可能推過)。repo 合併步驟見 journal 2026-09-08。
 - **MacBook 已建好(2026-09-10)**:筆記、補音檔、Playwright 驗證都能做,與 Windows 等價;細節 toolchain §6、journal 2026-09-10。
+- **N5 模擬考 `n5-mock-easy.html` 已題庫化(2026-09-11)**:150 題(5 份的量,範圍全 N5),每次依題型配額抽 30 題、考過的優先不出、可回看上次考卷(題目/作答/詳解);
+  音檔 `mock_audio.py`(196 clips)、驗證 `test_mock.mjs`(19 項)。**目標 N5 考試日 2026-12-06**(about-me)。
 - 筆記內容:第1課〜第12課架構,**L1〜L5 完整**(單字/文法/小考/朗讀/測驗)+數字/量詞/時間表。
 - **五十音已獨立成 `kana.html`(2.0MB,2026-08-22)**,首頁第一張卡;minna-notes 當時瘦到 16.3MB,現在又長到 27.8MB。
 - `n5-vocab.html`:**892 字**,全面改用 VOICEVOX 冥鳴ひまり(14)預錄音檔(1725 clips,6.8MB),

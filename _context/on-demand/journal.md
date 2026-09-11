@@ -393,3 +393,16 @@ ode_modules`)。
   kana.html 已 `git checkout` 還原;修完三頁重跑皆缺 0、HTML 沒動;merge 修正用副本+假 clip 實測。
 - 驗證:test_voice_full 37/0、test_kana 19/0(Mac)。
 - 未裝:pillow-heif(要看 HEIC 手寫照才需要);Python 用系統 3.9(Windows 3.11),目前所有腳本可跑。
+
+## 2026-09-11 — N5 模擬考題庫化:150 題、配額抽題、上次考卷回看;Mac 首次獨立產音檔
+- Why:使用者報名 2026-12-06 N5,原 `n5-mock-easy.html` 只有固定 30 題、每次同一份。決定做題庫＋每次抽題(不做固定套卷,加題不用平衡整卷),
+  範圍全 N5(1〜25 課),規模 150 題 = 5 份的量。
+- 題庫:原 30 題保留、新增 120 題,配額與原一份相同(文字語彙 4/2/1/1、文法讀解 6/1/3、聴解 3/3/3/3);讀解以「一篇 3 題」為單位抽。
+  抽題邏輯 `QUOTA`/`unitsOf`/`pickExam`;交卷 `markSeen` 記進 localStorage `jp_n5mock_seen`,優先抽沒考過的,全考完自動重來。
+- 上次考卷回看(使用者加的需求):交卷時整份存 `jp_n5mock_last`(題目、作答、日期、是否自動交卷),開始畫面「上次考試結果」按鈕;
+  批改與成績卡從 submit 抽成 `showGraded(rec, review)` 共用,回看不動最佳紀錄、不重記考過。只留最近一次。
+- 音檔:新增 `mock_audio.py`(角色 F/M/N = speaker 2/11/13,從既有 clip id 用 md5 規則反推),補 157 clips,檔案 360KB → 1.75MB。
+  兩個坑:①node 讀 stdin 沒 setEncoding,日文字切在分塊邊界變亂碼、合成出壞 clip(已清、已修);②「何まい」唸成ナニマイ → 改假名。
+- 我自己的 bug:題目識別 key 一開始只用題目文字,發話表現/即時應答的 q 全相同會撞號 → key 改為 短文＋題目＋對白。
+- 驗證:新增 `test_mock.mjs` 23 項全 PASS(結構、配額、音檔覆蓋、抽 30 題、交卷記錄、兩次不重複、回看、版面)。
+- 沒動:考試說明裡「瀏覽器內建語音」舊文案;CLAUDE.md 驗證清單未加 test_mock(記在 toolchain)。toolchain.md 201 行,貼在 budget 邊。

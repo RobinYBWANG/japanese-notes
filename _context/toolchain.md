@@ -138,7 +138,10 @@ un.exe`（無介面、約 4 秒、之後常駐）
 - 新增漢字詞先問引擎它會怎麼唸（`/audio_query` 回傳的 moras），對不上就加進 `sayForceKana`。
   實例：「水餃」被唸成「ミズ」。
 - 三角色：Chloe=四国めたん(2，聲音A預設)、Darren=玄野武宏(11，聲音B預設)、Uncle Ben=青山龍星(13)。
-- **兩個頁面各有測試**：`test_voice_full.mjs`（minna-notes）、`test_kana.mjs`（kana.html，19 項）。
+- **n5-mock-easy.html 的音檔是獨立一套**（2026-09-11）：`mock_audio.py` 一步跑完。key 是「角色|文本」，F/M/N = speaker 2/11/13；
+  readChoices 的題目每個選項也要「N|1ばん。選項」。坑：把 JS 字面值交給 node 轉 JSON 時 stdin 要 `setEncoding("utf8")`，
+  否則分塊邊界切到日文字會變亂碼、合成出壞 clip。漢字唸錯（如 何まい→ナニマイ）直接把對白改成假名，沒有 sayForceKana。
+- **三個頁面各有測試**：`test_voice_full.mjs`（minna-notes）、`test_kana.mjs`（kana.html，19 項）、`test_mock.mjs`（n5-mock，19 項）。
   `本機補音檔.py` 兩個頁面都吃（export 會自己判斷是 `vocab-data` 還是 `kana-data`）。
 - 驗證：`node docs\語音包工具\test_voice_full.mjs [html]`（預設 minna-notes.html）。
   2026-08-22 改成本機版：用 playwright 自帶的 chromium、路徑由參數決定，
@@ -186,7 +189,8 @@ un.exe`（無介面、約 4 秒、之後常駐）
 - 換行：Windows 這台 system 層級 `core.autocrlf=true`、Mac 不設；root `.gitattributes` 的 `* text=auto` 讓 repo 內一律 LF。
 - 日文資料夾名（語音包工具／工具）：兩台都 `git config --global core.precomposeunicode true`（Mac 必要、Windows 無害）。
 - **新 clone 之後**：`cd docs/語音包工具 && npm ci && npx playwright install chromium`（node_modules 與 Chromium 不在 repo）。
-- **Mac 這台已備妥（2026-09-10）**：repo 在 `~/Robin/Claude/日文學習/japanese-notes`（HTTPS remote，push 走 osxkeychain）；
+- **Mac 這台已備妥（2026-09-10）**：repo 在 `~/Robin/Claude/日文學習/japanese-notes`（HTTPS remote；push 的憑證走 GitHub CLI：`gh auth login` 一次＋`gh auth setup-git`，
+  token 在 macOS keychain。git 提示問帳密時**不要打密碼**，GitHub 不收）；
   Homebrew 6 → node v26.8 / ffmpeg 9.0.1（含 libopus）；Playwright Chromium 已裝；`test_voice_full.mjs`、`test_kana.mjs` 全 PASS。
   Python 是系統內建 3.9（Windows 3.11），遇到新語法再 `brew install python`。
 - **Mac 也能產音檔了（2026-09-10）**：VOICEVOX ENGINE 0.25.2 macOS arm64（GitHub release 的 7z，1.8GB → 解壓 2.0GB）
