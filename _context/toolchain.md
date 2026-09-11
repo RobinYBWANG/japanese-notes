@@ -27,8 +27,6 @@
 | 背景行程能否常駐 | **雲端可以；沙盒不行**（`--die-with-parent`，呼叫結束就殺光） | 可以 |
 | 單次指令時限 | 沙盒 45 秒 | 沒有那麼緊 |
 | 檔案往你電腦寫 | 上限 **20MB／檔** | 直接寫，無上限 |
-| 檔案從你電腦讀 | 上限 400MB／檔 | 直接讀 |
-| 刪檔 | 掛載資料夾**不能刪**，沙盒 `/tmp` 可以 | 可以 |
 | VOICEVOX 引擎 | **只能在雲端容器**（沙盒常駐不了、45 秒連暖機都不夠） | **可以直接跑**，不用每次重裝 1.7GB |
 
 **在 Claude Code 底下，上面那些限制大多消失。** 但下面第 2、3 節的「改檔陷阱」與 git 規則跟環境無關，照樣適用。
@@ -49,14 +47,9 @@
 - **Windows 主控台是 cp950，印日文會 `UnicodeEncodeError` 直接當掉**。
   腳本開頭設 `PYTHONIOENCODING=utf-8` + `sys.stdout.reconfigure`。
 
-### Cowork 沙盒的實測規格（如果還在 Cowork 底下工作）
-Ubuntu 22.04、Python 3.10.12、Node 22、**網路可通**（走 proxy）、磁碟 9.1GB、RAM 3.8GB、
-uid 1012（非 root，`apt-get` 不行、`pip install --user` 可以）、**檔案系統跨呼叫保留**。
-網路是隔離命名空間（只有 `lo`），**連不到你 Windows 上的 localhost 服務**。
-
 ---
 
-## 2. 改 `minna-notes.html`（17.9MB）的安全作法
+## 2. 改 `minna-notes.html`（0.8MB，音檔已外置）的安全作法
 
 檔案內含四個 `<script>` 區塊。改法一律：**正規表示式定位 → 就地換掉那一段 → 重讀驗證**。
 
@@ -70,14 +63,14 @@ uid 1012（非 root，`apt-get` 不行、`pip install --user` 可以）、**檔�
 （2026-08-22 commit 前才發現，改回 indent=2 後 diff 回到正常的 75/16。）
 
 - 寫回前 `assert '<' not in pretty`（有裸 `<` 才需轉成 `<`）
-- `vv-data` 相反，**本來就壓成一行**，維持 `json.dumps(VV, ensure_ascii=False)`
+- `vv-data` 相反，**本來就壓成一行**，維持 `json.dumps(VV, ensure_ascii=False)`；2026-09-11 起只剩 `say`＋`reading`，音檔在 `docs/audio/<頁>/<id>.ogg`
 
 ### 2.2 各區塊的錨點
 
 | 要改的東西 | 位置 | 作法 |
 |---|---|---|
 | 單字 | `<script id="vocab-data">` 的 `lessons[n]` | 解析 JSON → append → indent=2 寫回 |
-| 音檔 | `<script id="vv-data">` | 交給 `語音包工具\` 的腳本，不要手改 |
+| 音檔 | `docs/audio/<頁>/<id>.ogg`＋`vv-data.say` | 交給 `語音包工具\` 的腳本，不要手改；資料夾名以 HTML 的 `VV_BASE` 為準 |
 | 文法 | JS 的 ``GRAMMAR_DEFAULT={ n:`…` }`` template literal | 抓該課最後一段的 ``</div></div>` `` 當錨點，插在反引號前 |
 | 文法測驗 | JS 的 `QUIZ_GRAMMAR={ n:[…] }` | 抓最後一題的 `exp:'…'}\n]` 當錨點 |
 | 強制假名發音 | JS 的 `sayForceKana=new Set([…])` | 字串取代 |
@@ -121,11 +114,11 @@ fd=os.open(P, os.O_WRONLY|os.O_TRUNC); os.write(fd, out.encode('utf-8')); os.fsy
   python docs\語音包工具\本機補音檔.py --engine-only   # 只把引擎叫起來
   ```
 
-  這支會：找 ffmpeg → 沒引擎就自動啟動 `vv-engine
-un.exe`（無介面、約 4 秒、之後常駐）
-  → `export_missing_clips.py`（合成缺的 clip，中途包丟暫存）→ `merge_clips.py`（併回 HTML）。
+  這支會：找 ffmpeg → 沒引擎就自動啟動 `vv-engine\run.exe`（無介面、約 4 秒、之後常駐）
+  → `export_missing_clips.py`（看 `docs/audio/<頁>/` 缺哪些檔、合成，包丟暫存）→ `merge_clips.py`（寫成 .ogg、只更新 say）。
   缺 0 個就原地結束，HTML 一個字元都不動。
-  Cowork 時代要拆成 export／merge 兩段過橋，是為了繞開 20MB 的 device_commit 限制，本機不用。
+- **音檔外置（2026-09-11）**：clip 是獨立 .ogg，點到才載入；`VV_AUDIO` 只是 id 集合，`VV_PLAYER.src=VV_BASE+id+'.ogg'`。
+  整句音檔很貴：一個 clip 3〜5KB，「加入單字」1,650 個就 8MB，加功能前先估數量。
 - 文本來源必須是**單字 ＋ HTML 所有 `data-say` 的聯集**。只收單字會漏掉文法例句（踩過）。
 - 收 `data-say` 時要過濾 `data-say="'+esc(x)+'"`、`data-say="${q.say}"` 這種**還沒求值的 JS 樣板字串**，
   否則會合成一堆垃圾音檔（踩過，檔案胖 0.6MB）。
@@ -145,7 +138,7 @@ un.exe`（無介面、約 4 秒、之後常駐）
   （ChatGPT 產的合圖用 Pillow 偵測黑格線切開、灰階 16 色 PNG，四格題約 80KB、場景 20KB）。
 - **動詞小抽考「加入單字」**（2026-09-11）：搭配表在 `<script id="vobj-data">`（key 動詞 `word|kana` → [助詞, 名詞 word, 中文]），前端 `vbPool()` 只取到本課為止的名詞；
   文本「名詞假名＋助詞＋空格＋活用形」由 export 的 E 段同規則產生。新動詞要補搭配、名詞多讀音只取第一行。
-- **三個頁面各有測試**：`test_voice_full.mjs`（minna-notes）、`test_kana.mjs`（kana.html，19 項）、`test_mock.mjs`（n5-mock，19 項）。
+- **三個頁面各有測試**：`test_voice_full.mjs`（minna-notes，38 項）、`test_kana.mjs`（kana.html，20 項）、`test_mock.mjs`（n5-mock，35 項）。
   `本機補音檔.py` 兩個頁面都吃（export 會自己判斷是 `vocab-data` 還是 `kana-data`）。
 - 驗證：`node docs\語音包工具\test_voice_full.mjs [html]`（預設 minna-notes.html）。
   2026-08-22 改成本機版：用 playwright 自帶的 chromium、路徑由參數決定，
@@ -165,7 +158,7 @@ un.exe`（無介面、約 4 秒、之後常駐）
 - `docs\工具\git-wrap.sh` 的 `g` / `publish` 是為了繞開「device_bash 不能刪 `.lock`」而生的。
   **在 Claude Code 底下可以直接用原生 git**，那些包裝不再必要（但也不會壞）。
 - `.git` 在 Windows 這台有 321MB（211 個 loose object 從沒 gc 過；GitHub 端只有 61MB）。想瘦身跑 `git gc`（使用者決定）；Mac 用 clone 拿到的天生就是打包好的。
-- GitHub 限制其實很寬：單檔 push 100MB 才擋（50MB 起警告）、Pages 站台 1GB。27.8MB 還不是問題。
+- GitHub 限制其實很寬：單檔 push 100MB 才擋（50MB 起警告）、Pages 站台 1GB。音檔外置後 HTML 0.8MB、`docs/audio/` 36MB／11,526 檔。
 
 ---
 

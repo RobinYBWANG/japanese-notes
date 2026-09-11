@@ -3,7 +3,19 @@
 給之後的 Claude session 看的操作手冊。用途：筆記新增內容後，補產音檔並寫回 HTML。
 搭配專案記憶 `tts.md` 一起讀。
 
-## 現況（2026-08-21）
+## 音檔外置（2026-09-11 起，現行做法）
+
+- 音檔不再內嵌。每個 clip 是獨立檔案：`docs/audio/<頁>/<id>.ogg`（minna／kana／n5vocab 三個資料夾，共 11,526 個）。
+  `<script id="vv-data">` 只剩 `say`（文本 → {speaker: id}）與 `reading`；HTML 從 40MB 瘦到 0.8MB。
+- 前端：`VV_BASE='audio/minna/'` 定義資料夾，`VV_AUDIO` 只是「有這個 id」的集合（由 say 建出來），
+  播放就是 `VV_PLAYER.src = VV_BASE + id + '.ogg'`，點到才載入，瀏覽器會快取。`file://` 本機開檔也能播。
+- 管線：`export_missing_clips.py` 看資料夾裡有沒有檔案來判斷缺什麼；`merge_clips.py` 把 clip 包寫成 .ogg、只更新 say。
+  兩支都從 HTML 的 `VV_BASE` 讀資料夾名，不另外硬編碼。`本機補音檔.py` 用法不變。
+- 測試多一項「say 指到的音檔檔案都存在」（node 端用 fs 看）。
+- n5-mock-easy.html 的音檔（`var VV`，2.2MB）還是內嵌的，沒改。
+- 下面「現況」「增量更新流程」段落是內嵌時代的紀錄，關於 `audio` map 的部分已不適用。
+
+## 現況（2026-08-21，內嵌時代）
 
 - **筆記檔＝ `docs/minna-notes.html`（唯一一份，17.4MB）**。
   2026-08-21 已移除根目錄的中文檔名母版（在 `_to_delete/母版-0821/`）——

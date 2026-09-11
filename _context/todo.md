@@ -7,10 +7,6 @@
 
 ## Inbox
 - [ ] 第5課(以後各課)的**重音**待補:要從課本照片放大逐字判讀
-- [ ] **音檔外置**(未開工,強烈建議在第6課之前做):`minna-notes.html` 已漲到 **27.8MB**,其中約 27MB 是內嵌音檔 → 拆成 `voice/<clipid>.ogg`
-  個別檔(**不打包成 JSON**,因為 `file://` 下 fetch 讀不到旁邊的檔案,但 `<audio src>` 可以;順帶省掉 base64 的 33%)。
-  頁面本體可降到約 300KB。取捨:第一次點某字有 100〜200ms 延遲(可預抓該課)、離線只剩快取過的字有聲音。
-  做完再推到 `n5-vocab.html`(6.8MB)與 `kana.html`(2MB)。**不需要任何雲端帳號,音檔照樣放同一個 GitHub Pages repo。**
 - [ ] **共用備註 / 同步層**(未決定):要讓兩個人在頁面上直接改備註、即時、所有人可見 → 需要後端。
   選定 **Cloudflare Workers(後端)+ KV(資料庫)**;Supabase 免費專案閒置一週會暫停,故不選。
   真正划算的做法是一次涵蓋 備註 + 學習進度 + 錯題記錄(現在全存 localStorage、每台裝置各自獨立)。
@@ -26,6 +22,7 @@
 - [ ] `tidy-japanese-notes` skill 的 SKILL.md 改在本機快取(去掉寫死路徑、母版舊制);若被帳號同步蓋回,到 app 的 Skills 介面改
 
 ## Archive
+- [x] 音檔外置 → 2026-09-11 做完(三頁 clip 拆成 `docs/audio/<頁>/<id>.ogg`,HTML 40MB→0.8MB),見 journal 2026-09-11。
 - 2026-09-10:Mac 補音檔(VOICEVOX 引擎裝好、本機補音檔.py 加 macOS 路徑)-> journal.md 2026-09-10
 - 2026-09-11:N5 模擬考題庫化 150 題＋配額抽題＋上次考卷回看、mock_audio.py、test_mock.mjs -> journal.md 2026-09-11
 - 2026-09-08:整個專案資料夾合併成 git repo、Pages 改 main /docs、output/input/_to_delete 不上 git、test_autoplay 改相對路徑 -> journal.md 2026-09-08

@@ -452,3 +452,15 @@ ode_modules`)。
 - 引擎唸法：「何でも」→ナニデモ，朗讀句直接寫假名なんでも（朗讀文本＝合成文本，沒有 say 欄可以改）。
 - test_voice_full.mjs 原本寫死第6課是空課 → 改第7課；文法小考檢查涵蓋 1〜6 課。
 - 三批音檔共 2,103 clips，minna-notes 28.9 → 40.3MB。
+
+## 2026-09-11（第六筆）— 音檔外置：三頁 clip 拆成 docs/audio/<頁>/<id>.ogg
+- Why：minna-notes 內嵌音檔漲到 40.3MB（「加入單字」一次 +8.4MB），照這速度第12課會破 GitHub 單檔 100MB；使用者拍板做外置。
+- 做法：每個 clip 一個獨立 .ogg（不打包 JSON —— `file://` 下 fetch 讀不到旁邊檔案，但 `<audio src>` 可以；也省掉 base64 33%）。
+  `vv-data` 只留 say＋reading；前端 `VV_BASE='audio/minna/'`、`VV_AUDIO` 改成由 say 建出的 id 集合（既有的 `if(id&&VV_AUDIO[id])` 判斷不用動），
+  `VV_PLAYER.src=VV_BASE+id+'.ogg'`。kana／n5-vocab 同法（n5-vocab 的 vvClip 直接回傳 URL）。
+- 管線：export 看資料夾判缺、merge 寫 .ogg＋只更新 say，資料夾名兩支都從 HTML 的 VV_BASE 讀；本機補音檔.py 用法不變。
+  測試各加一項「say 指到的檔案都在」（node fs）；一開始把它加在總結迴圈之後沒被算到，搬到前面才生效。
+- 結果：HTML 40.3→0.8MB／2.0→0.09MB／7.0→0.19MB；`docs/audio/` 11,526 檔 36MB。minna 38、kana 20、autoplay 全 PASS；
+  假 clip 在複本上驗過 merge。n5-mock 的 `var VV`（2.2MB）未改。
+- 順手：toolchain 刪掉 Cowork 沙盒規格（Ubuntu 22.04／Python 3.10／Node 22／磁碟 9.1GB／RAM 3.8GB／uid 1012 非 root／
+  網路隔離連不到 localhost）與環境表兩列，回到 199 行；todo 的音檔外置移進 Archive。

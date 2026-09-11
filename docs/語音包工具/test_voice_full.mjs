@@ -1,6 +1,7 @@
 // 語音版驗證:載入、六角色選單、發音點覆蓋、朗讀預錄套組、測驗、無錯誤
 import { chromium } from 'playwright';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // 用法：node test_voice_full.mjs [要驗的 HTML，預設 ..\minna-notes.html]
@@ -152,7 +153,7 @@ ok('朗讀套組每行有音檔', readOK);
 const played = await page.evaluate(() => new Promise(res => {
   const id = vvClip(sayText(workbook.lessons['1'][0]), 'A');
   if (!id) return res(false);
-  const a = new Audio('data:audio/mpeg;base64,' + VV_AUDIO[id]);
+  const a = new Audio(VV_BASE + id + '.ogg');
   a.addEventListener('loadedmetadata', () => res(a.duration > 0.2));
   a.addEventListener('error', () => res(false));
 }));
@@ -221,6 +222,9 @@ ok('試聽B有音檔', await page.evaluate(() => !!vvClip('こんにちは。べ
 ok('無 console 錯誤', errors.length === 0);
 
 let fail = 0;
+// 音檔外置（2026-09-11）：say 指到的每個 id 都要有 audio/<頁>/<id>.ogg
+const _fsMissing = await page.evaluate(() => { const out = []; for (const t in VV_SAY) for (const v in VV_SAY[t]) out.push(VV_SAY[t][v]); return { base: VV_BASE, ids: out }; }).then(r => r.ids.filter(id => !fs.existsSync(path.join(path.dirname(HTML), r.base, id + '.ogg'))));
+ok('say 指到的音檔檔案都存在', _fsMissing.length === 0);
 for (const [n, c] of checks) { console.log((c ? 'PASS' : 'FAIL') + '  ' + n); if (!c) fail++; }
 if (cover.length) console.log('data-say missing sample:', cover.slice(0, 5));
 if (vocabCover.length) console.log('vocab missing sample:', vocabCover.slice(0, 5));

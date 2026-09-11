@@ -57,7 +57,15 @@ gquiz = block('gquiz-data', required=False)      # 文法小考的題目（gen_g
 if vd is None and kana is None:
     sys.exit('這個 HTML 既沒有 vocab-data 也沒有 kana-data，不知道要合成什麼')
 VV = block('vv-data')
-say, audio = VV['say'], VV['audio']
+say = VV['say']
+# 音檔外置（2026-09-11）：clip 是 audio/<頁>/<id>.ogg 的獨立檔案，「有沒有」看檔案在不在。
+# 資料夾名以 HTML 裡的 VV_BASE 為準，兩邊才不會漂移。
+_mb = re.search(r"VV_BASE='([^']+)'", h)
+if not _mb:
+    sys.exit('HTML 裡找不到 VV_BASE（音檔資料夾），這頁還沒做音檔外置')
+AUDIO_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(HTML)), _mb.group(1)))
+audio = {f[:-4] for f in os.listdir(AUDIO_DIR) if f.endswith('.ogg')} if os.path.isdir(AUDIO_DIR) else set()
+print('音檔資料夾：%s（%d 個 clip）' % (AUDIO_DIR, len(audio)))
 
 
 def say_text(r):  # port 自前端 sayText()

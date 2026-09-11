@@ -2,6 +2,7 @@
 // 用法：node test_kana.mjs [要驗的 html，預設 ..\kana.html]
 import { chromium } from 'playwright';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -114,7 +115,7 @@ ok('每題都有回饋', (await page.locator('.qfb.good, .qfb.bad').count()) ===
 const played = await page.evaluate(() => new Promise(res => {
   const id = vvClip(KANA[0].hira, 'A');
   if (!id) return res(false);
-  const a = new Audio('data:audio/ogg;base64,' + VV_AUDIO[id]);
+  const a = new Audio(VV_BASE + id + '.ogg');
   a.addEventListener('loadedmetadata', () => res(a.duration > 0.1));
   a.addEventListener('error', () => res(false));
 }));
@@ -141,6 +142,9 @@ ok('320/390/768/1280 無橫向溢出', over.length === 0);
 ok('無 console 錯誤', errors.length === 0);
 
 let fail = 0;
+// 音檔外置（2026-09-11）：say 指到的每個 id 都要有 audio/<頁>/<id>.ogg
+const _fsMissing = await page.evaluate(() => { const out = []; for (const t in VV_SAY) for (const v in VV_SAY[t]) out.push(VV_SAY[t][v]); return { base: VV_BASE, ids: out }; }).then(r => r.ids.filter(id => !fs.existsSync(path.join(path.dirname(HTML), r.base, id + '.ogg'))));
+ok('say 指到的音檔檔案都存在', _fsMissing.length === 0);
 for (const [n, c] of checks) { console.log((c ? 'PASS' : 'FAIL') + '  ' + n); if (!c) fail++; }
 if (cover.length) console.log('缺音檔樣本:', cover.slice(0, 6));
 if (sane.length) console.log('壞題樣本:', sane.slice(0, 4));
