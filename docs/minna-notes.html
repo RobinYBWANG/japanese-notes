@@ -201,7 +201,7 @@
   .vt-count{color:var(--sub);font-weight:600}
   .vt-empty{text-align:center;color:var(--sub);padding:18px}
   /* ===== 助詞分頁 ===== */
-  #panel-joshi{padding:14px}
+  #panel-joshi,#panel-alljoshi{padding:14px}
   .jo{font-family:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP",serif;color:#c0392b;
       font-weight:800;font-size:1.18em;letter-spacing:.5px;padding:0 1px}
   .jo-tip{background:#fffbe6;border:1px solid #ffe08a;border-radius:10px;padding:10px 12px;
@@ -599,6 +599,10 @@ B: はい、学生です。
 <div class="ghint">📖 <b>文法總表</b>：目前已學課程的文法整理（唯讀參考）。點 🔊 可聽例句發音。</div>
 <div id="gram-body"></div>
 </div></div>
+<div id="panel-alljoshi" style="display:none">
+  <div class="ghint">🔤 <b>助詞總表</b>：三張表 39 種用法（唯讀參考），筆記欄前的標籤是課本教到的課次。點 🔊 可聽例句發音。</div>
+  <div id="alljoshi-body"></div>
+</div>
 <div id="panel-allverb" style="display:none">
 <div class="wrap">
 <div id="allverb-quiz"><button class="aq-collapse" title="收合／展開小抽考">▲</button><span class="aq-mini-label">📝 小抽考（點右邊 ▼ 展開）</span><div class="aq-modes"><button class="aq-mode on" data-mode="zh2jp">看中文→猜日文</button><button class="aq-mode" data-mode="jp2zh">看日文→猜中文</button><button class="aq-mode" data-mode="listen">只聽發音</button><button class="aq-mode" data-mode="type">聽寫打字</button><span class="aq-count" id="av-count"></span><button id="av-next" title="下一題">下一題 ▶</button><button id="av-restart" title="全部重新出題，從第一題開始">🔁 重考</button></div><div class="aq-body"><div class="aq-q" id="av-q">—</div><div class="aq-a masked" id="av-a" title="點一下看答案／再點發音"></div></div></div>
@@ -6781,7 +6785,7 @@ function switchLesson(n){
 
 /* ===== 子分頁：單字 / 文法 / 測驗 ===== */
 const subtabsEl=document.getElementById('subtabs');
-function subsFor(n){return (n===13?[['num','數字'],['counter','量詞'],['time','時間']]:(n===14?[['all','單字總表'],['gram','文法總表'],['allverb','動詞總表'],['allread','朗讀總表'],['quiz','測驗']]:(n<=12?[['vocab','單字'],['verb','動詞'],['grammar','文法'],['joshi','助詞'],['read','朗讀'],['quiz','測驗']]:[['vocab','單字'],['verb','動詞'],['grammar','文法'],['read','朗讀'],['quiz','測驗']])));}
+function subsFor(n){return (n===13?[['num','數字'],['counter','量詞'],['time','時間']]:(n===14?[['all','單字總表'],['gram','文法總表'],['allverb','動詞總表'],['alljoshi','助詞總表'],['allread','朗讀總表'],['quiz','測驗']]:(n<=12?[['vocab','單字'],['verb','動詞'],['grammar','文法'],['joshi','助詞'],['read','朗讀'],['quiz','測驗']]:[['vocab','單字'],['verb','動詞'],['grammar','文法'],['read','朗讀'],['quiz','測驗']])));}
 if(!subsFor(lesson).some(s=>s[0]===section))section=subsFor(lesson)[0][0];
 function renderSubtabs(){
   subtabsEl.innerHTML='';
@@ -6801,6 +6805,7 @@ function applySection(){
   document.getElementById('panel-all').style.display=section==='all'?'':'none';
   document.getElementById('panel-gram').style.display=section==='gram'?'':'none';
   document.getElementById('panel-allverb').style.display=section==='allverb'?'':'none';
+  document.getElementById('panel-alljoshi').style.display=section==='alljoshi'?'':'none';
   document.getElementById('panel-num').style.display=section==='num'?'':'none';
   document.getElementById('panel-counter').style.display=section==='counter'?'':'none';
   document.getElementById('panel-time').style.display=section==='time'?'':'none';
@@ -6809,6 +6814,7 @@ function applySection(){
   document.getElementById('bulkbar').style.display=(section==='vocab'&&selected.size)?'flex':'none';
   if(section==='grammar'){loadGrammar();setGramQuizH();if(gqLesson!==lesson||!gqRow)gqPick();}
   if(section==='joshi')loadJoshi();
+  if(section==='alljoshi')loadAllJoshi();
   if(section==='verb'){loadVerb();if(vbLesson!==lesson||!vbRow)vbPick();}
   if(section==='vocab')setVocQuizH();
   if(section==='all')renderAll();
@@ -6983,6 +6989,9 @@ function vbRestart(){vbQueue=[];vbRow=null;vbPick();}
 function vbReveal(){const a=document.getElementById('vb-a');if(!a||!vbRow)return;if(a.classList.contains('typing'))return;if(!a.classList.contains('shown')){const html=(vbMode==='jp2zh')?('<b>'+esc(vbRow.zh)+'</b>'):(vbMode==='zh2jp')?('<b>'+esc(vbRow.word)+'</b>　'+esc(vbRow.kana)):('<b>'+esc(vbRow.word)+'</b>　'+esc(vbRow.kana)+'　<span style="color:#8a95a1">'+esc(vbRow.zh)+'</span>');a.className='aq-a shown';a.innerHTML=html;}speak(vbRow.kana,a);}
 (function(){const a=document.getElementById('vb-a');if(a)a.addEventListener('click',vbReveal);const ob=document.getElementById('vb-obj');if(ob){ob.checked=vbObj;ob.addEventListener('change',function(){vbObj=this.checked;localStorage.setItem('jp_vb_obj',vbObj?'1':'0');vbRestart();});}const n=document.getElementById('vb-next');if(n)n.addEventListener('click',aqUser(vbPick));const rs=document.getElementById('vb-restart');if(rs)rs.addEventListener('click',aqUser(vbRestart));const qq=document.getElementById('vb-q');if(qq)qq.addEventListener('click',function(e){if(e.target.closest('.aq-play')&&vbRow)speak(vbRow.kana,e.target.closest('.aq-play'));});document.querySelectorAll('#verb-quiz .aq-mode').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('#verb-quiz .aq-mode').forEach(function(x){x.classList.remove('on');});b.classList.add('on');vbMode=b.dataset.mode;aqUser(function(){if(vbRow)vbRender();else vbPick();})();});});})();
 document.getElementById('panel-joshi').addEventListener('click',function(e){const b=e.target.closest('.gspk');if(!b)return;e.preventDefault();speak(b.getAttribute('data-say')||b.textContent,b);});
+/* 總學習的助詞總表：同一份 JOSHI_ALL，不上色（全部正常），只保留課次標籤 */
+function loadAllJoshi(){const b=document.getElementById('alljoshi-body');if(!b)return;b.innerHTML=JOSHI_ALL.replace(/<div class="jo-legend">.*?<\/div>/,'');b.querySelectorAll('tr[data-les]').forEach(tr=>{const nt=tr.querySelector('td.jo-note');if(nt)nt.insertAdjacentHTML('afterbegin','<span class="jo-les">第'+tr.dataset.les+'課</span>');});}
+document.getElementById('panel-alljoshi').addEventListener('click',function(e){const b=e.target.closest('.gspk');if(!b)return;e.preventDefault();speak(b.getAttribute('data-say')||b.textContent,b);});
 document.getElementById('panel-gram').addEventListener('click',function(e){const b=e.target.closest('.gspk');if(!b)return;e.preventDefault();speak(b.getAttribute('data-say')||b.textContent,b);});
 
 /* ===== 朗讀（可編輯；A:/B: 兩人對話，也可貼文章）===== */
