@@ -87,6 +87,24 @@ if vd:
                 stem = ka[:-2]
                 for s in VERB_SUFS:
                     add(stem + s)
+# E. 動詞小抽考「加入單字」的搭配句（<script id="vobj-data">，key = 動詞 word|kana，值 = [助詞, 名詞 word, 中文]）。
+#    文本規則要跟 HTML 的 vbPool() 一模一樣：名詞假名（多讀音只取第一行、去〜［］）＋助詞＋空格＋動詞假名活用形。
+_vobj = block('vobj-data', required=False)
+if vd and _vobj:
+    _nouns = {}
+    for _rows in vd['lessons'].values():
+        for _r in _rows:
+            _nouns.setdefault(_r.get('word'), _r)
+    for _key, _pairs in _vobj.items():
+        _stem = _key.split('|')[1][:-2]
+        for _p in _pairs:
+            _nr = _nouns.get(_p[1])
+            if not _nr:
+                continue
+            _nk = re.sub(r'[〜～~［］\[\]]', '', (_nr.get('kana') or '').split('\n')[0]).strip()
+            for _s in VERB_SUFS:
+                add(_nk + _p[0] + ' ' + _stem + _s)
+
 # C. 朗讀套組（vv-data.reading）—— 以前這批是另一條管線（gen_full_manifest）產的，
 #    這支掃不到，所以改了朗讀就會缺音檔。行首的「A:／B:」要去掉，跟前端 parseRead 一致。
 for _txt in [t for v in VV.get('reading', {}).values() for t in (v if isinstance(v, list) else [v])]:

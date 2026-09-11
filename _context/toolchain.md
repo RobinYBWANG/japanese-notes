@@ -143,6 +143,8 @@ un.exe`（無介面、約 4 秒、之後常駐）
   否則分塊邊界切到日文字會變亂碼、合成出壞 clip。漢字唸錯（如 何まい→ナニマイ）直接把對白改成假名，沒有 sayForceKana。
   題庫欄位：`img`＋`fixed:true` = 四格圖片題（c 固定 1〜4、a = 正解格−1）；`scene:{img}` = 發話表現場景圖；圖放 `docs/img/mock/`
   （ChatGPT 產的合圖用 Pillow 偵測黑格線切開、灰階 16 色 PNG，四格題約 80KB、場景 20KB）。
+- **動詞小抽考「加入單字」**（2026-09-11）：搭配表在 `<script id="vobj-data">`（key 動詞 `word|kana` → [助詞, 名詞 word, 中文]），前端 `vbPool()` 只取到本課為止的名詞；
+  文本「名詞假名＋助詞＋空格＋活用形」由 export 的 E 段同規則產生。新動詞要補搭配、名詞多讀音只取第一行。
 - **三個頁面各有測試**：`test_voice_full.mjs`（minna-notes）、`test_kana.mjs`（kana.html，19 項）、`test_mock.mjs`（n5-mock，19 項）。
   `本機補音檔.py` 兩個頁面都吃（export 會自己判斷是 `vocab-data` 還是 `kana-data`）。
 - 驗證：`node docs\語音包工具\test_voice_full.mjs [html]`（預設 minna-notes.html）。
