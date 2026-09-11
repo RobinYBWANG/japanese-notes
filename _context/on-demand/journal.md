@@ -421,3 +421,9 @@ ode_modules`)。
   問題3・4 選項作答中只顯示號碼(`.choices.row.hid`),交卷後才出字。
 - 驗證:`test_mock.mjs` 35 項全 PASS(計時器檢查改成允許 1〜2 秒誤差,原本會偶發 FAIL)。截圖確認四格圖、場景圖、交卷後原文。
 - 沒動:「看原文」作答中仍可按(會露出選項文字);toolchain.md 203 行超 budget 3 行,下次 wrap 把 §1 Cowork 沙盒規格搬去 journal。
+
+## 2026-09-11（第三筆）— 四頁加回 VOICEVOX 署名
+- Why:討論「網站公開好不好」時指出唯一明確違反條款的是 08-23 移除的署名,使用者決定加回。
+- 做法:minna-notes／kana 插在 </body> 前的小字段落;n5-vocab／n5-mock 併進既有 footer。角色從各頁 vv-data 的 speaker id 自動判定
+  (minna/kana/mock = 2/11/13,n5-vocab = 14),格式「VOICEVOX:角色名」。三支測試全過。
+- 同場討論未做:帳號密碼(靜態站做不到真正的鎖,不建議)、noindex、GoatCounter 瀏覽統計(要使用者先註冊)。
