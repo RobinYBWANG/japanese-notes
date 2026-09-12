@@ -60,7 +60,9 @@ const info = await page.evaluate(() => {
   const quotaTotal = Object.values(QUOTA).reduce((a, b) => a + b, 0);
   const enough = Object.keys(QUOTA).every(k => types[k] >= QUOTA[k] * 5);
   const uncovered = BANK.filter(q => q.audio && !vvCover(q)).length;
-  return { n: BANK.length, types, bad, passOk, orderOk, quotaOk, quotaTotal, enough, uncovered, hasAll: VV_HAS_ALL,
+  // 選項洗牌後也要有音檔（2026-09-12：以前「1ばん。選項」整句合成，洗牌後就退回瀏覽器語音）
+  const uncoveredDrawn = pickExam().map(shuffleChoices).filter(q => q.audio && !vvCover(q)).length;
+  return { n: BANK.length, types, bad, passOk, orderOk, quotaOk, quotaTotal, enough, uncovered, uncoveredDrawn, hasAll: VV_HAS_ALL,
            clips: Object.keys(VV.audio).length, texts: Object.keys(VV.say).length };
 });
 ok('題庫 195 題', info.n === 195);
@@ -70,6 +72,7 @@ ok('題庫依 科目→問題N 排序', info.orderOk);
 ok('配額表 14 個題型一一對應、合計 ' + N, info.quotaOk && info.quotaTotal === N && Object.keys(info.types).length === 14);
 ok('每個題型夠抽 5 份', info.enough);
 ok('聴解音檔全覆蓋（含題目旁白與選項朗讀）', info.uncovered === 0 && info.hasAll);
+ok('抽出的考卷（選項洗牌後）音檔也全覆蓋', info.uncoveredDrawn === 0);
 
 // 圖片：14 題四格圖（選項 1〜4、固定順序）、15 題發話表現有場景圖，圖檔都載得進來
 const pics = await page.evaluate(() => new Promise(res => {

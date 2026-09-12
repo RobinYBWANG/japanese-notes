@@ -4,7 +4,8 @@
 #
 # 這頁的音檔跟 minna-notes / kana 的管線分開：
 #   - key 是「角色|文本」，角色 F/M/N 對應 speaker 2/11/13（從既有 clip id 反推，2026-09-11）
-#   - readChoices 的題目，每個選項也要有「N|1ばん。選項」的音檔（前端 vvCover 會檢查）
+#   - readChoices 的題目：號碼「N|1ばん。」與選項「N|選項」分開兩段（選項會洗牌，整句合成會對不上；2026-09-12 修）
+#   - --prune：把 say/audio 裡不再需要的 clip 刪掉（改文本或改規則後用）
 #   - clip id = md5("speaker|文本") 前 12 碼、opus 16k mono，與 export_missing_clips.py 相同
 # 冪等：缺 0 個就原地結束，HTML 一個字元都不動。只動 `var VV = {...};` 那一行。
 import base64, hashlib, json, os, re, subprocess, sys, tempfile, urllib.parse, urllib.request
@@ -33,7 +34,7 @@ bank = json.loads(subprocess.run(['node', '-e', NODE_EVAL], input=m.group(1),
                                  capture_output=True, text=True, check=True).stdout)
 
 # 與前端 audioLines() 同步：課題理解／ポイント理解（問題1・2）由旁白在對話前後各唸一次題目；
-# readChoices 的題目每個選項唸「1ばん。選項」
+# readChoices 的題目：號碼一段、選項一段
 need = []
 for q in bank:
     if not q.get('audio'):
@@ -44,7 +45,8 @@ for q in bank:
         need.append((line['r'], line['t']))
     if q.get('readChoices'):
         for j, c in enumerate(q['c']):
-            need.append(('N', '%dばん。%s' % (j + 1, c)))
+            need.append(('N', '%dばん。' % (j + 1)))
+            need.append(('N', c))
 need = list(dict.fromkeys(need))
 need_set = set(need)
 
@@ -53,8 +55,14 @@ assert mvv, '找不到 var VV'
 VV = json.loads(mvv.group(1))
 missing = [(r, t) for r, t in need if (r + '|' + t) not in VV['say']]
 orphan = [k for k in VV['say'] if tuple(k.split('|', 1)) not in need_set]
-print('文本 %d 個；缺 %d 個；多餘 %d 個（不動）' % (len(need), len(missing), len(orphan)))
-if not missing:
+PRUNE = '--prune' in sys.argv
+print('文本 %d 個；缺 %d 個；多餘 %d 個%s' % (len(need), len(missing), len(orphan), '（--prune 刪掉）' if PRUNE else '（不動，要刪加 --prune）'))
+if PRUNE and orphan:
+    for k in orphan:
+        del VV['say'][k]
+    _used = set(VV['say'].values())
+    VV['audio'] = {i: a for i, a in VV['audio'].items() if i in _used}
+if not missing and not (PRUNE and orphan):
     print('沒有缺的，HTML 一個字元都沒動。')
     sys.exit(0)
 
@@ -67,7 +75,7 @@ def engine_alive():
         return False
 
 
-if not engine_alive():
+if missing and not engine_alive():
     subprocess.run([sys.executable, os.path.join(HERE, '本機補音檔.py'), '--engine-only'], check=True)
 
 TMP = tempfile.mkdtemp()

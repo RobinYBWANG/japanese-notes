@@ -132,7 +132,7 @@ fd=os.open(P, os.O_WRONLY|os.O_TRUNC); os.write(fd, out.encode('utf-8')); os.fsy
   實例：「水餃」被唸成「ミズ」。
 - 三角色：Chloe=四国めたん(2，聲音A預設)、Darren=玄野武宏(11，聲音B預設)、Uncle Ben=青山龍星(13)。
 - **n5-mock-easy.html 的音檔是獨立一套**（2026-09-11）：`mock_audio.py` 一步跑完。key 是「角色|文本」，F/M/N = speaker 2/11/13；
-  readChoices 的題目每個選項也要「N|1ばん。選項」。坑：把 JS 字面值交給 node 轉 JSON 時 stdin 要 `setEncoding("utf8")`，
+  readChoices 的題目號碼「N|1ばん。」與選項「N|選項」分開兩段（選項會洗牌，整句合成會對不上而退回瀏覽器語音，2026-09-12 踩到）；`--prune` 刪多餘 clip。坑：把 JS 字面值交給 node 轉 JSON 時 stdin 要 `setEncoding("utf8")`，
   否則分塊邊界切到日文字會變亂碼、合成出壞 clip。漢字唸錯（如 何まい→ナニマイ）直接把對白改成假名，沒有 sayForceKana。
   題庫欄位：`img`＋`fixed:true` = 四格圖片題（c 固定 1〜4、a = 正解格−1）；`scene:{img}` = 發話表現場景圖；圖放 `docs/img/mock/`
   （ChatGPT 產的合圖用 Pillow 偵測黑格線切開、灰階 16 色 PNG，四格題約 80KB、場景 20KB）。
