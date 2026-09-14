@@ -28,7 +28,7 @@ TMP = os.path.join(tempfile.gettempdir(), '_exportclip')   # Windows 上 /tmp �
 # 收進來會合成出一堆垃圾音檔（2026-08-22 實際踩到，檔案胖了 0.6MB）。不要拿掉這個過濾。
 CODEY = re.compile(r"\$\{|'\+|\+'|[<>\\]")
 
-STRIP = re.compile(r'[～~［］\[\]]')
+STRIP = re.compile(r'[〜～~［］\[\]]')   # 跟 HTML sayText() 的 replace 一致（含波浪號 U+301C，2026-09-14）
 norm = lambda t: STRIP.sub('', str(t or '')).replace('　', ' ').strip()
 aid = lambda text, sp: hashlib.md5((str(sp) + '|' + text).encode()).hexdigest()[:12]
 
@@ -72,7 +72,7 @@ def say_text(r):  # port 自前端 sayText()
     w = STRIP.sub('', (r.get('word') or '')).strip()
     if w and w not in SAY_FORCE_KANA:
         return w
-    return re.sub(r'\s*\n\s*', '、', (r.get('kana') or '').replace('～', '').replace('~', '')).strip()
+    return re.sub(r'\s*\n\s*', '、', (r.get('kana') or '').replace('〜', '').replace('～', '').replace('~', '')).strip()
 
 
 texts = set()
