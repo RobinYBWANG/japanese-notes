@@ -254,20 +254,7 @@ T = {
          {'whenf': WHEN_F, 'who': WHO, 'tride': TRIDE, 'dest': DEST}),
     ],
     6: [
-        ('① ［受詞］を 動詞', '我買{buy}', 'わたしは {buy}を 買います', {'buy': BUY}),
-        ('① ［受詞］を 動詞', '我看{media}', 'わたしは {media}を 見ます', {'media': MEDIA}),
-        ('① ［受詞］を 動詞', '我吃{food}', 'わたしは {food}を 食べます', {'food': FOOD}),
-        ('① ［受詞］を 動詞', '我喝{drink}', 'わたしは {drink}を 飲みます', {'drink': DRINK}),
-        ('① ［受詞］を 動詞', '我讀{read}', 'わたしは {read}を 読みます', {'read': READ}),
-        ('① ［受詞］を 動詞', '我寫{write}', 'わたしは {write}を 書きます', {'write': WRITE}),
-        ('① ［受詞］を 動詞', '我聽{listen}', 'わたしは {listen}を 聞きます', {'listen': LISTEN}),
-        ('① ［受詞］を 動詞', '我學日文', 'わたしは 日本語を 勉強します', None),
-        ('① ［受詞］を 動詞', '我學英文', 'わたしは 英語を 勉強します', None),
-        ('① ［受詞］を 動詞', '我拍照', 'わたしは 写真を 撮ります', None),
-        ('① ［受詞］を 動詞', '我抽菸', 'わたしは たばこを 吸います', None),
-        ('① ［受詞］を 動詞', '我{whenp}買了{buy}', 'わたしは {whenp} {buy}を 買いました', {'whenp': WHEN_P, 'buy': BUY}),
-        ('① ［受詞］を 動詞', '我{whenp}看了{media}', 'わたしは {whenp} {media}を 見ました', {'whenp': WHEN_P, 'media': MEDIA}),
-        ('① ［受詞］を 動詞', '我{whenp}吃了{food}', 'わたしは {whenp} {food}を 食べました', {'whenp': WHEN_P, 'food': FOOD}),
+        # ① ［受詞］を 動詞：不放固定樣板，改由下面 vobj_items() 從「加入單字」的動詞↔受詞配對生（2026-09-14）
         ('② ［名詞］を します', '我{doit}', 'わたしは {doit}を します', {'doit': DOIT}),
         ('② ［名詞］を します', '我{whenp}{doit}了', 'わたしは {whenp} {doit}を しました', {'whenp': WHEN_P, 'doit': DOIT}),
         ('② ［名詞］を します', '我不{doit}', 'わたしは {doit}を しません', {'doit': DOIT}),
@@ -315,6 +302,49 @@ T = {
         ('⑩ 〜ましょう', '喝{drink}吧', '{drink}を 飲みましょう', {'drink': DRINK}),
     ],
 }
+
+# ① 受詞題從「加入單字」的動詞↔受詞配對（vobj-data）生：該課每個動詞 × 它能搭的名詞（名詞要在該課或之前教過），
+#   ます／ました／ません 三種輪流 —— 這樣第6課的 掃除します／教えます／出します／手紙… 都會出現
+#   （2026-09-14 使用者反映小考只看到文法例句裡的字）。say 全部是假名（動詞假名來自 key、名詞假名查單字表），不用 REPL。
+VOBJ = None   # 主流程讀完 HTML 後才載入（h 在下面才定義）
+VOBJ_LES = {6: '① ［受詞］を 動詞'}
+_BR = re.compile(r'[〜～~［］\[\]]')
+
+
+def vobj_items(les, rows):
+    if les not in VOBJ_LES:
+        return []
+    global VOBJ
+    if VOBJ is None:
+        VOBJ = json.loads(re.search(r'<script[^>]*id="vobj-data"[^>]*>(.*?)</script>', h, re.S).group(1))
+    label = VOBJ_LES[les]
+    kana = {}
+    for k in vd['lessons']:
+        if k.isdigit() and 1 <= int(k) <= les:
+            for r in vd['lessons'][k]:
+                w, kk = (r.get('word') or ''), _BR.sub('', (r.get('kana') or '').split('\n')[0]).strip()
+                if w and kk and w not in kana:
+                    kana[w] = kk
+    verbs = [(r['word'], r['kana']) for r in vd['lessons'][str(les)] if r.get('pos') == 'verb']
+    out, i = [], 0
+    for vw, vk in verbs:
+        for p, nw, zh in VOBJ.get(vw + '|' + vk, []):
+            nk = kana.get(nw)
+            if not nk:
+                continue
+            nw2 = _BR.sub('', nw)
+            form = ('ます', 'ました', 'ません')[i % 3]
+            wp = WHEN_P[(i // 3) % len(WHEN_P)]
+            i += 1
+            stem_w, stem_k = re.sub(r'ます$', '', vw), re.sub(r'ます$', '', vk)
+            if form == 'ました':
+                o = {'w': wp['w'] + ' ' + nw2 + p + ' ' + stem_w + form, 'k': wp['k'] + ' ' + nk + p + ' ' + stem_k + form,
+                     'zh': wp['zh'] + zh + '了'}
+            else:
+                o = {'w': nw2 + p + ' ' + stem_w + form, 'k': nk + p + ' ' + stem_k + form, 'zh': ('不' if form == 'ません' else '') + zh}
+            out.append((label, '我{o}', 'わたしは {o}', {'o': [o]}))
+    return out
+
 
 TOKEN = re.compile(r'\{(\w+?)(\d?)(?:\.(\w+))?\}')
 
@@ -402,7 +432,7 @@ for les in sorted(T):
         rows += vd['lessons'].get(k, [])
     qs = []
     print('=== 第%d課 ===' % les)
-    for item in T[les]:
+    for item in T[les] + vobj_items(les, rows):
         got = expand(les, rows, item)
         for q in got:
             print('   %-22s %-24s %s' % (q['g'][:22], q['zh'][:24], q['jp']))
