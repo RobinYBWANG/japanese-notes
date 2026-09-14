@@ -6892,13 +6892,18 @@ function setAllVerbQuizH(){const q=document.getElementById('allverb-quiz');if(q)
 const GQUIZ=(function(){try{return JSON.parse(document.getElementById('gquiz-data').textContent);}catch(e){return {};}})();
 let gqRow=null,gqLesson=null,gqQueue=[],gqMode='zh2jp';
 function gqPool(){return (GQUIZ[String(lesson)]||[]);}
+/* 第5・6課題庫很大（150／178 題），一輪只抽一半：每個文法點各抽一半，整課文法一輪就能複習完；
+   按「重考」再抽一次就是另一組題（2026-09-14 使用者要求；題庫本身不動） */
+const GQ_HALF={5:true,6:true};
+function gqDraw(p){if(!GQ_HALF[lesson])return shuffle(p.slice());const by={};p.forEach(q=>{(by[q.g]=by[q.g]||[]).push(q);});
+  let out=[];for(const g in by){const s=shuffle(by[g].slice());out=out.concat(s.slice(0,Math.ceil(s.length/2)));}return shuffle(out);}
 function gqPick(){
   const q=document.getElementById('gq-q'),a=document.getElementById('gq-a');if(!q||!a)return;
   const p=gqPool(),c=document.getElementById('gq-count'),g=document.getElementById('gq-g');
   const changed=(gqLesson!==lesson);gqLesson=lesson;
   if(!p.length){gqRow=null;gqQueue=[];q.textContent='（這一課還沒有文法小考）';a.className='aq-a';a.innerHTML='';
     if(c)c.textContent='';if(g)g.textContent='';return;}
-  if(gqQueue.length===0||changed||gqQueue._n!==p.length){gqQueue=shuffle(p.slice());gqQueue._n=p.length;}
+  if(gqQueue.length===0||changed||gqQueue._src!==p.length){gqQueue=gqDraw(p);gqQueue._src=p.length;gqQueue._n=gqQueue.length;}
   gqRow=gqQueue.shift();
   if(c)c.textContent='('+(gqQueue._n-gqQueue.length)+'/'+gqQueue._n+')';
   if(g)g.textContent=gqRow.g||'';
