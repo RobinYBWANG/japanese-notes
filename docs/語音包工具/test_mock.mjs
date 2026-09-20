@@ -65,7 +65,7 @@ const info = await page.evaluate(() => {
   return { n: BANK.length, types, bad, passOk, orderOk, quotaOk, quotaTotal, enough, uncovered, uncoveredDrawn, hasAll: VV_HAS_ALL,
            clips: Object.keys(VV.audio).length, texts: Object.keys(VV.say).length };
 });
-ok('題庫 195 題', info.n === 195);
+ok('題庫 295 題', info.n === 295);   // 2026-09-20 加 100 題（195→295）
 ok('每題結構正確', info.bad.length === 0);
 ok('讀解／文章文法每篇題數正確、短文不重複', info.passOk);
 ok('題庫依 科目→問題N 排序', info.orderOk);
