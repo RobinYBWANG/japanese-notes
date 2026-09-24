@@ -113,6 +113,13 @@ if vd and _vobj:
             for _s in VERB_SUFS:
                 add(_nk + _p[0] + ' ' + _stem + _s)
 
+# F. 助詞小考的整句（<script id="jquiz-data">，每題的 say 就是要唸的假名句）。
+_jq = block('jquiz-data', required=False)
+if _jq:
+    for _q in _jq:
+        if _q.get('say'):
+            add(_q['say'])
+
 # C. 朗讀套組（vv-data.reading）—— 以前這批是另一條管線（gen_full_manifest）產的，
 #    這支掃不到，所以改了朗讀就會缺音檔。行首的「A:／B:」要去掉，跟前端 parseRead 一致。
 for _txt in [t for v in VV.get('reading', {}).values() for t in (v if isinstance(v, list) else [v])]:

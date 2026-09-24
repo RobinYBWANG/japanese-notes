@@ -98,6 +98,28 @@ ok('掀開答案顯示日文', gq.sample.shown && /[ぁ-んァ-ン一-鿿]/.test
 ok('題目是中文', /[一-鿿]/.test(gq.sample.zh) && !/[ぁ-んァ-ン]/.test(gq.sample.zh));
 ok('沒有內容的課顯示提示', /還沒有文法小考/.test(gq.empty || ''));
 
+// 助詞小考（2026-09-24）：第7課起才出現，每題的整句都要有音檔
+const jq = await page.evaluate(() => {
+  switchLesson(6); switchSection('joshi');
+  const off = document.getElementById('joshi-quiz').style.display === 'none';
+  switchLesson(7); switchSection('joshi');
+  const on = document.getElementById('joshi-quiz').style.display !== 'none';
+  const slots = document.querySelectorAll('#jq-line .jq-s').length;
+  const bank = jqBank();
+  const badShape = bank.filter(q => q.segs.length !== q.slots.length + 1 || !q.slots.length).length;
+  const noAudio = bank.filter(q => !vvClip(q.say, 'A')).map(q => q.say);
+  const round = document.getElementById('jq-count').textContent;
+  switchLesson(14); switchSection('alljoshi');
+  const allRound = document.getElementById('ajq-count').textContent;
+  return { off, on, slots, badShape, noAudio, n: bank.length, round, allRound,
+    scoped: bank.filter(q => q.les <= 7).length };
+});
+ok('助詞小考第6課不顯示、第7課顯示', jq.off && jq.on);
+ok('助詞小考總題庫夠大（文法＋助詞表自動組成）', jq.n > 200 && jq.slots > 0);
+ok('助詞小考每題的段數與空格數對得上', jq.badShape === 0);
+ok('助詞小考的整句都有音檔', jq.noAudio.length === 0);
+ok('各課一輪 30 題、總表一輪 50 題', /\/30\)/.test(jq.round) && /\/50\)/.test(jq.allRound));
+
 // 文法小考的「只聽發音」模式：掀開要同時有日文與中文
 const gqListen = await page.evaluate(() => {
   switchLesson(2); switchSection('grammar');
