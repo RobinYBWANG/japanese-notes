@@ -183,7 +183,7 @@
   #tbody td.masked,.lvtable td.masked{position:relative;color:transparent!important;cursor:pointer;user-select:none}
   #tbody td.masked>*,.lvtable td.masked>*{visibility:hidden}
   #tbody td.masked::after,.lvtable td.masked::after{content:'•••••';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9aa5b1;background:repeating-linear-gradient(45deg,#f1f4f7,#f1f4f7 7px,#e7ecf1 7px,#e7ecf1 14px);letter-spacing:3px;font-size:13px}
-  #tbody td.masked.revealed,.lvtable td.masked.revealed{color:inherit!important}
+  #tbody td.masked.revealed,.lvtable td.masked.revealed{color:inherit!important;user-select:text;-webkit-user-select:text}
   #tbody td.masked.revealed>*,.lvtable td.masked.revealed>*{visibility:visible}
   #tbody td.masked.revealed::after,.lvtable td.masked.revealed::after{display:none}
   #all-tbody td.spk-c{cursor:pointer}
@@ -7764,6 +7764,21 @@ function updateBulk(){
 
 tbody.addEventListener('input',e=>{const td=e.target.closest('td[contenteditable]');if(!td)return;const tr=td.closest('tr');const i=+tr.dataset.i;rows[i][td.dataset.f]=td.innerText;touch();if(td.dataset.f==='kana'||td.dataset.f==='cho'){const pn=tr.querySelector('.panote');if(pn)pn.innerHTML=pitchNotes(rows[i].kana,rows[i].cho);}});
 
+/* 遮起來的欄位掀開後要能選字複製（2026-10-02 使用者要求）：
+   按下去馬上放開＝開關（蓋回去）；按住拖曳或長按＝在選字，就不要蓋回去。 */
+let maskDown=null;
+document.addEventListener('mousedown',e=>{maskDown={x:e.clientX,y:e.clientY,t:Date.now()};},true);
+function quickTap(e){
+  const sel=getSelection();
+  if(sel&&!sel.isCollapsed&&String(sel).trim())return false;   /* 已經選到字了 */
+  if(!maskDown)return true;
+  return Date.now()-maskDown.t<250&&Math.abs(e.clientX-maskDown.x)<5&&Math.abs(e.clientY-maskDown.y)<5;
+}
+/* 掀開／蓋回去：還蓋著的時候任何點擊都掀開，掀開後只有「點一下馬上放開」才蓋回去 */
+function toggleMask(td,e){
+  if(!td.classList.contains('revealed')){td.classList.add('revealed');return;}
+  if(quickTap(e))td.classList.remove('revealed');
+}
 tbody.addEventListener('click',e=>{
   const t=e.target;const tr=t.closest('tr');if(!tr)return;const i=+tr.dataset.i;
   /* 遮起來的欄位先處理：線上版的備註欄是 contenteditable，放在 !isContentEditable 裡面會掀不開（2026-10-02）。
@@ -7771,7 +7786,7 @@ tbody.addEventListener('click',e=>{
   {const td=t.closest('td');
    /* 遮起來的欄位：點一下就是掀開／蓋回去的開關，這個狀態下一律不能編輯（2026-10-02 使用者定案）。
       要編輯請先把上面的欄位勾選框打勾。 */
-   if(td&&td.classList.contains('masked')){td.classList.toggle('revealed');return;}
+   if(td&&td.classList.contains('masked')){toggleMask(td,e);return;}
    if(td&&!td.classList.contains('drag')&&!td.classList.contains('col-chk')&&!td.isContentEditable&&!td.classList.contains('masked')){const sy=sayText(rows[i]);if(sy)speak(sy,td);}}
   if(t.dataset.act==='sel'){const r=rows[i];if(t.checked)selected.add(r);else selected.delete(r);tr.classList.toggle('sel',t.checked);updateBulk();}
 });
@@ -8313,7 +8328,7 @@ let lvMask=(function(){try{return JSON.parse(localStorage.getItem('jp_lv_colmask
 function lessonVerbTable(){const rows=(workbook.lessons[String(lesson)]||[]).filter(r=>(r.kana||'').endsWith('ます')&&(r.kana||'').length<=9);if(!rows.length)return '';const head=LV_COLS.map(c=>'<th><label class="colvis" title="取消勾選＝遮住此欄，用來練習"><input type="checkbox" class="colvis-cb" data-key="'+c[0]+'"'+(lvMask[c[0]]?'':' checked')+'> '+c[1]+'</label></th>').join('');return '<h3 class="lv-h">本課動詞（'+rows.length+' 個）</h3><table class="alltable lvtable"><colgroup><col style="width:150px"><col style="width:180px"><col style="width:200px"><col style="width:220px"></colgroup><thead><tr>'+head+'</tr></thead><tbody>'+rows.map(r=>{const s=esc(sayText(r));const sig=encodeURIComponent(lesson+'|'+(r.word||'')+'|'+(r.kana||''));return '<tr data-sig="'+sig+'">'+LV_COLS.map(c=>{const mk=lvMask[c[0]]?' masked':'';const spk=c[0]==='note'?'':' spk-c';const say=c[0]==='note'?'':' data-say="'+s+'"';return '<td class="'+c[2]+spk+mk+'"'+say+'>'+esc(r[c[0]]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>';}
 document.getElementById('verb-body').addEventListener('change',e=>{const cb=e.target.closest('.colvis-cb');if(!cb)return;const k=cb.dataset.key;if(cb.checked)delete lvMask[k];else lvMask[k]=true;localStorage.setItem('jp_lv_colmask',JSON.stringify(lvMask));loadVerb();});
 function loadVerb(){const body=document.getElementById('verb-body');if(!body)return;const v=VERB_DEFAULT[lesson]||'';const t=lessonVerbTable();body.innerHTML=t+(v||(t?'':'<div class="ghint">這一課沒有動詞變化的內容。</div>'));}
-document.getElementById('panel-verb').addEventListener('click',function(e){const m=e.target.closest('.lvtable td.masked');if(m){m.classList.toggle('revealed');return;}const c=e.target.closest('td.spk-c');if(c&&c.dataset.say){speak(c.dataset.say,c);return;}const b=e.target.closest('.gspk');if(!b)return;e.preventDefault();speak(b.getAttribute('data-say')||b.textContent,b);});
+document.getElementById('panel-verb').addEventListener('click',function(e){const m=e.target.closest('.lvtable td.masked');if(m){toggleMask(m,e);return;}const c=e.target.closest('td.spk-c');if(c&&c.dataset.say){speak(c.dataset.say,c);return;}const b=e.target.closest('.gspk');if(!b)return;e.preventDefault();speak(b.getAttribute('data-say')||b.textContent,b);});
 /* ===== 動詞小考（該課動詞 × 四種型態）===== */
 let vbMode='zh2jp',vbRow=null,vbQueue=[],vbLesson=null;
 function vbZh(mean,suf){if(suf==='ます')return '會'+mean;if(suf==='ません')return '不會'+mean;if(suf==='ました')return mean+'了';return '沒有'+mean;}
