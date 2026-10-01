@@ -631,3 +631,8 @@ ode_modules`)。
   並把掀開／蓋回去改成 `toggleMask()`＋`quickTap()`：**按下到放開 <250ms 且滑鼠沒移動 >5px、且目前沒有選到字** 才算「開關」，
   按住拖曳或長按一律視為在選字、不蓋回去。`mousedown` 用 capture 記下時間與座標。單字表與各課動詞表共用。
   驗證：本機與 `?ro=1` 各跑一遍（掀開／快點蓋回／拖曳選字不蓋回／長按 500ms 不蓋回／遮著時打不進字），動詞表另測拖曳選到「切ります」。
+
+- 追加（10-02）：push 時 GitHub 警告「This repository moved」—— 帳號名從 `RobinYBWang` 改成 `RobinYBWANG`（只差大小寫）。
+  CLAUDE.md、reference E1、about-me 的帳號名都改了。**`git remote set-url` 沒改到** —— 被 auto mode 的 Remote Repoint 分類器攔下，
+  留給使用者自己跑（Windows 那台的 clone 也要一起改）。靠 GitHub 自動轉址目前還推得上去。
+  Pages 網址 `https://robinybwang.github.io/japanese-notes/` 不受影響（Pages 網址恆小寫，實測 200）。

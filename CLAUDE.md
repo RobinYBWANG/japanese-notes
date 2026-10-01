@@ -29,7 +29,7 @@ Stack / 工具:單檔 HTML(minna-notes.html 約 28MB,內嵌 VOICEVOX 音檔)、V
 - ./input/        唯讀投放區(我丟檔案,你分析)
 - ./output/       你產出的交付物(_vN 版本化)
 - ./docs/         **GitHub Pages 發布來源(main /docs)**,所有筆記頁面與工具都在這裡,不歸 input/output 管。
-- (整個專案資料夾 = git repo `RobinYBWang/japanese-notes`;`output/ input/ _to_delete/` 在 .gitignore,不上 git。)
+- (整個專案資料夾 = git repo `RobinYBWANG/japanese-notes`(2026-10-02 帳號名大小寫改了);`output/ input/ _to_delete/` 在 .gitignore,不上 git。)
 - ./_to_delete/   待刪暫存區。**2026-08-22 起本機可直接刪檔**,這裡只放「不確定要不要留」的東西。
 
 ## Context load policy — 每個新 task 開始時

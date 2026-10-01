@@ -3,7 +3,7 @@
 > Purpose:本 project 範圍內的身分+耐久偏好(覆寫一般預設之處要明寫 supersedes)。
 > Update when:耐久事實或硬化偏好改變(少)。不是任務日誌。
 
-- 姓名:Robin(GitHub: RobinYBWang)
+- 姓名:Robin(GitHub: RobinYBWANG;2026-10-02 前寫作 RobinYBWang)
 - 本 project 角色:日文自學者兼筆記擁有者(沿用一般預設,無 supersedes)
 - 學習教材:《大家的日本語》初級(初級一 L1〜12、初級二 L13〜25 = N5 範圍),目標 N5,**考試日 2026-12-06**
 - 目前進度:第1課〜第12課架構已建,L1〜L5 內容完整;五十音獨立成 kana.html

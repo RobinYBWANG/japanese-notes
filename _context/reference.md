@@ -43,7 +43,9 @@
 - D13 | 五十音 2026-08-22 從 minna-notes 第0課獨立成 `kana.html`,minna 不再有第0課(資料、程式、CSS、音檔都清掉);首頁第一張卡就是它 | LOCKED
 
 ## 環境(E)
-- E1 | 線上網址 https://robinybwang.github.io/japanese-notes/ ;repo `RobinYBWang/japanese-notes`(Public,Pages = main / **docs**(2026-09-08 起;整個專案資料夾 = repo)) | ACTIVE
+- E1 | 線上網址 https://robinybwang.github.io/japanese-notes/（Pages 網址恆小寫，不受帳號改名影響，10-02 實測 200）;
+  repo `RobinYBWANG/japanese-notes`(Public,Pages = main / **docs**(2026-09-08 起;整個專案資料夾 = repo));
+  **2026-10-02 帳號名從 `RobinYBWang` 改成 `RobinYBWANG`** —— GitHub 會自動轉址，舊 remote 還推得上去但會警告 | ACTIVE
 - E6 | Windows 這台 `core.autocrlf=true`(system 層級)、Mac 不設;`core.precomposeunicode=true` 兩台都設(全域);新 clone 要 `npm ci` + `npx playwright install chromium`(toolchain §6) | ACTIVE
 - E2 | git commit 身分已寫進 git-wrap.sh,不用每次帶 `-c`(本機 stop hook 會建議改 email,不要照做) | LOCKED
 - E3 | `device_commit_files` 的 devicePath 必須是 Windows 路徑;`device_bash` 只吃 `/sessions/...` 路徑 | LOCKED
