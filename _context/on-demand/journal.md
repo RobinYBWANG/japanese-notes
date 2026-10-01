@@ -619,3 +619,7 @@ ode_modules`)。
 - 修法：把 `masked` 的判斷移到最前面，不再受 contenteditable 影響；並改成
   「可編輯的格子掀開後再點＝進入編輯（不蓋回去），不可編輯的才維持開關行為」。動詞表 `.lvtable` 的同一段也一起修。
 - 驗證要加 `?ro=1` 才會重現 —— 本機 file:// 預設是可編輯模式，測不出來。
+
+- 追加（10-02）：備註欄遮起來時改成**只做開關、完全不能編輯**（使用者定案：要編輯就先把欄位勾選框打勾）。
+  四個地方一起改：單字表的 click 改回單純 toggle、動詞表同樣、本機的 dblclick 擋掉 `td.masked`、
+  唯讀模式的 `markNote()` 依遮罩決定 contenteditable 並在 beforeinput／paste 擋掉 `td.masked`。
