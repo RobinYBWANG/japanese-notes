@@ -623,3 +623,6 @@ ode_modules`)。
 - 追加（10-02）：備註欄遮起來時改成**只做開關、完全不能編輯**（使用者定案：要編輯就先把欄位勾選框打勾）。
   四個地方一起改：單字表的 click 改回單純 toggle、動詞表同樣、本機的 dblclick 擋掉 `td.masked`、
   唯讀模式的 `markNote()` 依遮罩決定 contenteditable 並在 beforeinput／paste 擋掉 `td.masked`。
+
+- commit：`59b023e`（掀開修正）、`b8d45fe`（遮起來時不可編輯）；10-01 的 +50 題是 `5a3e5e4`、送ります／出します 備註是 `665d708`、
+  助詞小考上線是 `5c0ab64`、各課測驗 20 題與第7課朗讀是 `a787b0a`。
