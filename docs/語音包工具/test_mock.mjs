@@ -65,7 +65,7 @@ const info = await page.evaluate(() => {
   return { n: BANK.length, types, bad, passOk, orderOk, quotaOk, quotaTotal, enough, uncovered, uncoveredDrawn, hasAll: VV_HAS_ALL,
            clips: Object.keys(VV.audio).length, texts: Object.keys(VV.say).length };
 });
-ok('題庫 295 題', info.n === 295);   // 2026-09-20 加 100 題（195→295）
+ok('題庫 345 題', info.n === 345);   // 2026-10-01 再加 50 題（295→345）   // 2026-09-20 加 100 題（195→295）
 ok('每題結構正確', info.bad.length === 0);
 ok('讀解／文章文法每篇題數正確、短文不重複', info.passOk);
 ok('題庫依 科目→問題N 排序', info.orderOk);
@@ -135,11 +135,11 @@ ok('進入聴解：計時 15:00、按鈕變成「交卷」', s3.cur === 3 && s3.
 // 聴解畫面：發話表現／即時応答的選項文字作答中看不到；圖片題有圖、選項是 1〜4
 const hid = await page.evaluate(() => {
   const span = document.querySelector('.pane[data-sec="3"] .choices.row.hid .ch > span:last-child');
-  const img = document.querySelector('.pane[data-sec="3"] img.qimg, .pane[data-sec="3"] .scene img');
+  const img = document.querySelector('.pane[data-sec="3"] img.qimg, .pane[data-sec="3"] .scene img, .pane[data-sec="3"] .scene .emo');
   return { hidden: span && getComputedStyle(span).display === 'none', hasImg: !!img, hidCards: document.querySelectorAll('.pane[data-sec="3"] .choices.row.hid').length };
 });
 ok('作答中發話表現／即時応答的選項只唸不顯示（6 題）', hid.hidden && hid.hidCards === 6);
-ok('聴解畫面有圖片', hid.hasImg);
+ok('聴解畫面有場景提示（圖片或 emoji）', hid.hasImg);
 
 // 播放一題聴解不噴錯
 await page.click('#quiz .pane[data-sec="3"] .play');
