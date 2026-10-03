@@ -186,6 +186,17 @@ print('缺的文本：', sorted({t for t, _, _ in todo}))
 os.makedirs(TMP, exist_ok=True)
 
 
+# 引擎會把「〜は 何ですか」唸成 なにですか（正確是 なんですか）。朗讀是拿顯示用的原文去合成的，
+# 所以合成前先換成假名，但 clip 的 key 仍沿用原文 —— 前端是用原文去查 clip 的（2026-10-04）。
+READ_FIX = [('何ですか', 'なんですか')]
+
+
+def engine_text(t):
+    for a, b in READ_FIX:
+        t = t.replace(a, b)
+    return t
+
+
 def synth(text, sp):
     q = urllib.parse.urlencode({'text': text, 'speaker': sp})
     query = urllib.request.urlopen(
@@ -206,7 +217,7 @@ def synth(text, sp):
 
 new_say, new_audio = {}, {}
 for i, (t, v, cid) in enumerate(todo, 1):
-    new_audio[cid] = synth(t, v)
+    new_audio[cid] = synth(engine_text(t), v)
     new_say.setdefault(t, {})[str(v)] = cid
     if i % 10 == 0 or i == len(todo):
         print('  ...%d/%d' % (i, len(todo)))

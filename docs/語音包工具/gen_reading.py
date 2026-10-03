@@ -165,6 +165,9 @@ TOGETHER7 = ['ごはんを 食べます', 'テレビを 見ます', '会話し�
 ONEWAY7 = ['日本語を 教えます', '質問します', '挑戦します', '勝ちました', '負けました']
 
 
+DRINK7R = ['コーヒー', 'お茶', '紅茶', 'ジュース', 'ビール', 'ケーキ']
+
+
 def rtmpl7(rows, rng):
     c = rng.choice
     # 一套 22 行：從頭依序取，取滿為止（同類句用 c([...]) 併成一格，後面的才輪得到）。
@@ -191,6 +194,20 @@ def rtmpl7(rows, rng):
         lambda: c([['砂糖を 水に 入れます。'], ['財布を ポケットに 入れます。'], ['水を 入れます。']]),
         lambda: ['私は ' + c(PERSON7) + 'に 昨日の 事を 話します。'],
         lambda: c([['誰に 電話を かけましたか。'], ['誰を 連れて 行きましたか。'], ['誰と 話しましたか。']]),
+        lambda: ['ストローで ジュースを 飲みます。'],
+        lambda: ['ネットで チケットを 買います。'],
+        lambda: ['A: 「おはよう」は 中国語で 何ですか。', 'B: 分かりません。'],
+        lambda: ['もう お酒を 飲みません。'],
+        lambda: ['もう たばこを 吸いません。'],
+        lambda: ['まだ 早いです。'],
+        lambda: ['まだ 小さいです。'],
+        lambda: ['まだ 結婚しません。'],
+        lambda: ['まだ 食べます。'],
+        lambda: ['まだ 食べません。'],
+        lambda: ['A: ' + c(DRINK7R) + 'は いかがですか。', 'B: はい、いただきます。'],
+        lambda: ['A: ' + c(DRINK7R) + 'は いかがですか。', 'B: いいえ、けっこうです。'],
+        lambda: [c(PERSON7) + 'が 私に ' + c(GIFT7) + 'を くれました。'],
+        lambda: ['A: だれが ' + c(GIFT7) + 'を くれましたか。', 'B: ' + c(PERSON7) + 'です。'],
     ]
 
 
@@ -222,6 +239,9 @@ def build_total(VV, rng, nset=2, target=150):
         for t in VV['reading'][k]:
             bs += blocks(t)
         if bs:
+            # 原本是從頭依序取，每課只會取到前面 20 幾個區塊，排在後面的新句子永遠進不了總表。
+            # 用固定種子洗一次，取樣就會散佈在整課（2026-10-04）。
+            rng.shuffle(bs)
             per[k] = bs
     assert per, '沒有任何課的朗讀可以拿來混合'
     sets = []
@@ -261,10 +281,14 @@ else:
     assert T, '第%s課沒有足夠的單字' % LES
     sets = []
     for s in range(NSET):
+        # 一套只收 22 行，樣板比 22 行多的時候（第7課）排在後面的永遠輪不到，
+        # 所以每一套換一個起點，整份樣板才會被用到（2026-10-04）。
+        off = (s * max(1, len(T) // NSET)) % len(T)
+        Ts = T[off:] + T[:off]
         lines = []
         guard = 0
         while len(lines) < 22 and guard < 25:      # 一套約 22 行
-            for f in T:
+            for f in Ts:
                 if len(lines) >= 22:
                     break
                 lines += f()
