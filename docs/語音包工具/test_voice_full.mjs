@@ -77,7 +77,7 @@ ok('單字/假名全覆蓋', vocabCover.length === 0);
 // 各課文法小考
 const gq = await page.evaluate(() => {
   const out = { counts: {}, miss: [], sample: null, empty: null };
-  for (let n = 1; n <= 7; n++) {
+  for (let n = 1; n <= 8; n++) {
     switchLesson(n); switchSection('grammar');
     out.counts[n] = gqPool().length;
     for (const q of gqPool()) if (!vvClip(q.say || q.jp, 'A')) out.miss.push(q.say || q.jp);
@@ -88,15 +88,47 @@ const gq = await page.evaluate(() => {
   gqReveal();
   out.sample = { zh: q, jp: document.getElementById('gq-a').textContent,
     shown: document.getElementById('gq-a').classList.contains('shown') };
-  switchLesson(8); switchSection('grammar');   // 第8課還沒有內容（2026-09-20 第7課補上文法後改）
+  switchLesson(9); switchSection('grammar');   // 第9課還沒有內容（2026-10-04 第8課補上文法後改）
   out.empty = document.getElementById('gq-q').textContent;
   return out;
 });
-ok('第1〜7課都有文法小考題目', [1, 2, 3, 4, 5, 6, 7].every(n => gq.counts[n] > 10));
+ok('第1〜8課都有文法小考題目', [1, 2, 3, 4, 5, 6, 7, 8].every(n => gq.counts[n] > 10));
 ok('文法小考句子全有音檔', gq.miss.length === 0);
 ok('掀開答案顯示日文', gq.sample.shown && /[ぁ-んァ-ン一-鿿]/.test(gq.sample.jp));
 ok('題目是中文', /[一-鿿]/.test(gq.sample.zh) && !/[ぁ-んァ-ン]/.test(gq.sample.zh));
 ok('沒有內容的課顯示提示', /還沒有文法小考/.test(gq.empty || ''));
+
+// 形容詞分頁（2026-10-04）：各課一個，總學習一個；表格與小考的音檔都要查得到
+const aj = await page.evaluate(() => {
+  const subs8 = (switchLesson(8), [...document.querySelectorAll('#subtabs .subtab')].map(e => e.textContent));
+  switchSection('adj');
+  const rows8 = document.querySelectorAll('#adj-body .lvtable tbody tr').length;
+  const miss = [];
+  document.querySelectorAll('#adj-body .lvtable td[data-say]').forEach(td => {
+    if (!vvClip(td.dataset.say, 'A')) miss.push(td.dataset.say);
+  });
+  switchLesson(5); switchSection('adj');
+  const empty5 = document.getElementById('adj-body').textContent;
+  switchLesson(14); switchSection('alladj');
+  const subs14 = [...document.querySelectorAll('#subtabs .subtab')].map(e => e.textContent);
+  const rowsAll = document.querySelectorAll('#alladj-tbody tr').length;
+  document.querySelectorAll('#alladj-tbody td[data-say]').forEach(td => {
+    if (!vvClip(td.dataset.say, 'A')) miss.push(td.dataset.say);
+  });
+  const pool = aaPool();
+  const noAudio = pool.filter(r => !vvClip(r.kana, 'A')).map(r => r.kana);
+  return { subs8, subs14, rows8, rowsAll, miss, empty5, n: pool.length, noAudio };
+});
+ok('各課分頁有「形容詞」且排在動詞與文法之間',
+   aj.subs8.indexOf('形容詞') === aj.subs8.indexOf('動詞') + 1 &&
+   aj.subs8.indexOf('文法') === aj.subs8.indexOf('形容詞') + 1);
+ok('總學習有「形容詞總表」且排在動詞總表與助詞總表之間',
+   aj.subs14.indexOf('形容詞總表') === aj.subs14.indexOf('動詞總表') + 1);
+ok('第8課形容詞表有內容', aj.rows8 >= 30);
+ok('沒有形容詞的課顯示提示', /還沒有形容詞/.test(aj.empty5 || ''));
+ok('形容詞總表有內容', aj.rowsAll >= 30);
+ok('形容詞表（含否定形）的音檔都在', aj.miss.length === 0);
+ok('形容詞總表小考的題目都有音檔', aj.n >= 30 && aj.noAudio.length === 0);
 
 // 助詞小考（2026-09-24）：第7課起才出現，每題的整句都要有音檔
 const jq = await page.evaluate(() => {

@@ -95,6 +95,26 @@ if vd:
                 stem = ka[:-2]
                 for s in VERB_SUFS:
                     add(stem + s)
+# G. 形容詞的否定形與接名詞形（第8課起）。這兩種形是前端 adjNeg()／adjAttr() 即時組出來的，
+#    掃 data-say 掃不到，規則要跟 HTML 那兩支一模一樣：
+#      な形容詞 → 〜じゃ ありません／〜な ＋名詞　｜　い形容詞 → 〜く ないです（いい・よい → よく ないです）
+if vd:
+    for _k, _rows in vd['lessons'].items():
+        for _r in _rows:
+            _p = _r.get('pos')
+            if _p not in ('adjna', 'adji'):
+                continue
+            _ka = (_r.get('kana') or '').strip()
+            if not _ka:
+                continue
+            if _p == 'adjna':
+                add(_ka + 'じゃ ありません')
+                add(_ka + 'な')
+            elif _ka in ('いい', 'よい'):
+                add('よく ないです')
+            else:
+                add(_ka[:-1] + 'く ないです')
+
 # E. 動詞小抽考「加入單字」的搭配句（<script id="vobj-data">，key = 動詞 word|kana，值 = [助詞, 名詞 word, 中文]）。
 #    文本規則要跟 HTML 的 vbPool() 一模一樣：名詞假名（多讀音只取第一行、去〜［］）＋助詞＋空格＋動詞假名活用形。
 _vobj = block('vobj-data', required=False)
