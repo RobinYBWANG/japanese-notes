@@ -65,7 +65,7 @@ const info = await page.evaluate(() => {
   return { n: BANK.length, types, bad, passOk, orderOk, quotaOk, quotaTotal, enough, uncovered, uncoveredDrawn, hasAll: VV_HAS_ALL,
            clips: Object.keys(VV.audio).length, texts: Object.keys(VV.say).length };
 });
-ok('題庫 345 題', info.n === 345);   // 2026-10-01 再加 50 題（295→345）   // 2026-09-20 加 100 題（195→295）
+ok('題庫 445 題', info.n === 445);   // 2026-10-11 再加 100 題（345→445）   // 2026-10-01 加 50 題（295→345）   // 2026-09-20 加 100 題（195→295）
 ok('每題結構正確', info.bad.length === 0);
 ok('讀解／文章文法每篇題數正確、短文不重複', info.passOk);
 ok('題庫依 科目→問題N 排序', info.orderOk);
@@ -89,8 +89,8 @@ const pics = await page.evaluate(() => new Promise(res => {
     im.src = s;
   });
 }));
-ok('四格圖片題 14 題：選項 1〜4、固定順序', pics.four === 14 && pics.fourOk);
-ok('發話表現 15 題都有場景圖', pics.scenes === 15);
+ok('四格圖片題 25 題：選項 1〜4、固定順序', pics.four === 25 && pics.fourOk);
+ok('發話表現 27 題有場景圖（其餘用 emoji 場景）', pics.scenes === 27);
 ok('29 張圖都載得進來、寬度夠', pics.bad.length === 0);
 if (pics.bad.length) console.log('壞圖:', pics.bad);
 
