@@ -41,6 +41,19 @@ Stack / 工具:單檔 HTML(minna-notes.html 約 28MB,內嵌 VOICEVOX 音檔)、V
 動詞小考另有兩個勾選框:**加入例句**(配前面學過的名詞,`jp_vb_obj`)、
 **時態**(打勾才考 ません/ました/ませんでした,不打勾只考 ます;各課 `jp_vb_tense`、總表 `jp_av_tense`)。
 
+## N5 模擬考（正式版）—— 2026-10-11 開始
+
+`docs\n5-mock-full.html`:**題目固定的 A/B/C 三份考卷**,比照正式 N5 的題數(67 題)、時間
+(20/40 分＋聴解)、兩個得分區分(120/60、合格 ≥80 且 38/19)、聴解一次播到底不能重聽。
+和簡易版(`n5-mock-easy.html`)**題庫完全獨立**。
+
+**做考卷的完整規格 -> `docs\語音包工具\正式版考卷規格.md`**(題數、文章長度、解說規格、
+聴解的秒數與唸法、圖片規則、做新考卷的步驟)。動這一頁之前先讀那份。
+
+管線:`paper_X.py`(題目原始檔)-> `build_mockfull.py`(嵌進頁面)-> `mockfull_audio.py`(音檔)
+-> `audit_paper.py X`(體檢)-> `test_mockfull.mjs`(驗證)。**改題目一律改 `paper_X.py`**,
+不要動 JSON 或 HTML(下次 build 會蓋掉)。
+
 ## Folder map(本層)
 - ./_context/     context 檔(依下方 load policy 載入)
 - ./input/        唯讀投放區(我丟檔案,你分析)
