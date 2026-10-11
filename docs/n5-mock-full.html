@@ -276,13 +276,18 @@ function renderHome(msg){
     }
     h += '</div></div>';
   });
+  if (['A','B','C'].some(id => loadHist(id).length))
+    h += '<p class="note" style="text-align:center">'
+       + '<button class="clr" data-clear="*">清空全部考卷的紀錄</button>'
+       + '　紀錄存在這台裝置的瀏覽器裡，換裝置不會同步。</p>';
   el.innerHTML = h;
   el.querySelectorAll('[data-start]').forEach(b => b.addEventListener('click', () => startExam(b.dataset.start)));
   el.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.clear;
-    if (!confirm(id + ' 卷的歷史紀錄會全部刪掉，確定嗎？')) return;
-    try{ localStorage.removeItem(HIST_KEY(id)); }catch(e){}
-    renderHome(id + ' 卷的歷史紀錄已經清空。');
+    const all = id === '*';
+    if (!confirm((all ? '三份考卷的歷史紀錄' : id + ' 卷的歷史紀錄') + '會全部刪掉，確定嗎？')) return;
+    try{ (all ? ['A','B','C'] : [id]).forEach(x => localStorage.removeItem(HIST_KEY(x))); }catch(e){}
+    renderHome((all ? '全部' : id + ' 卷') + '的歷史紀錄已經清空。');
   }));
   el.querySelectorAll('[data-review]').forEach(b => b.addEventListener('click', () => {
     const [id, i] = b.dataset.review.split(':');
