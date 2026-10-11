@@ -3,27 +3,13 @@
 
    產出 docs/data/paper-A.json，接著跑 build_mockfull.py 嵌進頁面、mockfull_audio.py 補音檔。
    改題目一定要從這裡改，不要直接改 JSON 或 HTML（會被下一次 build 蓋掉）。
+   共用的樣板在 paper_lib.py，規格在 正式版考卷規格.md。
    執行：python3 paper_A.py && python3 build_mockfull.py && python3 mockfull_audio.py"""
-import json, os, collections
+import os
+from paper_lib import (UL, BK, ST, V, R, LN, Q2, C1, C3, C4, EX1, EX3, EX4, OPENING,
+                       GAP12, GAP34, paper, build)
 
 OUT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'paper-A.json'))
-UL = lambda w: '<span class="ul">' + w + '</span>'
-BK = '<span class="bk">　　</span>'
-ST = '<span class="star">★</span>'
-
-
-def V(q, c, a, e):
-    return {'q': q, 'c': c, 'a': a, 'e': e}
-
-
-def R(pas, zh, items):
-    """読解：一篇文章帶 1〜2 題"""
-    return [{'pass': pas, 'passZh': zh, 'q': q, 'c': c, 'a': a, 'e': e} for q, c, a, e in items]
-
-
-def LN(*pairs):
-    return [{'r': r, 't': t} for r, t in pairs]
-
 
 # ════════════════ 試験Ⅰ 言語知識（文字・語彙）21 題 ════════════════
 S1P1 = [
@@ -281,83 +267,6 @@ S2P6 = R(
    '<br><b>陷阱</b>：年齡分三段（〜5／6〜15／16〜／65〜），要先確認 11 歲落在哪一段再去查價錢。')])
 
 # ════════════════ 試験Ⅲ 聴解 24 題 ════════════════
-GAP12, GAP34 = 10, 8
-INSTR = {
- 1: '問題1では、はじめに しつもんを 聞いて ください。それから 話を 聞いて、'
-    'もんだいようしの 1から4の 中から、いちばん いい ものを 一つ えらんで ください。',
- 2: '問題2では、はじめに しつもんを 聞いて ください。それから 話を 聞いて、'
-    'もんだいようしの 1から4の 中から、いちばん いい ものを 一つ えらんで ください。',
- 3: '問題3では、えを 見ながら しつもんを 聞いて ください。'
-    'やじるしの 人は 何と 言いますか。1から3の 中から、いちばん いい ものを 一つ えらんで ください。',
- 4: '問題4では、えなどが ありません。ぶんを 聞いて、'
-    '1から3の 中から、いちばん いい ものを 一つ えらんで ください。',
-}
-
-
-def C1(n, img, a, lines, q, zh, e):
-    """問題1・2：印出四格圖或文字選項；旁白在對話前後各唸一次題目。
-       第一次唸完問題後有一段留白讓你看圖／看選項 —— 正式考試就是這樣，
-       問題2（文字選項）給得比問題1（圖）久。{'p': 秒數} 是播放器認得的靜默。"""
-    look = 12 if isinstance(img, list) else 5
-    play = ([{'r': 'N', 't': '%dばん。' % n}, {'r': 'N', 't': q}, {'p': look}]
-            + lines + [{'r': 'N', 't': q}])
-    it = {'n': n, 'play': play, 'q': q, 'a': a, 'gap': GAP12, 'zh': zh, 'e': e}
-    if isinstance(img, str):
-        it['img'] = 'img/mock/' + img + '.png'
-        it['c'] = ['1', '2', '3', '4']
-    else:
-        it['c'] = img
-    return it
-
-
-def C3(n, img, narr, c, a, zh, e):
-    play = [{'r': 'N', 't': '%dばん。' % n}, {'r': 'N', 't': narr}]
-    for i, t in enumerate(c, 1):
-        play += [{'r': 'N', 't': '%dばん。' % i}, {'r': 'M' if i % 2 else 'F', 't': t}]
-    return {'n': n, 'scene': 'img/mock/' + img + '.png', 'play': play, 'q': '何と 言いますか。',
-            'c': c, 'a': a, 'gap': GAP34, 'zh': zh, 'e': e, 'hideChoices': True}
-
-
-def C4(n, role, line, c, a, zh, e):
-    play = [{'r': 'N', 't': '%dばん。' % n}, {'r': role, 't': line}]
-    for i, t in enumerate(c, 1):
-        play += [{'r': '%s' % ('F' if role == 'M' else 'M'), 't': t}]
-    return {'n': n, 'play': play, 'q': '（へんじを えらんで ください）', 'c': c, 'a': a,
-            'gap': GAP34, 'zh': zh, 'e': e, 'hideChoices': True}
-
-
-# ── 各大題的「例」：正式考試每個大題都會先播一題例題並公布答案（不計分）。
-#    畫面上也要有例題的圖卡（含選項與答案），這樣聽說明和例題的時候可以順便調音量。
-OPENING = 'これから、ちょうかいしけんを はじめます。もんだいようしに メモを とっても かまいません。'
-ANS = lambda a: {'r': 'N', 't': 'いちばん いい ものは %dばんです。' % (a + 1)}
-
-
-def EX1(img, q, lines, c, a, zh):
-    """例題（問題1・2）：有四格圖或文字選項"""
-    look = 12 if not img else 5          # 例題也照正式考試留看圖／看選項的時間
-    e = {'ex': True, 'q': q, 'c': c, 'a': a, 'zh': zh,
-         'play': ([{'r': 'N', 't': 'れい。'}, {'r': 'N', 't': q}, {'p': look}]
-                  + lines + [{'r': 'N', 't': q}, ANS(a)])}
-    if img:
-        e['img'] = 'img/mock/' + img + '.png'
-    return e
-
-
-def EX3(img, narr, c, a, zh):
-    play = [{'r': 'N', 't': 'れい。'}, {'r': 'N', 't': narr}]
-    for i, t in enumerate(c, 1):
-        play += [{'r': 'N', 't': '%dばん。' % i}, {'r': 'M' if i % 2 else 'F', 't': t}]
-    return {'ex': True, 'scene': 'img/mock/' + img + '.png', 'q': narr, 'c': c, 'a': a, 'zh': zh,
-            'play': play + [ANS(a)]}
-
-
-def EX4(role, line, c, a, zh):
-    other = 'F' if role == 'M' else 'M'
-    play = [{'r': 'N', 't': 'れい。'}, {'r': role, 't': line}] + [{'r': other, 't': t} for t in c]
-    return {'ex': True, 'q': '（へんじを えらんで ください）', 'c': c, 'a': a, 'zh': zh,
-            'play': play + [ANS(a)]}
-
-
 EX = {
  1: EX1('l2-08', '女の人は あした 何を しますか。',
         LN(('M', 'あした、えいがを 見に 行きませんか。'),
@@ -374,6 +283,7 @@ EX = {
  4: EX4('F', 'おなまえは。', ['山田です。', 'はじめまして。', 'そうです。'], 0,
         '女：請問您貴姓？'),
 }
+
 
 S3P1 = [
  C1(1, 'l1-10', 1,
@@ -621,79 +531,8 @@ S3P4 = [
     '「はい、多いです」只回答了行李多不多，<b>沒有回應「要不要幫忙」</b>。'),
 ]
 
-PAPER = {
- 'id': 'A', 'name': 'A 卷',
- 'pass': {'total': 80, 'a': 38, 'b': 19},
- 'sections': [
-  {'key': 'moji', 'label': '言語知識（文字・語彙）', 'min': 20, 'score': None, 'parts': [
-    {'no': 1, 'title': '問題1', 'instr': '＿＿の ことばは ひらがなで どう 書きますか。'
-     '1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S1P1},
-    {'no': 2, 'title': '問題2', 'instr': '＿＿の ことばは どう 書きますか。'
-     '1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S1P2},
-    {'no': 3, 'title': '問題3', 'instr': '（　）に 何を 入れますか。'
-     '1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S1P3},
-    {'no': 4, 'title': '問題4', 'instr': '＿＿の ぶんと だいたい 同じ いみの ぶんが あります。'
-     '1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S1P4},
-  ]},
-  {'key': 'bunpou', 'label': '言語知識（文法）・読解', 'min': 40, 'score': None, 'parts': [
-    {'no': 1, 'title': '問題1', 'instr': '（　）に 何を 入れますか。'
-     '1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S2P1},
-    {'no': 2, 'title': '問題2', 'instr': '★に 入る ものは どれですか。'
-     '1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S2P2},
-    {'no': 3, 'title': '問題3', 'instr': 'つぎの 文章を 読んで、【　】に 入る ものを'
-     '1・2・3・4から 一つ えらんで ください。', 'items': S2P3},
-    {'no': 4, 'title': '問題4', 'instr': 'つぎの 文を 読んで、しつもんに こたえて ください。'
-     'こたえは 1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S2P4},
-    {'no': 5, 'title': '問題5', 'instr': 'つぎの 文章を 読んで、しつもんに こたえて ください。'
-     'こたえは 1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S2P5},
-    {'no': 6, 'title': '問題6', 'instr': 'つぎの お知らせを 見て、しつもんに こたえて ください。'
-     'こたえは 1・2・3・4から いちばん いい ものを 一つ えらんで ください。', 'items': S2P6},
-  ]},
-  {'key': 'choukai', 'label': '聴解', 'min': None, 'score': None, 'opening': OPENING,
-   'closing': 'これで ちょうかいしけんを おわります。', 'parts': [
-    {'no': 1, 'title': '問題1　課題理解', 'instr': INSTR[1], 'ex': EX[1], 'items': S3P1},
-    {'no': 2, 'title': '問題2　ポイント理解', 'instr': INSTR[2], 'ex': EX[2], 'items': S3P2},
-    {'no': 3, 'title': '問題3　発話表現', 'instr': INSTR[3], 'ex': EX[3], 'items': S3P3},
-    {'no': 4, 'title': '問題4　即時応答', 'instr': INSTR[4], 'ex': EX[4], 'items': S3P4},
-  ]},
- ],
-}
 
-# ── 正解位置打散（題目與選項都固定，所以在產檔時算好就定稿）──
-#    輪流把正解放到第 1→2→3→4 格，其餘選項維持原本的相對順序（這樣時間、價錢那種選項還是照順序排）。
-#    圖片題（選項是 1〜4 的格號）與組み立て題（c 是正確語序）不能動。
-_k = 0
-for _sec in PAPER['sections']:
-    for _p in _sec['parts']:
-        for _it in _p['items']:
-            if _it['c'] == ['1', '2', '3', '4'] or 'class="star"' in _it.get('q', ''):
-                continue
-            _ans = _it['c'][_it['a']]
-            _rest = [x for x in _it['c'] if x != _ans]
-            _t = _k % len(_it['c'])
-            _k += 1
-            _it['c'] = _rest[:_t] + [_ans] + _rest[_t:]
-            _it['a'] = _t
-
-# ── 檢查 ──
-n = 0
-pos = collections.Counter()
-for sec in PAPER['sections']:
-    sn = 0
-    for p in sec['parts']:
-        for it in p['items']:
-            n += 1
-            sn += 1
-            assert 2 < len(it['c']) < 5, (p['title'], it['c'])
-            assert 0 <= it['a'] < len(it['c'])
-            assert len(set(it['c'])) == len(it['c']), it['c']
-            assert it.get('e') and len(it['e']) > 40, (p['title'], it.get('e'))
-            pos[it['a']] += 1
-    sec['n'] = sn
-    print('%-24s %d 題' % (sec['label'], sn))
-print('合計 %d 題；正解位置分布 %s' % (n, dict(sorted(pos.items()))))
-assert n == 67, n
-
-os.makedirs(os.path.dirname(OUT), exist_ok=True)
-open(OUT, 'w', encoding='utf-8').write(json.dumps(PAPER, ensure_ascii=False, indent=1))
-print('→', OUT, '%.1fKB' % (os.path.getsize(OUT) / 1024))
+build(paper('A', 'A 卷',
+            [S1P1, S1P2, S1P3, S1P4],
+            [S2P1, S2P2, S2P3, S2P4, S2P5, S2P6],
+            [S3P1, S3P2, S3P3, S3P4], EX), OUT)

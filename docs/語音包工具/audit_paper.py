@@ -38,7 +38,8 @@ for sec in P['sections']:
                 B(tag, '選項重複 %s' % it['c'])
             if not it.get('e') or len(it['e']) < 40:
                 B(tag, '解說太短')
-            key = re.sub(r'<[^>]+>', '', it['q']) + '|' + '|'.join(it['c'])
+            key = (re.sub(r'<[^>]+>', '', it['q']) + '|' + '|'.join(it['c'])
+                   + '|' + str(it.get('img') or it.get('scene') or ''))
             if key in seen_q:
                 B(tag, '和 %s 完全同題' % seen_q[key])
             seen_q[key] = tag
@@ -61,17 +62,42 @@ EB = json.loads(subprocess.run(['node', '-e',
     'const fs=require("fs");const BANK=eval(fs.readFileSync(process.argv[1],"utf8").replace(/^var BANK = /,""));'
     'process.stdout.write(JSON.stringify(BANK))', tmp], capture_output=True, text=True, check=True).stdout)
 eq = {re.sub(r'<[^>]+>', '', q['q']).strip() for q in EB}
+el = {l['t'] for q in EB if q.get('audio') for l in q['audio']}
+el |= {c for q in EB for c in q['c']}
+# 其他份正式考卷的台詞也不能撞
+for _pid in ('A', 'B', 'C'):
+    if _pid == PID:
+        continue
+    _m = re.search(r'<script id="paper-%s" type="application/json">(.*?)</script>' % _pid, h, re.S)
+    if not _m:
+        continue
+    _p = json.loads(_m.group(1))
+    for _sec in _p.get('sections', []):
+        for _part in _sec['parts']:
+            for _it in _part['items']:
+                eq.add(re.sub(r'<[^>]+>', '', _it['q']).strip())
+                for _l in _it.get('play', []):
+                    if 't' in _l:
+                        el.add(_l['t'])
 # JLPT 的制式題幹本來就會重複出現，不算撞題
 BOILER = {'何と 言いますか。', '（へんじを えらんで ください）',
           '男の人は これから 何を しますか。', '女の人は これから 何を しますか。',
-          '女の人は まず 何を しますか。', 'この 人は 来年 何を したいですか。'}
-el = {l['t'] for q in EB if q.get('audio') for l in q['audio']}
+          '女の人は まず 何を しますか。', 'この 人は 来年 何を したいですか。',
+          '女の人は はじめに 何を しますか。', '女の人は この あと どこへ 行きますか。',
+          '男の人は まず 何を しますか。', '二人は 何で 行きますか。',
+          '女の人は いくら はらいますか。', '女の人は これから 何を しますか。'}
 for tag, sec, part, it in qs:
     t = re.sub(r'<[^>]+>', '', it['q']).strip()
     if t and t in eq and len(t) > 8 and t not in BOILER:
         B(tag, '題幹和簡易考一樣：' + t[:24])
     for l in it.get('play', []):
-        if l.get('t') in el and len(l.get('t', '')) > 14 and not l['t'].endswith('ございます。'):
+        t2 = l.get('t', '')
+        # 唸出來的「選項」是固定說法（あいさつ、決まり文句），各卷重複很正常；
+        # 不能重複的是題幹、旁白與對話。
+        if t2 in it.get('c', []):
+            continue
+        if (t2 in el and len(t2) > 14 and not t2.endswith('ございます。')
+                and t2 not in BOILER and not re.match(r'^\d+ばん。$', t2)):
             B(tag, '對白和簡易考一樣：' + l['t'][:22])
 
 # ── 3. 圖片 ──
@@ -131,7 +157,28 @@ for r, t in need:
         B('音檔', '太短 %.2f 秒：%s' % (d, t[:24]))
     if d / max(1, len(t)) > 0.9:
         B('音檔', '異常長 %.1f 秒 / %d 字：%s' % (d, len(t), t[:24]))
-orphan = [k for k in SAY if tuple(k.split('|', 1)) not in set(need)]
+allneed = set()
+for _pid in ('A', 'B', 'C'):
+    _m = re.search(r'<script id="paper-%s" type="application/json">(.*?)</script>' % _pid, h, re.S)
+    if not _m:
+        continue
+    _p = json.loads(_m.group(1))
+    for _sec in _p.get('sections', []):
+        if _sec.get('key') != 'choukai':
+            continue
+        for _k in ('opening', 'closing'):
+            if _sec.get(_k):
+                allneed.add(('N', _sec[_k]))
+        for _part in _sec['parts']:
+            allneed.add(('N', _part['instr']))
+            for _l in (_part.get('ex') or {}).get('play', []):
+                if 'p' not in _l:
+                    allneed.add((_l['r'], _l['t']))
+            for _it in _part['items']:
+                for _l in _it['play']:
+                    if 'p' not in _l:
+                        allneed.add((_l['r'], _l['t']))
+orphan = [k for k in SAY if tuple(k.split('|', 1)) not in allneed]
 if orphan:
     B('音檔', '多餘的 clip %d 個' % len(orphan))
 print('音檔文本 %d 個；總長 %.1f 分鐘' % (len(need), sum(durs.values()) / 60))

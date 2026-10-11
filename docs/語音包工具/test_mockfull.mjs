@@ -203,6 +203,38 @@ const h2 = await page.evaluate(() => JSON.parse(localStorage.getItem('mf_hist_A'
 ok('中途離開會記成作廢', h2.length === 2 && h2[0].void === true, h2[0]);
 ok('重新進來有提示', (await page.textContent('#home')).includes('作廢'));
 
+// ───────── 其他考卷（B／C）─────────
+const others = await page.evaluate(() => {
+  const out = {};
+  ['B', 'C'].forEach(id => {
+    const p = PAPERS[id];
+    out[id] = p && p.sections ? {
+      n: p.sections.reduce((a, s) => a + s.n, 0),
+      secs: p.sections.map(s => s.n),
+      bad: p.sections.flatMap(s => s.parts.flatMap(part => part.items.filter(it =>
+        !(it.c.length === 3 || it.c.length === 4) || !(it.a >= 0 && it.a < it.c.length)
+        || new Set(it.c).size !== it.c.length || !it.e || it.e.length < 40
+        || (s.key === 'choukai' && !(it.play && it.play.length))).map(() => part.title))),
+      noClip: p.sections.filter(s => s.key === 'choukai').flatMap(s => [
+        ...(s.opening ? [['N', s.opening]] : []), ...(s.closing ? [['N', s.closing]] : []),
+        ...s.parts.flatMap(part => [['N', part.instr],
+          ...(part.ex ? part.ex.play : []).filter(l => !l.p).map(l => [l.r, l.t]),
+          ...part.items.flatMap(it => it.play.filter(l => !l.p).map(l => [l.r, l.t]))])
+      ]).filter(([r, t]) => !SAY[r + '|' + t]).length,
+    } : null;
+  });
+  return out;
+});
+for (const id of ['B', 'C']){
+  const o = others[id];
+  if (!o){ console.log('SKIP  ' + id + ' 卷還沒有內容'); continue; }
+  ok(id + ' 卷 67 題、三科 21/22/24', o.n === 67 && JSON.stringify(o.secs) === '[21,22,24]', o.secs);
+  ok(id + ' 卷每題結構正確', o.bad.length === 0, o.bad.slice(0, 5));
+  ok(id + ' 卷聴解每一行都有 clip', o.noClip === 0, o.noClip);
+  await page.evaluate(i => renderHome(), id);
+  ok(id + ' 卷在選卷頁上可以開始', await page.locator('[data-start="' + id + '"]').count() === 1);
+}
+
 // ───────── 版面 ─────────
 const over = [];
 for (const w of [320, 390, 768, 1280]){

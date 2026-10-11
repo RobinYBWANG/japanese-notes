@@ -11,7 +11,6 @@
    "key": "moji",
    "label": "言語知識（文字・語彙）",
    "min": 20,
-   "score": null,
    "parts": [
     {
      "no": 1,
@@ -279,7 +278,6 @@
    "key": "bunpou",
    "label": "言語知識（文法）・読解",
    "min": 40,
-   "score": null,
    "parts": [
     {
      "no": 1,
@@ -590,7 +588,6 @@
    "key": "choukai",
    "label": "聴解",
    "min": null,
-   "score": null,
    "opening": "これから、ちょうかいしけんを はじめます。もんだいようしに メモを とっても かまいません。",
    "closing": "これで ちょうかいしけんを おわります。",
    "parts": [
