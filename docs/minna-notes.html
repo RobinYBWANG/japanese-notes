@@ -190,6 +190,8 @@
   #all-tbody td.spk-c:hover{background:#fff7cc}
   #allverb-tbody td.spk-c{cursor:pointer}
   #allverb-tbody td.spk-c:hover{background:#fff7cc}
+  #alladj-tbody td.spk-c{cursor:pointer}
+  #alladj-tbody td.spk-c:hover{background:#fff7cc}
   .lv-h{margin:16px 0 8px;font-size:16px}
   #adj-body{padding:14px}
   #adj-body .adj-intro{max-width:820px}
@@ -9209,8 +9211,9 @@ function lessonAdjTable(){
     +rows.map(function(r){
       return '<tr>'+LA_COLS.map(function(c){
         const mk=laMask[c[0]]?' masked':'';
-        const spk=(c[0]==='word'||c[0]==='kana'||c[0]==='neg')?' spk-c':'';
-        const say=c[0]==='neg'?' data-say="'+esc(r.negk)+'"':((c[0]==='word'||c[0]==='kana')?' data-say="'+esc(r.kana)+'"':'');
+        /* 詞義欄也要能點播 —— 單字表與動詞表都是「點哪一欄都唸該單字」（2026-10-13 使用者要求） */
+        const spk=(c[0]==='word'||c[0]==='kana'||c[0]==='mean'||c[0]==='neg')?' spk-c':'';
+        const say=c[0]==='neg'?' data-say="'+esc(r.negk)+'"':((c[0]==='word'||c[0]==='kana'||c[0]==='mean')?' data-say="'+esc(r.kana)+'"':'');
         return '<td class="'+c[2]+spk+mk+'"'+say+'>'+esc(r[c[0]]||'')+'</td>';}).join('')+'</tr>';}).join('')
     +'</tbody></table>';
 }
@@ -9267,7 +9270,7 @@ function renderAllAdj(){
   const cell=(t,say)=>'<td class="spk-c" data-say="'+esc(say)+'">'+esc(t)+'</td>';
   tb.innerHTML=rows.map(r=>'<tr><td class="vt-les">第'+r.les+'課</td>'
     +cell(r.word,r.kana)+cell(r.kana,r.kana)
-    +'<td class="vt-mean">'+esc(r.type)+'</td><td class="vt-mean">'+esc(r.mean)+'</td>'
+    +'<td class="vt-mean">'+esc(r.type)+'</td><td class="vt-mean spk-c" data-say="'+esc(r.kana)+'">'+esc(r.mean)+'</td>'
     +cell(r.neg,r.negk)+cell(r.attr,r.attrk)+'</tr>').join('')
     ||'<tr><td colspan="7" class="vt-empty">目前還沒有形容詞。</td></tr>';}
 document.getElementById('alladj-tbody').addEventListener('click',e=>{const c=e.target.closest('td.spk-c');if(c&&c.dataset.say)speak(c.dataset.say,c);});
