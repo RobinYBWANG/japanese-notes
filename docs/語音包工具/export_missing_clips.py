@@ -101,6 +101,17 @@ if vd:
 # G. 形容詞的否定形與接名詞形（第8課起）。這兩種形是前端 adjNeg()／adjAttr() 即時組出來的，
 #    掃 data-say 掃不到，規則要跟 HTML 那兩支一模一樣：
 #      な形容詞 → 〜じゃ ありません／〜な ＋名詞　｜　い形容詞 → 〜く ないです（いい・よい → よく ないです）
+def adj_negk(ka, na):
+    """跟 HTML 的 adjNeg() 一模一樣：な→じゃ ありません；い→く ないです；
+       字尾是「いい（良い）」的複合詞整個變 よく（かっこいい→かっこよく ないです）。"""
+    if na:
+        return ka + 'じゃ ありません'
+    if ka in ADJ_YOKU:
+        return re.sub(r'[いよ]い$', 'よく', ka) + ' ないです'
+    return ka[:-1] + 'く ないです'
+
+
+ADJ_KANA = []      # [(假名, 是不是な形容詞)]，I 段也要用
 if vd:
     for _k, _rows in vd['lessons'].items():
         for _r in _rows:
@@ -110,21 +121,27 @@ if vd:
             _ka = (_r.get('kana') or '').strip()
             if not _ka:
                 continue
-            if _p == 'adjna':
-                add(_ka + 'じゃ ありません')
+            _na = _p == 'adjna'
+            ADJ_KANA.append((_ka, _na))
+            add(adj_negk(_ka, _na))
+            if _na:
                 add(_ka + 'な')
-            elif _ka in ADJ_YOKU:
-                # 字尾是「いい（良い）」的複合詞整個變 よく（かっこいい→かっこよく ないです）。
-                # 規則要跟 HTML 的 adjNeg() 一致，否則會合成出一批沒人用的音檔。
-                add(re.sub(r'[いよ]い$', 'よく', _ka) + ' ないです')
-            else:
-                add(_ka[:-1] + 'く ないです')
 
 # H. 副詞分頁的程度副詞表（const ADV_ROWS）。data-say 是 '+esc(r.kana)+' 組出來的，掃 B 掃不到。
 _m_adv = re.search(r'const ADV_ROWS\s*=\s*\[(.*?)\n\];', h, re.S)
 if _m_adv:
     for _ka in re.findall(r"kana:'([^']+)'", _m_adv.group(1)):
         add(_ka)
+
+# I. 形容詞小考勾選「副詞」後的組合句（前端 ajWithAdv() 即時組，掃 B 掃不到）：
+#      配肯定的副詞 ＋ 形容詞 ＋ です　／　配否定的副詞 ＋ 形容詞的否定形
+_m_adv = re.search(r'const ADV_ROWS\s*=\s*\[(.*?)\n\];', h, re.S)
+if _m_adv and ADJ_KANA:
+    _advs = [(m.group(1), m.group(2) == 'true')
+             for m in re.finditer(r"kana:'([^']+)'.*?neg:(true|false)", _m_adv.group(1))]
+    for _ak, _aneg in _advs:
+        for _ka, _na in ADJ_KANA:
+            add(_ak + ' ' + (adj_negk(_ka, _na) if _aneg else _ka + 'です'))
 
 # E. 動詞小抽考「加入單字」的搭配句（<script id="vobj-data">，key = 動詞 word|kana，值 = [助詞, 名詞 word, 中文]）。
 #    文本規則要跟 HTML 的 vbPool() 一模一樣：名詞假名（多讀音只取第一行、去〜［］）＋助詞＋空格＋動詞假名活用形。

@@ -144,6 +144,56 @@ ok('程度副詞表固定是指定的六個',
 ok('每一課的副詞表都一樣（不跟著該課單字跑）', adv.words1.join('|') === adv.words.join('|'));
 ok('副詞分頁的音檔全都在', adv.miss.length === 0);
 
+// 形容詞小考勾「副詞」：組合句要組對，而且每一句都要有音檔
+const ajAdvChk = await page.evaluate(() => {
+  switchLesson(8); switchSection('adj');
+  const bad = [], noAudio = [];
+  adjRows().forEach(r => ADV_ROWS.forEach(a => {
+    const w = a.word + ' ' + (a.neg ? r.neg : r.word + 'です');
+    const k = a.kana + ' ' + (a.neg ? r.negk : r.kana + 'です');
+    if (!vvClip(k, 'A')) noAudio.push(k);
+    const isNeg = /く ないです$|じゃ ありません$/.test(w);   // 危ないです（危ない＋です）不算否定
+    if (a.neg !== isNeg) bad.push(a.word + ' + ' + r.word + ' → ' + w);
+  }));
+  // 勾起來之後題庫長度不變（每個形容詞配一個副詞），而且每題都帶 adv
+  const n0 = ajPool().length;
+  const cb = document.getElementById('aj-adv');
+  cb.checked = true; cb.dispatchEvent(new Event('change'));
+  const pool = ajPool();
+  const n1 = pool.length, allAdv = pool.every(x => !!x.adv);
+  const negOK = pool.every(x => x.adv.neg === /く ないです$|じゃ ありません$/.test(x.word));
+  const zhOK = pool.every(x => x.mean.startsWith(x.adv.qzh) && !/^(很|非常)|的$/.test(x.mean.slice(x.adv.qzh.length)));
+  cb.checked = false; cb.dispatchEvent(new Event('change'));
+  return { bad, noAudio, n0, n1, allAdv, negOK, zhOK, back: ajPool().every(x => !x.adv) };
+});
+ok('副詞題的組合句全有音檔', ajAdvChk.noAudio.length === 0);
+ok('配否定的副詞一定接否定形', ajAdvChk.bad.length === 0 && ajAdvChk.negOK);
+ok('勾副詞後一輪題數不變', ajAdvChk.n1 === ajAdvChk.n0 && ajAdvChk.allAdv);
+ok('副詞題的中文前綴正確', ajAdvChk.zhOK);
+ok('取消勾選回到單純形容詞', ajAdvChk.back);
+
+// 形容詞總表的小考也有同一個勾選框，記憶鍵與各課分開
+const aaAdvChk = await page.evaluate(() => {
+  switchLesson(14); switchSection('alladj');
+  const n0 = aaPool().length;
+  const cb = document.getElementById('aa-adv');
+  cb.checked = true; cb.dispatchEvent(new Event('change'));
+  const pool = aaPool();
+  const r = {
+    n0, n1: pool.length,
+    allAdv: pool.every(x => !!x.adv),
+    lesOK: pool.every(x => typeof x.les === 'number' && x.les >= 1),
+    negOK: pool.every(x => x.adv.neg === /く ないです$|じゃ ありません$/.test(x.word)),
+    noAudio: pool.map(x => x.kana).filter(k => !vvClip(k, 'A')).length,
+  };
+  cb.checked = false; cb.dispatchEvent(new Event('change'));
+  r.back = aaPool().every(x => !x.adv);
+  return r;
+});
+ok('總表小考有副詞選項且題數不變', aaAdvChk.n1 === aaAdvChk.n0 && aaAdvChk.allAdv && aaAdvChk.back);
+ok('總表副詞題：否定對、課次留著、音檔全在',
+   aaAdvChk.negOK && aaAdvChk.lesOK && aaAdvChk.noAudio === 0);
+
 ok('總學習有「形容詞總表」且排在動詞總表與助詞總表之間',
    aj.subs14.indexOf('形容詞總表') === aj.subs14.indexOf('動詞總表') + 1);
 ok('第8課形容詞表有內容', aj.rows8 >= 30);
