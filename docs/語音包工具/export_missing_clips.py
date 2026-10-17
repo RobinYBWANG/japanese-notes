@@ -40,6 +40,9 @@ _m = re.search(r'sayForceKana\s*=\s*new Set\(\[(.*?)\]\)', h, re.S)
 SAY_FORCE_KANA = set(re.findall(r"'([^']+)'", _m.group(1))) if _m else set()
 print('sayForceKana：從 HTML 讀到 %d 個字' % len(SAY_FORCE_KANA))
 
+_m = re.search(r'ADJ_YOKU\s*=\s*new Set\(\[(.*?)\]\)', h, re.S)
+ADJ_YOKU = set(re.findall(r"'([^']+)'", _m.group(1))) if _m else {'いい', 'よい'}
+
 
 def block(idv, required=True):
     m = re.search(r'<script[^>]*id="' + idv + r'"[^>]*>(.*?)</script>', h, re.S)
@@ -110,10 +113,18 @@ if vd:
             if _p == 'adjna':
                 add(_ka + 'じゃ ありません')
                 add(_ka + 'な')
-            elif _ka in ('いい', 'よい'):
-                add('よく ないです')
+            elif _ka in ADJ_YOKU:
+                # 字尾是「いい（良い）」的複合詞整個變 よく（かっこいい→かっこよく ないです）。
+                # 規則要跟 HTML 的 adjNeg() 一致，否則會合成出一批沒人用的音檔。
+                add(re.sub(r'[いよ]い$', 'よく', _ka) + ' ないです')
             else:
                 add(_ka[:-1] + 'く ないです')
+
+# H. 副詞分頁的程度副詞表（const ADV_ROWS）。data-say 是 '+esc(r.kana)+' 組出來的，掃 B 掃不到。
+_m_adv = re.search(r'const ADV_ROWS\s*=\s*\[(.*?)\n\];', h, re.S)
+if _m_adv:
+    for _ka in re.findall(r"kana:'([^']+)'", _m_adv.group(1)):
+        add(_ka)
 
 # E. 動詞小抽考「加入單字」的搭配句（<script id="vobj-data">，key = 動詞 word|kana，值 = [助詞, 名詞 word, 中文]）。
 #    文本規則要跟 HTML 的 vbPool() 一模一樣：名詞假名（多讀音只取第一行、去〜［］）＋助詞＋空格＋動詞假名活用形。

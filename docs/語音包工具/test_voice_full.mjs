@@ -119,9 +119,31 @@ const aj = await page.evaluate(() => {
   const noAudio = pool.filter(r => !vvClip(r.kana, 'A')).map(r => r.kana);
   return { subs8, subs14, rows8, rowsAll, miss, empty5, n: pool.length, noAudio };
 });
-ok('各課分頁有「形容詞」且排在動詞與文法之間',
+ok('各課分頁順序：動詞 → 形容詞 → 副詞 → 文法',
    aj.subs8.indexOf('形容詞') === aj.subs8.indexOf('動詞') + 1 &&
-   aj.subs8.indexOf('文法') === aj.subs8.indexOf('形容詞') + 1);
+   aj.subs8.indexOf('副詞') === aj.subs8.indexOf('形容詞') + 1 &&
+   aj.subs8.indexOf('文法') === aj.subs8.indexOf('副詞') + 1);
+const adv = await page.evaluate(() => {
+  switchLesson(8); switchSection('adv');
+  const miss = [];
+  document.querySelectorAll('#adv-body .gspk').forEach(b => {
+    if (!vvClip(b.dataset.say, 'A')) miss.push(b.dataset.say);
+  });
+  document.querySelectorAll('#adv-body .lvtable td[data-say]').forEach(td => {
+    if (!vvClip(td.dataset.say, 'A')) miss.push(td.dataset.say);
+  });
+  const blocks = document.querySelectorAll('#adv-body .adv-intro').length;
+  const words = [...document.querySelectorAll('#adv-body .lvtable tbody tr')].map(tr => tr.children[0].textContent);
+  switchLesson(1); switchSection('adv');
+  const words1 = [...document.querySelectorAll('#adv-body .lvtable tbody tr')].map(tr => tr.children[0].textContent);
+  return { miss, blocks, words, words1 };
+});
+ok('副詞分頁有老師的程度副詞表（3 塊）', adv.blocks === 3);
+ok('程度副詞表固定是指定的六個',
+   adv.words.join('|') === 'とても|けっこう|ちょっと|あまり|そんなに|全然');
+ok('每一課的副詞表都一樣（不跟著該課單字跑）', adv.words1.join('|') === adv.words.join('|'));
+ok('副詞分頁的音檔全都在', adv.miss.length === 0);
+
 ok('總學習有「形容詞總表」且排在動詞總表與助詞總表之間',
    aj.subs14.indexOf('形容詞總表') === aj.subs14.indexOf('動詞總表') + 1);
 ok('第8課形容詞表有內容', aj.rows8 >= 30);
