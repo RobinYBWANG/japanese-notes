@@ -219,6 +219,34 @@ const adChk = await page.evaluate(() => {
     back: adPool().every(x => !x.base),
   };
 });
+// 新面板的小考很容易漏掛進 CSS／applyAqMin 的「所有小抽考」清單，
+// 漏掉就拿不到 sticky＋flex-column，收合鈕與欄位全跑掉（2026-10-18 副詞小考踩過）。
+const quizLayout = await page.evaluate(() => {
+  const ids = ['voc-quiz','all-quiz','verb-quiz','allverb-quiz','adj-quiz','adv-quiz',
+               'alladj-quiz','gram-quiz','allgram-quiz','joshi-quiz','alljoshi-quiz'];
+  const bad = [];
+  // 每個面板都切過去一次，display:none 的元素量不到版面
+  const secOf = {'voc-quiz':['vocab',8],'verb-quiz':['verb',8],'adj-quiz':['adj',8],'adv-quiz':['adv',8],
+                 'gram-quiz':['grammar',8],'joshi-quiz':['joshi',8],'all-quiz':['all',14],
+                 'allverb-quiz':['allverb',14],'alladj-quiz':['alladj',14],
+                 'allgram-quiz':['gram',14],'alljoshi-quiz':['alljoshi',14]};
+  for (const id of ids) {
+    const [sec, les] = secOf[id];
+    switchLesson(les); switchSection(sec);
+    const el = document.getElementById(id);
+    if (!el) { bad.push(id + ' 不存在'); continue; }
+    const st = getComputedStyle(el);
+    if (st.position !== 'sticky' || st.flexDirection !== 'column') bad.push(id + ' 版面沒掛到');
+    if (!el.querySelector('.aq-collapse')) bad.push(id + ' 沒有收合鈕');
+  }
+  // 收合要一起生效
+  applyAqMin(true);
+  const notMin = ids.filter(i => { const e = document.getElementById(i); return e && !e.classList.contains('aq-min'); });
+  applyAqMin(false);
+  return bad.concat(notMin.map(i => i + ' 收合沒生效'));
+});
+ok('每個小抽考都掛到版面樣式與收合（' + (quizLayout[0] || 'ok') + '）', quizLayout.length === 0);
+
 ok('副詞小考題庫就是那六個',
    adChk.n === 6 && adChk.words.join('|') === 'とても|けっこう|ちょっと|あまり|そんなに|全然');
 ok('副詞小考的音檔全都在', adChk.noAudio0 === 0 && adChk.noAudio1 === 0);

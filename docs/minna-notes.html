@@ -279,7 +279,7 @@
     .vtable td.vt-f:not(.vt-main) b{font-size:14px}
     .vtable .vt-k{font-size:11px}
   }
-  #all-quiz,#voc-quiz,#verb-quiz,#allverb-quiz,#adj-quiz,#alladj-quiz,#gram-quiz,#allgram-quiz,#joshi-quiz,#alljoshi-quiz{position:sticky;top:var(--topbar-h,132px);z-index:17;background:#f7f9fb;border:1px solid var(--line);border-top:0;border-radius:0;padding:10px 12px 8px;margin:0;box-shadow:0 4px 8px rgba(0,0,0,.08);display:flex;flex-direction:column}
+  #all-quiz,#voc-quiz,#verb-quiz,#allverb-quiz,#adj-quiz,#adv-quiz,#alladj-quiz,#gram-quiz,#allgram-quiz,#joshi-quiz,#alljoshi-quiz{position:sticky;top:var(--topbar-h,132px);z-index:17;background:#f7f9fb;border:1px solid var(--line);border-top:0;border-radius:0;padding:10px 12px 8px;margin:0;box-shadow:0 4px 8px rgba(0,0,0,.08);display:flex;flex-direction:column}
   #verb-quiz,#joshi-quiz,#alljoshi-quiz{margin-bottom:12px}
   .aq-modes,.aq-body{max-width:900px}
   .aq-modes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;padding-right:54px}
@@ -340,7 +340,7 @@
     /* :not(.aq-min) 不能省 —— id+class 的權重蓋過 .aq-min .aq-body{display:none}，
        收合後題目還是看得見（2026-09-06 使用者用 iPhone 回報）。 */
     #voc-quiz:not(.aq-min) .aq-body,#all-quiz:not(.aq-min) .aq-body,#verb-quiz:not(.aq-min) .aq-body,
-      #allverb-quiz:not(.aq-min) .aq-body,#adj-quiz:not(.aq-min) .aq-body,#alladj-quiz:not(.aq-min) .aq-body,#gram-quiz:not(.aq-min) .aq-body,#allgram-quiz:not(.aq-min) .aq-body{display:block}
+      #allverb-quiz:not(.aq-min) .aq-body,#adj-quiz:not(.aq-min) .aq-body,#adv-quiz:not(.aq-min) .aq-body,#alladj-quiz:not(.aq-min) .aq-body,#gram-quiz:not(.aq-min) .aq-body,#allgram-quiz:not(.aq-min) .aq-body{display:block}
     #voc-quiz .aq-q,#all-quiz .aq-q,#verb-quiz .aq-q,
     #allverb-quiz .aq-q,#allgram-quiz .aq-q,#gram-quiz .aq-q{min-width:0;margin:0 0 8px;font-size:19px;line-height:1.5}
     #voc-quiz .aq-a,#all-quiz .aq-a,#verb-quiz .aq-a,
@@ -10238,7 +10238,7 @@ function aqReveal(){const a=document.getElementById('aq-a');if(!a||!aqRow)return
 function setAllQuizH(){const q=document.getElementById('all-quiz');if(q)document.documentElement.style.setProperty('--allquiz-h',q.offsetHeight+'px');}
 window.addEventListener('resize',setAllQuizH);
 if(window.ResizeObserver){const _aqel=document.getElementById('all-quiz');if(_aqel)new ResizeObserver(setAllQuizH).observe(_aqel);}
-function applyAqMin(on){document.querySelectorAll('#voc-quiz,#all-quiz,#verb-quiz,#allverb-quiz,#adj-quiz,#alladj-quiz,#gram-quiz,#allgram-quiz,#joshi-quiz,#alljoshi-quiz').forEach(el=>el.classList.toggle('aq-min',on));if(typeof setVocQuizH==='function')setVocQuizH();if(typeof setAllQuizH==='function')setAllQuizH();if(typeof setAllVerbQuizH==='function')setAllVerbQuizH();}
+function applyAqMin(on){document.querySelectorAll('#voc-quiz,#all-quiz,#verb-quiz,#allverb-quiz,#adj-quiz,#adv-quiz,#alladj-quiz,#gram-quiz,#allgram-quiz,#joshi-quiz,#alljoshi-quiz').forEach(el=>el.classList.toggle('aq-min',on));if(typeof setVocQuizH==='function')setVocQuizH();if(typeof setAllQuizH==='function')setAllQuizH();if(typeof setAllVerbQuizH==='function')setAllVerbQuizH();}
 document.addEventListener('click',function(e){const b=e.target.closest&&e.target.closest('.aq-collapse');if(!b)return;const on=localStorage.getItem('jp_aqmin')!=='1';localStorage.setItem('jp_aqmin',on?'1':'0');applyAqMin(on);});
 if(localStorage.getItem('jp_aqmin')==='1')applyAqMin(true);
 /* 小抽考的自動發音閘門：只有使用者按「下一題／重考／切模式」時才自動念。
