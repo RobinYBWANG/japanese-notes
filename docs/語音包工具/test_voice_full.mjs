@@ -123,6 +123,18 @@ ok('各課分頁順序：動詞 → 形容詞 → 副詞 → 文法',
    aj.subs8.indexOf('形容詞') === aj.subs8.indexOf('動詞') + 1 &&
    aj.subs8.indexOf('副詞') === aj.subs8.indexOf('形容詞') + 1 &&
    aj.subs8.indexOf('文法') === aj.subs8.indexOf('副詞') + 1);
+
+// 分頁依內容決定：沒有形容詞的課不放形容詞頁；副詞第8課才開始（2026-10-18）
+const subTabs = await page.evaluate(() => {
+  const o = {};
+  for (let n = 1; n <= 12; n++) { switchLesson(n); o[n] = [...document.querySelectorAll('#subtabs .subtab')].map(e => e.textContent); }
+  return o;
+});
+ok('第4〜7課沒有形容詞分頁', [4, 5, 6, 7].every(n => !subTabs[n].includes('形容詞')));
+ok('有形容詞的課仍保留形容詞分頁', [1, 2, 3, 8].every(n => subTabs[n].includes('形容詞')));
+ok('副詞分頁只出現在第8課以後',
+   [1, 2, 3, 4, 5, 6, 7].every(n => !subTabs[n].includes('副詞')) &&
+   [8, 9].every(n => subTabs[n].includes('副詞')));
 const adv = await page.evaluate(() => {
   switchLesson(8); switchSection('adv');
   const miss = [];
@@ -134,7 +146,7 @@ const adv = await page.evaluate(() => {
   });
   const blocks = document.querySelectorAll('#adv-body .adv-intro').length;
   const words = [...document.querySelectorAll('#adv-body .lvtable tbody tr')].map(tr => tr.children[0].textContent);
-  switchLesson(1); switchSection('adv');
+  switchLesson(9); switchSection('adv');
   const words1 = [...document.querySelectorAll('#adv-body .lvtable tbody tr')].map(tr => tr.children[0].textContent);
   return { miss, blocks, words, words1 };
 });
@@ -143,6 +155,31 @@ ok('程度副詞表固定是指定的六個',
    adv.words.join('|') === 'とても|けっこう|ちょっと|あまり|そんなに|全然');
 ok('每一課的副詞表都一樣（不跟著該課單字跑）', adv.words1.join('|') === adv.words.join('|'));
 ok('副詞分頁的音檔全都在', adv.miss.length === 0);
+
+// 副詞小考：題庫就是那六個；勾「配形容詞」改考整句，配否定的要用否定形
+const adChk = await page.evaluate(() => {
+  switchLesson(8); switchSection('adv');
+  const base = adPool();
+  const cb = document.getElementById('ad-adj');
+  cb.checked = true; cb.dispatchEvent(new Event('change'));
+  const comb = adPool();
+  cb.checked = false; cb.dispatchEvent(new Event('change'));
+  return {
+    n: base.length,
+    words: base.map(x => x.word),
+    noAudio0: base.map(x => x.kana).filter(k => !vvClip(k, 'A')).length,
+    n2: comb.length,
+    negOK: comb.every(x => x.adv.neg === /く ないです$|じゃ ありません$/.test(x.word)),
+    hasAdj: comb.every(x => !!x.base),
+    noAudio1: comb.map(x => x.kana).filter(k => !vvClip(k, 'A')).length,
+    back: adPool().every(x => !x.base),
+  };
+});
+ok('副詞小考題庫就是那六個',
+   adChk.n === 6 && adChk.words.join('|') === 'とても|けっこう|ちょっと|あまり|そんなに|全然');
+ok('副詞小考的音檔全都在', adChk.noAudio0 === 0 && adChk.noAudio1 === 0);
+ok('配形容詞時配否定的副詞用否定形',
+   adChk.n2 === 6 && adChk.hasAdj && adChk.negOK && adChk.back);
 
 // 形容詞小考勾「副詞」：組合句要組對，而且每一句都要有音檔
 const ajAdvChk = await page.evaluate(() => {
