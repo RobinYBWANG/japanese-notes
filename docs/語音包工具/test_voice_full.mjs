@@ -132,6 +132,50 @@ const subTabs = await page.evaluate(() => {
 });
 ok('第4〜7課沒有形容詞分頁', [4, 5, 6, 7].every(n => !subTabs[n].includes('形容詞')));
 ok('有形容詞的課仍保留形容詞分頁', [1, 2, 3, 8].every(n => subTabs[n].includes('形容詞')));
+// 開啟時 lesson/section 是從 localStorage 讀回來的，測試一律從第1課開始，
+// 所以「第8課存著就載入失敗」這種 bug 之前整組測試都抓不到（2026-10-18 線上出包）。
+// 每一課每一個分頁都存進去重載一次，確認沒有 JS 例外、畫面有出來。
+const boot = await page.evaluate(async () => {
+  const secs = ['vocab','verb','adj','adv','grammar','joshi','read','quiz',
+                'all','gram','allverb','alladj','alljoshi','allread','num','counter','time'];
+  const bad = [];
+  for (let n = 1; n <= LESSONS; n++) {
+    for (const s of secs) {
+      try {
+        switchLesson(n); switchSection(s);
+        // 重新跑一次開檔時那段「存的分頁在這一課不存在就退回第一個」
+        const subs = subsFor(n).map(x => x[0]);
+        const sec = subs.includes(s) ? s : subs[0];
+        if (!document.getElementById('panel-' + sec)) bad.push(n + '/' + s + ' 沒有對應面板');
+      } catch (e) { bad.push(n + '/' + s + ' → ' + e.message); }
+    }
+  }
+  return bad;
+});
+ok('每一課每一個分頁都切得過去，沒有例外', boot.length === 0);
+
+// 真正重開頁面：把每一課存進 localStorage 再 reload，確認開檔時不會丟例外。
+// 2026-10-18 線上就是死在這 —— 存著第8課的人一進來整支 JS 就 TDZ 掛掉，畫面只出一半，
+// 而測試永遠從第1課（沒有い形容詞）開始，所以完全沒抓到。
+const bootErrs = [];
+const onBootErr = e => bootErrs.push(String(e));
+page.on('pageerror', onBootErr);
+const bootBad = [];
+for (let n = 1; n <= 14; n++) {
+  bootErrs.length = 0;
+  await page.evaluate(l => localStorage.setItem('jp_vocab_active_v2', l), String(n));
+  await page.reload({ timeout: 90000 });
+  await page.waitForTimeout(500);
+  const shown = await page.evaluate(() =>
+    [...document.querySelectorAll('[id^=panel-]')].filter(e => e.style.display !== 'none').length);
+  if (bootErrs.length || shown !== 1) bootBad.push(n + ':' + (bootErrs[0] || ('面板 ' + shown + ' 個')));
+}
+page.off('pageerror', onBootErr);
+await page.evaluate(() => localStorage.setItem('jp_vocab_active_v2', '1'));
+await page.reload({ timeout: 90000 });
+await page.waitForTimeout(1500);
+ok('存著任何一課重開都不會壞（' + (bootBad[0] || 'ok') + '）', bootBad.length === 0);
+
 ok('副詞分頁只出現在第8課以後',
    [1, 2, 3, 4, 5, 6, 7].every(n => !subTabs[n].includes('副詞')) &&
    [8, 9].every(n => subTabs[n].includes('副詞')));

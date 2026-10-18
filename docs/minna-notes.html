@@ -9094,8 +9094,10 @@ function subsFor(n){
   if(n===13)return [['num','數字'],['counter','量詞'],['time','時間']];
   if(n===14)return [['all','單字總表'],['gram','文法總表'],['allverb','動詞總表'],['alladj','形容詞總表'],['alljoshi','助詞總表'],['allread','朗讀總表'],['quiz','測驗']];
   const out=[['vocab','單字'],['verb','動詞']];
-  /* 第4〜7課一個形容詞都沒有，就不要放空白的形容詞頁；之後補了單字會自己長回來 */
-  if(adjRowsOf(String(n)).length)out.push(['adj','形容詞']);
+  /* 第4〜7課一個形容詞都沒有，就不要放空白的形容詞頁；之後補了單字會自己長回來。
+     這裡只看詞性，不要呼叫 adjRowsOf —— 它會用到下面才宣告的 const ADJ_YOKU，
+     而 subsFor 在本檔稍後就被呼叫一次，會踩到 TDZ 讓整支 JS 當掉（2026-10-18 線上出包）。 */
+  if((workbook.lessons[String(n)]||[]).some(r=>r.pos==='adjna'||r.pos==='adji'))out.push(['adj','形容詞']);
   if(n>=ADV_FROM)out.push(['adv','副詞']);
   out.push(['grammar','文法']);
   if(n<=12)out.push(['joshi','助詞']);
