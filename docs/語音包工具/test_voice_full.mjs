@@ -194,6 +194,27 @@ ok('總表小考有副詞選項且題數不變', aaAdvChk.n1 === aaAdvChk.n0 && 
 ok('總表副詞題：否定對、課次留著、音檔全在',
    aaAdvChk.negOK && aaAdvChk.lesOK && aaAdvChk.noAudio === 0);
 
+// 手機寬度：分頁列有八個了，不可以凸出畫面外（2026-10-18）
+const vpBefore = page.viewportSize();
+await page.setViewportSize({ width: 375, height: 812 });   // iPhone 寬度
+await page.waitForTimeout(250);
+const mob = await page.evaluate(async () => {
+  const out = {};
+  for (const n of [8, 14]) {
+    switchLesson(n);
+    const st = document.getElementById('subtabs');
+    const vw = document.documentElement.clientWidth;
+    const items = [...st.children].map(e => Math.round(e.getBoundingClientRect().right));
+    out[n] = { over: items.filter(r => r > vw + 1).length, docSW: document.documentElement.scrollWidth, vw };
+  }
+  return out;
+});
+await page.setViewportSize(vpBefore || { width: 1280, height: 800 });
+await page.waitForTimeout(250);
+ok('手機寬度下分頁列不凸出畫面',
+   mob[8].over === 0 && mob[14].over === 0 &&
+   mob[8].docSW <= mob[8].vw + 1 && mob[14].docSW <= mob[14].vw + 1);
+
 ok('總學習有「形容詞總表」且排在動詞總表與助詞總表之間',
    aj.subs14.indexOf('形容詞總表') === aj.subs14.indexOf('動詞總表') + 1);
 ok('第8課形容詞表有內容', aj.rows8 >= 30);

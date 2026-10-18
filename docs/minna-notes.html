@@ -504,7 +504,16 @@
     #panel-vocab td,#panel-vocab th,.alltable td,.alltable th{padding:6px 4px}
     td.panote,th.panote{white-space:normal}
   }
+  @media(max-width:600px){
+    /* 手機版分頁列：第8課起有 單字/動詞/形容詞/副詞/文法/助詞/朗讀/測驗 八個，
+       一行塞不下，朗讀與測驗會凸出畫面外（2026-10-18 使用者回報）。改成可換行，
+       樣式同時從「資料夾頁籤」換成藥丸 —— 換行後頁籤的下緣接不起來會很醜。 */
+    .subtabs{flex-wrap:wrap;row-gap:5px;padding:9px 10px 6px}
+    .subtab{padding:6px 12px;font-size:12.5px;border-radius:8px;border-bottom:1px solid var(--line)}
+    .subtab.active{top:0;border-color:var(--accent2)}
+  }
   @media(max-width:340px){
+    .subtab{padding:5px 9px;font-size:12px}
     #panel-vocab td,#panel-vocab th{font-size:12px;padding:5px 1px}
     #panel-vocab .panote{font-size:10px}
     #panel-vocab th .sub{font-size:9px}
