@@ -550,6 +550,22 @@
   if (ro) document.documentElement.className += ' ro';
 })();
 </script>
+<!-- GA4 -->
+<script>
+/* Google Analytics 4：只在線上 github.io 啟用，本機 file:// 打開不算。
+   ID 由 語音包工具/add_ga.py 統一寫入，要換就重跑那支，不要手改。 */
+(function(){
+  var GA_ID='G-VRBXH04WN3';
+  if(!/\.github\.io$/.test(location.hostname)||/X{6}/.test(GA_ID))return;
+  var s=document.createElement('script');s.async=true;
+  s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){dataLayer.push(arguments);};
+  gtag('js',new Date());gtag('config',GA_ID);
+})();
+</script>
+<!-- /GA4 -->
 </head>
 <body class="">
 <button id="zen" title="專注模式：放大內容、隱藏上方資訊"><svg viewBox="0 0 24 24" width="18" height="18"><path id="zen-i" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
