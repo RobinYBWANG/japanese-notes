@@ -43,6 +43,14 @@ const browser = await chromium.launch();
   ok('真頁面：第一次打開停在第一課（不是總學習）', r.first === (r.lessons ? 1 : 0));
   ok('真頁面：頁籤數＝課數＋總學習', r.tabs === r.lessons + 1);
   ok('真頁面：音檔資料夾是 audio/gogogo/', r.base === 'audio/gogogo/');
+  // 頁籤圖：用 GOGOGO 自己的大耳狗圖（img/tab/gogogo/），每張都載得到
+  const icons = await page.evaluate(async () => {
+    const imgs = [...document.querySelectorAll('#tabs .tabimg')];
+    await Promise.all(imgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
+    return imgs.map(im => ({ src: im.getAttribute('src'), ok: im.naturalWidth > 0 }));
+  });
+  ok('真頁面：頁籤圖都是 GOGOGO 的、全部載得到（' + icons.length + ' 張）',
+     icons.length === r.lessons + 1 && icons.every(x => x.ok && /^img\/tab\/gogogo\/\d{2}\.png$/.test(x.src)));
   ok('真頁面：每個 🔊 都有音檔（' + r.says + ' 句，缺 ' + r.miss.length + '）', r.miss.length === 0);
   if (r.miss.length) console.log('  缺音檔：', r.miss.slice(0, 10));
 
