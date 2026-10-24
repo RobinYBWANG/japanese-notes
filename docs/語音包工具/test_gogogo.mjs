@@ -115,6 +115,15 @@ const browser = await chromium.launch();
     ok('🔍 也會搜文法補充', gplusHit);
     const subs1 = await page.evaluate(() => { switchLesson(1); return subsFor(1).map(x => x[1]).join('│'); });
     ok('真頁面：第1課分頁＝單字│文法│文法補充│助詞（' + subs1 + '）', subs1 === '單字│文法│文法補充│助詞');
+    // 總學習 → 時間：時 12＋何時、分 24＋何分；特殊念法（4・7・9 時、ぷん）有標色
+    const tm = await page.evaluate(() => { switchLesson(ALL); switchSection('time');
+      const rows = [...document.querySelectorAll('#time-body tr')];
+      const hl = rows.filter(t => t.classList.contains('tok-hl')).map(t => t.children[0].textContent);
+      return { n: document.querySelectorAll('#time-body .kana[data-say]').length, hl,
+               miss: [...document.querySelectorAll('#time-body [data-say]')].map(e => e.dataset.say).filter(t => !vvClip(t, 'A')) }; });
+    ok('總學習：時間頁（時／分／其他 共 ' + tm.n + ' 格、全有音檔）', tm.n === 13 + 25 + 5 && tm.miss.length === 0);
+    ok('總學習：特殊念法有標色（4時・7時・9時、ぷん 結尾）',
+       ['4時', '7時', '9時', '1分', '6分', '10分', '何分'].every(x => tm.hl.includes(x)) && !tm.hl.includes('2分') && !tm.hl.includes('5時'));
     ok('🔍 找不到時有提示、Esc 會收起', none && esc);
   }
   await page.close();
@@ -208,7 +217,7 @@ for (const [label, vp] of [['桌機', { width: 1280, height: 900 }], ['手機', 
     ok('假資料：頁籤（2 課＋總學習）', r.tabs.length === 3 && /測試一/.test(r.tabs[0]) && /總學習/.test(r.tabs[2]));
     ok('假資料：第1課分頁＝單字／動詞／形容詞／副詞／文法／文法補充／助詞', r.subs1.join('') === '單字動詞形容詞副詞文法文法補充助詞');
     ok('假資料：第2課只有單字和助詞（沒內容的分頁不出現）', r.subs2.join('') === '單字助詞');
-    ok('假資料：總學習只有單字總表', r.subsAll.join('') === '單字總表');
+    ok('假資料：總學習＝單字總表＋時間', r.subsAll.join('') === '單字總表時間');
     ok('假資料：單字表 7 列、備註的 **粗體** 有轉成粗體', r.vocabRows === 7 && r.bold);
     ok('假資料：備註裡的 HTML 不會被執行', r.noScript);
     ok('假資料：動詞變化（ません／ました／ませんでした，念假名）',
