@@ -24,6 +24,10 @@ Stack / 工具:單檔 HTML(minna-notes.html 約 28MB,內嵌 VOICEVOX 音檔)、V
 
 最後跑驗證:`test_voice_full.mjs`(minna)、`test_kana.mjs`(kana)、`test_autoplay.mjs`。
 
+**全站音檔一律 VOICEVOX,不用瀏覽器內建語音**(2026-10-24 起 n5-grammar 也是)。聲音:各筆記頁三個(2/11/13);**N5 總單字、N5 總文法只用一個(14)**,使用者定案。
+引擎念錯的字統一加在 `docs\語音包工具\read_fix.py`(各產生器共用);各頁產生器與測試對照見 `語音包工具\README.md` 開頭的表。
+n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 `n5grammar_audio.py` + `test_grammar.mjs`。
+
 ## 小考一輪的題數上限(2026-10-04 定案)
 
 **題庫本身不限制,只限制「一輪出幾題」**;考完按「🔁 重考」再從題庫隨機抽一輪。

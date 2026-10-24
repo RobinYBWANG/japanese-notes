@@ -737,3 +737,15 @@ ode_modules`)。
 - 追加（10-11）：選卷頁加「清空全部考卷的紀錄」。考試紀錄存在瀏覽器的 localStorage
   （`mf_hist_A/B/C`），**per-origin、per-device**，repo 裡不會有，也沒辦法從開發端清掉別台裝置的，
   所以改成在頁面上給一鍵清除（單卷的按鈕本來就有，這次多一個一次清三卷的）。
+
+## 2026-10-24 全站稽核（單字、測驗、排版、音檔）——未 commit
+- 音檔讀音：所有 clip 用 audio_query 對照正確讀音、三個聲音的長度對照引擎預估（18,597 個，0 不符）。
+  抓到引擎念錯：はち→わち、はは→わわ、かれは 的は、歳／語 單獨念、中秋節、夜市、辛い、高い山、二十歳、米、雨が降ります、あの方、何ですか／何の（n5-vocab、mock-easy 沒套修正）。
+  修正規則集中到新檔 `語音包工具/read_fix.py`（export_missing_clips、mock_audio、n5vocab_audio、n5grammar_audio 共用），受影響的 97 句原地重錄。
+- n5-grammar 原本用瀏覽器內建語音 → 改 VOICEVOX 預錄（新產生器 n5grammar_audio.py、測試 test_grammar.mjs）。
+  使用者定案：N5 總單字、N5 總文法一種聲音就好（14）；一度把 n5-vocab 做成三聲音，中途停掉還原。
+- n5-vocab：共用一個播放器（點多了會 too many WebMediaPlayers）、被打斷的 AbortError 不再退回瀏覽器語音；補 n5vocab_audio.py、test_n5vocab.mjs。
+- minna：第5課測驗兩題解說與筆記矛盾（節日加不加に）、第8課「冷たい」題有兩個正確選項、第9課 よく 的解釋；刪沒用到的垃圾 say key「(^」。
+- 第2課 ルイスウトン → ルイ・ヴィトン（單字列＋朗讀兩句，重錄三聲音；使用者同意）。
+- 音調「待確認」（minna 250 列、gogogo 91 列）：使用者定案不補，有音檔就夠。
+- 驗證：test_voice_full 71、kana 20、gogogo 38、autoplay 12、mock 36、mockfull 55、grammar 13、n5vocab 9 全過；audit_paper A/B/C 無問題；8 頁×各課各分頁手機／桌機無跑版。

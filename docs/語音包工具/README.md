@@ -3,6 +3,24 @@
 給之後的 Claude session 看的操作手冊。用途：筆記新增內容後，補產音檔並寫回 HTML。
 搭配專案記憶 `tts.md` 一起讀。
 
+## 各頁的音檔產生器與讀音修正（2026-10-24）
+
+| 頁面 | 產生器 | 驗證 |
+|---|---|---|
+| minna-notes／gogogo-notes／kana | `本機補音檔.py <html>`（export_missing_clips → merge_clips） | test_voice_full／test_gogogo／test_kana |
+| n5-vocab | `n5vocab_audio.py`（單一聲音 14；`--prune` 刪用不到的） | test_n5vocab.mjs |
+| n5-grammar | `n5grammar_audio.py`（單一聲音 14；表格格子的中文註解不念，念法特例寫在 OVERRIDE） | test_grammar.mjs |
+| n5-mock-easy | `mock_audio.py` | test_mock.mjs |
+| n5-mock-full | `mockfull_audio.py`（自己的讀音規則＋語速 0.85） | test_mockfull.mjs |
+
+- **讀音修正 `read_fix.py`**：export_missing_clips／mock_audio／n5vocab_audio／n5grammar_audio 共用。
+  key 仍是原文，只有送給引擎的文字換掉。引擎念錯的字（何ですか→なにですか、はち→わち、夜市→やじ…）
+  一律加在這裡，不要各支各自寫。
+- **改了 read_fix.py 之後，既有的 clip 不會自己重錄**（產生器只補缺的）。要把受影響的句子刪掉 clip 重跑，
+  或用同樣的 id 原地重錄。
+- N5 總單字、N5 總文法只用一個聲音 14（使用者 2026-10-24 定案），其他頁三個聲音 2/11/13。
+- 2026-10-24 全站稽核：所有 clip 的讀音都用 `audio_query` 對照過正確讀音、長度對照過引擎預估。
+
 ## 音檔外置（2026-09-11 起，現行做法）
 
 - 音檔不再內嵌。每個 clip 是獨立檔案：`docs/audio/<頁>/<id>.ogg`（minna／kana／n5vocab 三個資料夾，共 11,526 個）。

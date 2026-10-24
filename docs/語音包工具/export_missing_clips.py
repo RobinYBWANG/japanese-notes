@@ -26,7 +26,7 @@ TMP = os.path.join(tempfile.gettempdir(), '_exportclip')   # Windows 上 /tmp �
 
 # 主程式裡有 data-say="'+esc(x)+'"、data-say="${q.say}" 這種還沒求值的 JS 樣板字串，
 # 收進來會合成出一堆垃圾音檔（2026-08-22 實際踩到，檔案胖了 0.6MB）。不要拿掉這個過濾。
-CODEY = re.compile(r"\$\{|'\+|\+'|[<>\\]")
+CODEY = re.compile(r"\$\{|'\+|\+'|[<>\\]|\[\^")   # [^ ：JS 裡的正規表示式 /data-say="([^"]*)"/ 會被誤抓成「(^」（2026-10-24）
 
 STRIP = re.compile(r'[〜～~［］\[\]]')   # 跟 HTML sayText() 的 replace 一致（含波浪號 U+301C，2026-09-14）
 norm = lambda t: STRIP.sub('', str(t or '')).replace('　', ' ').strip()
@@ -234,18 +234,11 @@ print('缺的文本：', sorted({t for t, _, _ in todo}))
 os.makedirs(TMP, exist_ok=True)
 
 
-# 引擎會把「〜は 何ですか」唸成 なにですか（正確是 なんですか）。朗讀是拿顯示用的原文去合成的，
+# 引擎會把「〜は 何ですか」唸成 なにですか（正確是 なんですか）之類的。朗讀是拿顯示用的原文去合成的，
 # 所以合成前先換成假名，但 clip 的 key 仍沿用原文 —— 前端是用原文去查 clip 的（2026-10-04）。
-READ_FIX = [('何ですか', 'なんですか'),
-            ('日本語', 'にほんご'),   # 要排在「日本」前面，不然會變成「にほん語」
-            ('日本', 'にほん'),       # 引擎預設唸 ニッポン，課本教的是 にほん
-            ('林さん', 'りんさん')]   # 課本的林さん是中國人（りん），引擎預設念 はやしさん（2026-10-24）
-
-
-def engine_text(t):
-    for a, b in READ_FIX:
-        t = t.replace(a, b)
-    return t
+# 規則表放在 read_fix.py（mock_audio.py 也用同一份，2026-10-24）。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from read_fix import engine_text  # noqa: E402
 
 
 def synth(text, sp):

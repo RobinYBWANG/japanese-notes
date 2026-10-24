@@ -7,7 +7,8 @@
 #
 # 執行：
 #   python 本機補音檔.py                      # 預設處理 ..\minna-notes.html
-#   python 本機補音檔.py ..\n5-vocab.html
+#   python 本機補音檔.py ..\gogogo-notes.html
+#   （n5-vocab／n5-grammar／n5-mock-easy 各有自己的產生器：n5vocab_audio.py／n5grammar_audio.py／mock_audio.py）
 #   python 本機補音檔.py --engine-only        # 只把引擎叫起來，不合成
 #
 # 注意：這條路徑只補「單字 ＋ HTML 的 data-say」＝ 621 個文本，

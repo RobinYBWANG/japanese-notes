@@ -79,6 +79,8 @@ if missing and not engine_alive():
     subprocess.run([sys.executable, os.path.join(HERE, '本機補音檔.py'), '--engine-only'], check=True)
 
 TMP = tempfile.mkdtemp()
+sys.path.insert(0, HERE)
+from read_fix import engine_text  # noqa: E402  讀音修正（跟 export_missing_clips.py 共用，2026-10-24）
 
 
 def synth(text, sp):
@@ -102,7 +104,7 @@ def synth(text, sp):
 for i, (r, t) in enumerate(missing, 1):
     sp = SPEAKER[r]
     cid = hashlib.md5(('%d|%s' % (sp, t)).encode('utf-8')).hexdigest()[:12]
-    VV['audio'][cid] = synth(t, sp)
+    VV['audio'][cid] = synth(engine_text(t), sp)
     VV['say'][r + '|' + t] = cid
     if i % 10 == 0 or i == len(missing):
         print('  ...%d/%d' % (i, len(missing)))
