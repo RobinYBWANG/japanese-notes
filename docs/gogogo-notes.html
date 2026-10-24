@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>【語音版】日本語GOGOGO 1 筆記</title>
+<style>
+  :root{
+    --bg:#f4f6f8;--ink:#1f2933;--sub:#6b7580;--accent:#2e7d6b;--accent2:#c0392b;
+    --line:#d8dee3;--head:#e8edf0;--sel:#ffe680;--jp:#1a3a5c;--stripe:#f9fafb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  #topbar{position:sticky;top:0;z-index:40;background:var(--bg);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:10px 16px}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  #zen{position:fixed;top:calc(var(--topbar-h,150px) + 8px);right:14px;z-index:80;width:34px;height:30px;border:1px solid var(--line);background:#fff;color:#3a4750;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.14);transition:top .2s}
+  #zen:hover{background:#eef4f9}
+  body.zen #zen{background:#121417;color:#fff;border-color:#121417}
+  body.zen #topbar{display:none}
+  body.zen #zen{top:8px}
+  #zen-save{position:fixed;top:8px;right:56px;z-index:80;width:34px;height:30px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.14);font-size:15px}
+  body.zen #zen-save{display:flex}
+  #zen-add{position:fixed;top:8px;right:98px;z-index:80;width:34px;height:30px;border:1px solid var(--line);background:#fff;color:#0a8a3c;border-radius:8px;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.14);font-size:22px;line-height:1;font-weight:700}
+  body.zen #zen-add{display:flex}
+  #zen-add:hover{background:#eef9f0}
+  #zen-add:disabled{opacity:.4;cursor:not-allowed}
+  #add,#save,#zen-add,#zen-save{display:none!important}
+  #zen-save:hover{background:#eef4f9}
+  #zen-save.need{background:#fff3e0;border-color:#f0c987}
+  body.zen{padding-top:6px}
+  h1{font-size:18px;margin:0;color:var(--accent);white-space:nowrap}
+  .stat{font-size:12px;color:var(--sub);background:var(--head);padding:4px 10px;border-radius:12px}
+  .search{flex:1;min-width:150px;padding:7px 12px;border:1px solid var(--line);border-radius:18px;font-size:14px;outline:none}
+  .search:focus{border-color:var(--accent)}
+  button{font-family:inherit;font-size:13px;cursor:pointer;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:#fff;transition:.15s;white-space:nowrap}
+  button:hover{background:var(--head)}
+  .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn-primary:hover{background:#26695a}
+  .btn-danger{color:var(--accent2);border-color:#e6c3bd}
+  .btn-danger:hover{background:#fbeceb}
+  #save.need{background:#e67e22;border-color:#e67e22;color:#fff}
+  #save.need:hover{background:#cf6f16}
+  .wrap{padding:12px;overflow:visible}
+  #bulkbar{display:none;align-items:center;gap:12px;background:#fff3e0;border:1px solid #f0c987;border-radius:10px;padding:8px 14px;margin:8px 12px 10px;font-size:13px}
+  #bulkbar b{color:var(--accent2);font-size:15px}
+  #bulkbar .grow{flex:1}
+  #add:disabled{opacity:.5;cursor:not-allowed}
+  table{border-collapse:collapse;background:#fff;table-layout:fixed;width:auto}
+  th,td{border:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left;overflow-wrap:break-word;word-break:break-word}
+  th{background:var(--head);position:sticky;top:var(--topbar-h,132px);z-index:15;font-size:13px;color:#3a4750;white-space:nowrap}
+  .resizer{position:absolute;top:0;right:-3px;width:8px;height:100%;cursor:col-resize;z-index:6;user-select:none}
+  .resizer:hover,.resizer.active{background:var(--accent);opacity:.5}
+  tbody tr:nth-child(even){background:var(--stripe)}
+  tbody tr.sel{background:var(--sel)!important}
+  tbody tr.sel td:first-child{box-shadow:inset 4px 0 0 var(--accent2)}
+  td[contenteditable]{outline:none}
+  td[contenteditable]:focus{background:#fffbe6;box-shadow:inset 0 0 0 2px #ffe08a}
+  td.word{font-weight:700;font-size:15px}
+  td.kana{color:#555;white-space:pre-line}
+  td.cho{text-align:center;color:var(--accent2);font-weight:600}
+  .panote{overflow-x:auto;white-space:nowrap}
+  .pa2{display:inline-flex;align-items:flex-end}
+  .pm{display:inline-block;text-align:center;margin:0 1px}
+  .pm .nb{display:block;height:18px;position:relative;min-width:14px}
+  .pm .note{position:absolute;left:0;right:0;font-size:13px;line-height:1}
+  .pm .note.hi{top:0;color:var(--accent2)}
+  .pm .note.lo{bottom:0;color:#1f2933}
+  .pm .mk{display:block;font-size:12px;color:var(--jp);line-height:1.3}
+  .col-chk{width:36px;text-align:center}
+  .col-chk input{width:18px;height:18px;cursor:pointer;accent-color:var(--accent2)}
+  .drag{text-align:center;color:#c2c8cd;cursor:grab;user-select:none;font-size:15px;line-height:1}
+  .drag:hover{color:var(--accent)}
+  tr.dragging{opacity:.4}
+  tr.dropline td{box-shadow:inset 0 2px 0 var(--accent)}
+  tr.dropline-b td{box-shadow:inset 0 -2px 0 var(--accent)}
+  .spk-cell{text-align:center;padding:4px}
+  .spk{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 8px;font-size:16px;cursor:pointer;line-height:1;transition:.12s}
+  .spk:hover{background:#e8f5ef;border-color:var(--accent)}
+  .spk.playing{background:var(--accent);border-color:var(--accent);animation:pulse .8s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  th small{font-weight:400;color:var(--sub);font-size:10px}
+  .colh{cursor:grab}
+  .colh[data-key="say"]{text-align:center}
+  .colh[data-key="say"] .resizer{cursor:col-resize}
+  .colh small{white-space:normal;display:inline-block;line-height:1.25}
+  .colh.coldrag{opacity:.45}
+  .colh.colover{box-shadow:inset 0 -3px 0 var(--accent2)}
+  .empty{text-align:center;color:var(--sub);padding:30px}
+  .hint{font-size:12px;color:var(--sub);margin-top:6px}
+  .tabs{display:flex;gap:3px;overflow-x:auto;padding:10px 12px 0;background:var(--bg);border-bottom:1px solid var(--line)}
+  .tab{padding:7px 15px;border:1px solid var(--line);border-bottom:none;border-radius:9px 9px 0 0;background:#e9eef1;color:var(--sub);cursor:pointer;white-space:nowrap;font-size:13px;font-weight:600;transition:.12s;text-align:center;line-height:1.35}
+  .tab{display:inline-flex;align-items:center;gap:7px}
+  .tab .tabimg{height:28px;width:28px;flex:none;pointer-events:none}
+  .tab:hover{background:#dde4e8;color:#3a4750}
+  .tab.active{background:#fff;color:var(--accent);border-color:var(--accent);position:relative;top:1px}
+  .tab .cnt{font-weight:400;font-size:11px;color:#9aa4ac;margin-left:5px}
+  .tab.active .cnt{color:var(--accent)}
+  .tname{outline:none}
+  .tname.editing{background:#fffbe6;box-shadow:0 0 0 2px #ffe08a inset;border-radius:4px;padding:0 3px;cursor:text}
+  .subtabs{display:flex;gap:3px;padding:9px 14px 0;background:var(--bg)}
+  .subtab{padding:6px 20px;border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;background:#eceff2;color:var(--sub);cursor:pointer;font-size:13px;font-weight:600;transition:.12s}
+  .subtab:hover{background:#e0e5e9;color:#3a4750}
+  .subtab.active{background:#fff;color:var(--accent2);border-color:var(--accent2);position:relative;top:1px}
+  .panel-empty{margin:12px;min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--sub);font-size:14px;line-height:1.9;background:#fff;border:1px dashed var(--line);border-radius:12px}
+  .pe-title{font-size:20px;color:var(--ink);margin-bottom:6px;font-weight:700}
+  #panel-grammar{padding:14px}
+  #panel-verb{padding:14px}
+  #time-quiz{background:#f7f9fb;border:1px solid var(--line);border-radius:12px;padding:10px 12px 8px;margin:0 0 14px;display:flex;flex-direction:column;align-items:center}
+  #time-quiz .nq-bar{justify-content:center}
+  #time-quiz .aq-body{min-height:0;align-items:center;justify-content:center;gap:0;margin:0}
+  #tq-q{font-size:24px;font-weight:700;color:#1f2933;text-align:center}
+  .tq-lb{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#3a4750;cursor:pointer;margin-right:14px}
+  .tq-lb input{cursor:pointer;margin:0;width:16px;height:16px;accent-color:var(--accent2)}
+  #tq-next,#tq-say{font-size:13px;padding:5px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}
+  #tq-say{background:var(--accent);color:#fff;border-color:var(--accent)}
+  #time-quiz.nq-min{padding:2px 10px}
+  #time-quiz.nq-min .nq-bar,#time-quiz.nq-min .aq-body{display:none}
+  #time-quiz.nq-min .nq-mini-label{display:block}
+  #time-quiz.nq-min .nq-collapse{transform:rotate(180deg)}
+  .timewrap{display:flex;flex-wrap:wrap;gap:18px}
+  .timecol h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+  .timecol.tall table{font-size:14px}
+  .timecol.tall tbody{column-count:1}
+  .cnttable tr.tok-hl td.kana{background:#fff3e0;color:#c0561a;font-weight:700}
+  .conjtable{border-collapse:collapse;margin:8px 0}
+  .conjtable th,.conjtable td{border:1px solid var(--line);padding:8px 14px;text-align:center;font-size:15px}
+  .conjtable th{background:var(--head);font-weight:600;color:#3a4750}
+  .conjlist{border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:8px 0;max-width:560px}
+  .conjrow{display:flex;align-items:stretch;border-top:1px solid var(--line)}
+  .conjrow:first-child{border-top:0}
+  .conjlabel{flex:0 0 100px;background:#f3efe6;color:#b23a2f;font-weight:700;padding:10px 14px;display:flex;align-items:center;font-size:14px}
+  .conjval{padding:10px 14px;font-size:16px;color:#1f3a5f;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+  .conjzh{color:#8a95a1;font-size:14px;font-weight:400}
+  .vex{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px dashed var(--line)}
+  .vex-jp{font-weight:700;color:#1f3a5f;font-size:16px}
+  .vex-zh{color:#8a95a1;font-size:14px;margin-top:2px}
+  .ghint{font-size:12px;color:var(--sub);margin:0 auto 12px;max-width:900px}
+  #grammar-body{outline:none;max-width:900px;margin:0 auto}
+  #grammar-body:empty::before{content:'此頁可直接打字新增文法，或把內容交給我幫你排版。';color:var(--sub)}
+  #grammar-body h3{color:var(--accent2);font-size:16px;margin:0 0 14px;border-bottom:2px solid var(--accent2);padding-bottom:6px}
+  .gp{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 16px;margin:0 0 14px}
+  .gp-label{font-weight:700;color:var(--accent2);font-size:15px;margin-bottom:6px}
+  .gp-form{font-size:17px;color:var(--jp);font-weight:600;letter-spacing:.5px;margin-bottom:6px}
+  .gp-note{font-size:13px;color:var(--sub);margin-bottom:6px}
+  .gp-ex{font-size:15px;color:#333;background:#f7f9fa;border-radius:6px;padding:9px 11px;line-height:2.4}
+  .gp-ex b{color:var(--accent2)}
+  #panel-gram{padding:14px}
+  #panel-gram .gram-wrap{max-width:900px;margin:0 auto}
+  #panel-gram .gsec{margin:0 0 22px}
+  #panel-gram .gsec h3{color:var(--accent2);font-size:16px;margin:0 0 4px;border-bottom:2px solid var(--accent2);padding-bottom:6px}
+  #panel-gram .gdesc{font-size:13px;color:var(--sub);margin:6px 0 12px}
+  #panel-num,#panel-counter,#panel-time{padding:14px}
+  #panel-num{padding:0}
+  .numtable,.cnttable{border-collapse:collapse;background:#fff;margin:0 auto;font-size:15px}
+  .numtable td,.numtable th,.cnttable td,.cnttable th{border:1px solid var(--line);padding:7px 14px;vertical-align:middle}
+  .numtable thead th,.cnttable thead th{background:var(--head);color:#3a4750;font-size:13px}
+  .numtable td.num{font-weight:700;text-align:right;color:var(--accent2);white-space:nowrap}
+  .cnttable td.num{font-weight:700;text-align:center;color:var(--accent2);white-space:nowrap}
+  .numtable td.kana,.cnttable td.kana{color:#1f2933;cursor:pointer}
+  .numtable td.kana:hover,.cnttable td.kana:hover{background:#fff7cc}
+  .cnthead{display:flex;align-items:center;gap:10px;margin:0 auto 12px;max-width:560px}
+  .cnthead select{padding:6px 10px;font-size:15px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  #cnt-body{overflow-x:auto}
+  .agegrid{border-collapse:collapse;margin:0 auto;font-size:14px}
+  .agegrid th,.agegrid td{border:1px solid var(--line);padding:5px 10px;text-align:center;white-space:nowrap}
+  .agegrid thead th{background:var(--head);color:#3a4750;font-size:12px}
+  .agegrid td.num{font-weight:700;color:var(--accent2)}
+  .agegrid td.kana{cursor:pointer}
+  .agegrid td.kana:hover{background:#fff7cc}
+  .agegrid thead th,.cnttable thead th,.numtable thead th{position:static;top:auto;z-index:1}
+  .agegrid td.ag-hl{background:#fff3e0;color:#c0561a;font-weight:700}
+  .spk-c:hover{background:#f4f9ff}
+  #tbody td{cursor:pointer}
+  #tbody td.drag{cursor:grab}
+  #tbody tr:not(.sel):hover td{background:#eef6ff}
+  #tbody td.editing{cursor:text;background:#fffbe6;box-shadow:inset 0 0 0 2px #ffe08a;border-radius:3px}
+  #tbody td.ed{white-space:pre-wrap;word-break:break-word}
+  #tbody td[data-col]{white-space:pre-wrap;word-break:break-word}
+  #tbody td.note,.lvtable td.lv-note{background:#fffdf5}
+  .colvis{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+  .colvis-cb{cursor:pointer;vertical-align:middle}
+  #tbody td.masked,.lvtable td.masked{position:relative;color:transparent!important;cursor:pointer;user-select:none}
+  #tbody td.masked>*,.lvtable td.masked>*{visibility:hidden}
+  #tbody td.masked::after,.lvtable td.masked::after{content:'•••••';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9aa5b1;background:repeating-linear-gradient(45deg,#f1f4f7,#f1f4f7 7px,#e7ecf1 7px,#e7ecf1 14px);letter-spacing:3px;font-size:13px}
+  #tbody td.masked.revealed,.lvtable td.masked.revealed{color:inherit!important;user-select:text;-webkit-user-select:text}
+  #tbody td.masked.revealed>*,.lvtable td.masked.revealed>*{visibility:visible}
+  #tbody td.masked.revealed::after,.lvtable td.masked.revealed::after{display:none}
+  #all-tbody td.spk-c{cursor:pointer}
+  #all-tbody td.spk-c:hover{background:#fff7cc}
+  #allverb-tbody td.spk-c{cursor:pointer}
+  #allverb-tbody td.spk-c:hover{background:#fff7cc}
+  #alladj-tbody td.spk-c{cursor:pointer}
+  #alladj-tbody td.spk-c:hover{background:#fff7cc}
+  .lv-h{margin:16px 0 8px;font-size:16px}
+  #adj-body,#adv-body{padding:14px}
+  #adv-body .adv-intro{max-width:860px}
+  #adv-body ruby rt{font-size:10px;color:var(--sub);font-weight:400}
+  #adj-body .adj-intro{max-width:820px}
+  #adj-body ruby rt{font-size:10px;color:var(--sub);font-weight:400}
+  .lvtable thead th{position:static;top:auto}
+  .lvtable td.spk-c{cursor:pointer}
+  .lvtable td.spk-c:hover{background:#fff7cc}
+  .lvtable td.lv-note{white-space:pre-line;font-size:13px;color:#3a4750}
+  .vtable td.vt-les{color:var(--sub);font-size:13px;white-space:nowrap}
+  .vtable td.vt-f b{color:var(--jp);font-size:16px}
+  .vtable .vt-k{display:block;font-size:12px;color:var(--sub);margin-top:2px}
+  .vt-count{color:var(--sub);font-weight:600}
+  .vt-empty{text-align:center;color:var(--sub);padding:18px}
+  /* ===== 助詞分頁 ===== */
+  #panel-joshi,#panel-alljoshi{padding:14px}
+  .jo{font-family:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP",serif;color:#c0392b;
+      font-weight:800;font-size:1.18em;letter-spacing:.5px;padding:0 1px}
+  .jo-tip{background:#fffbe6;border:1px solid #ffe08a;border-radius:10px;padding:10px 12px;
+      margin:0 0 12px;font-size:14px;line-height:1.9}
+  .jotable{border-collapse:collapse;background:#fff;width:100%;max-width:1180px;table-layout:auto}
+  .jotable th,.jotable td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+  .jotable thead th{background:var(--head);color:#3a4750;font-size:13px;position:static}
+  .jotable td.jo-c{text-align:center;white-space:nowrap;width:44px;background:#fcfdff}
+  .jotable tr.jo-key td.jo-logic,.jotable tr.jo-key td.jo-u,
+  .jotable tr.jo-key td.jo-ex,.jotable tr.jo-key td.jo-note{background:#fff3e0}
+  .jotable tr.jo-key td.jo-logic,.jotable tr.jo-key td.jo-u{background:#fff3e0}
+  .jotable tr.jo-future td:not(.jo-c):not(.jo-p){color:#b3bac2;background:#f6f7f9}
+  .jotable tr.jo-future .jo{color:#cfd4d9}
+  .jotable tr.jo-future .jo-emo{filter:grayscale(1);opacity:.45}
+  .jotable tr.jo-future .spk{opacity:.35}
+  .jotable tr.jo-future .jo-zh{color:#c3c9cf}
+  .jo-les{display:inline-block;font-size:11px;color:#8a95a1;border:1px solid var(--line);border-radius:8px;padding:0 6px;margin:0 6px 4px 0;vertical-align:middle;background:#fff}
+  .jotable tr.jo-key .jo-les{color:#c0561a;border-color:#f3c48b;background:#fff8ec}
+  .jo-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:#3a4750}
+  .jo-legend .lg{padding:3px 10px;border-radius:8px;border:1px solid var(--line)}
+  .jo-legend .lg-key{background:#fff3e0;border-color:#f3c48b}
+  .jo-legend .lg-past{background:#fff}
+  .jo-legend .lg-future{background:#f6f7f9;color:#b3bac2}
+  .jo-legend .lg-txt{color:var(--sub);font-size:12px}
+  .jotable td.jo-c,.jotable td.jo-p{vertical-align:middle}
+  .jotable td.jo-u{font-size:13px;color:#3a4750;width:200px}
+  .jotable td.jo-p{font-size:12px;color:var(--sub);white-space:nowrap;width:118px}
+  .jotable td.jo-logic{font-size:13px;color:#3a4750;text-align:center;width:92px;font-weight:700}
+  .jotable td.jo-logic .jo-emo{display:block;font-size:20px;line-height:1.6}
+  .jotable td.jo-note{font-size:12px;color:var(--sub);width:300px;line-height:1.7}
+  .jo-one{margin:2px 0 6px}
+  .jo-one:last-child{margin-bottom:0}
+  .jo-tag{display:inline-block;background:#eef2f5;color:#6b7280;border-radius:10px;
+      padding:0 7px;margin-right:6px;font-size:11px;font-weight:700}
+  .jotable td.jo-ex{font-size:15px;color:var(--jp);min-width:330px;white-space:nowrap}
+  .jotable td.jo-ex .jo-zh{white-space:normal}
+  .jotable td.jo-l{text-align:center;color:var(--sub);font-size:12px;white-space:nowrap;width:56px}
+  .jo-zh{font-size:12px;color:var(--sub);margin-left:6px}
+  @media(max-width:600px){
+    .jotable,.jotable tbody,.jotable tr,.jotable td{display:block;width:auto!important}
+    .jotable thead{display:none}
+    .jotable tr{border:1px solid var(--line);border-radius:10px;margin:0 0 10px;padding:8px 10px}
+    .jotable td{border:0!important;padding:2px 0!important}
+    .jotable td.jo-c{display:inline-block;background:transparent}
+    .jotable td.jo-l{display:inline-block;margin-left:8px}
+    .jotable td.jo-u,.jotable td.jo-p,.jotable td.jo-note{width:auto}
+    .jotable td.jo-logic{text-align:left;width:auto}
+    .jotable td.jo-logic .jo-emo{display:inline;font-size:17px;margin-right:4px}
+    .jotable td.jo-c{display:none}
+    .jotable tr::before{content:attr(data-jo);display:inline-block;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;
+      color:#c0392b;font-weight:800;font-size:20px;margin-right:8px;vertical-align:-2px}
+    .jotable td.jo-p{display:none}
+  }
+  @media(max-width:600px){
+    /* 手機版動詞總表：一個動詞一張卡（六欄在 390px 會擠到每個字換行）
+       用 flex + order 重排成「課·中文 → ます形 → 其他三種變化」 */
+    .vtable,.vtable tbody{display:block;width:auto!important}
+    .vtable thead,.vtable colgroup{display:none}
+    .vtable tr{display:flex;flex-wrap:wrap;align-items:baseline;background:#fff;
+      border:1px solid var(--line)!important;border-radius:10px;margin:0 0 10px;padding:8px 10px}
+    .vtable td{display:block;width:auto!important;border:0!important;padding:0!important}
+    .vtable td.vt-les{order:1;font-size:12px;color:var(--sub)}
+    .vtable td.vt-mean{order:2;flex:1 1 auto;margin-left:8px;font-size:13px;color:var(--sub)}
+    .vtable td.vt-main{order:3;flex:0 0 100%;margin:4px 0 8px!important}
+    .vtable td.vt-main b{font-size:20px}
+    .vtable td.vt-f:not(.vt-main){order:4;margin:0 6px 6px 0;padding:4px 9px!important;
+      border:1px solid var(--line)!important;border-radius:8px;background:#fbfdff}
+    .vtable td.vt-f:not(.vt-main) b{font-size:14px}
+    .vtable .vt-k{font-size:11px}
+  }
+  #all-quiz,#voc-quiz,#verb-quiz,#allverb-quiz,#adj-quiz,#adv-quiz,#alladj-quiz,#gram-quiz,#allgram-quiz,#joshi-quiz,#alljoshi-quiz{position:sticky;top:var(--topbar-h,132px);z-index:17;background:#f7f9fb;border:1px solid var(--line);border-top:0;border-radius:0;padding:10px 12px 8px;margin:0;box-shadow:0 4px 8px rgba(0,0,0,.08);display:flex;flex-direction:column}
+  #verb-quiz,#joshi-quiz,#alljoshi-quiz{margin-bottom:12px}
+  .aq-modes,.aq-body{max-width:900px}
+  .aq-modes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;padding-right:54px}
+  .aq-mode{font-size:13px;padding:4px 11px;border:1px solid var(--line);background:#fff;border-radius:16px;cursor:pointer}
+  .aq-mode.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .aq-opt{font-size:13px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:4px 6px;color:#3a4750}
+  #aq-next,#vq-next,#aq-restart,#vq-restart{font-size:13px;padding:4px 11px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;margin-left:6px}
+  .aq-count{margin-left:auto;font-size:13px;color:var(--sub);align-self:center;white-space:nowrap;font-weight:600}
+  .aq-body{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .aq-q{font-size:20px;font-weight:700;color:#1f2933;min-width:110px}
+  .aq-a{flex:1;min-width:160px;min-height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;border-radius:8px;cursor:pointer;padding:6px 10px;user-select:none}
+  .aq-a.masked{background:repeating-linear-gradient(45deg,#eef2f5,#eef2f5 7px,#e3e9ee 7px,#e3e9ee 14px);color:#8a95a1;font-size:14px}
+  .aq-a.masked::before{content:'••••• 點一下看答案'}
+  .aq-a.shown{background:#fffbe6;color:#1f2933}
+  .aq-collapse{align-self:center;order:9;margin-top:2px;width:28px;height:9px;border:1px solid var(--line);background:#fff;border-radius:5px;cursor:pointer;font-size:6px;line-height:1;color:#9aa5b1;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+  .aq-collapse:hover{background:#eef4f9}
+  .aq-mini-label{display:none;font-size:13px;color:#5a6b7a;font-weight:600;text-align:center;width:100%}
+  /* 助詞小考（2026-09-24）：整句每個助詞一個下拉選單 */
+  /* 題目在上排、按鈕靠右；說明在下面整行，先把兩行的空間留好（visibility），
+     送出時卡片高度不會變（2026-10-04 改版：原本題目在左、說明在右，說明欄太窄會變三行）。 */
+  #joshi-quiz .aq-modes,#alljoshi-quiz .aq-modes{max-width:none;flex-wrap:nowrap;align-items:flex-start;
+    margin-bottom:6px}
+  #joshi-quiz:not(.aq-min) .aq-body,#alljoshi-quiz:not(.aq-min) .aq-body{display:block;max-width:none}
+  .jq-line{flex:1 1 auto;min-width:240px;font-size:20px;font-weight:700;
+    line-height:1.7;color:#1f2933;word-break:break-word;align-self:flex-start}
+  #joshi-quiz .aq-count,#alljoshi-quiz .aq-count{margin-left:auto;align-self:center}
+  #joshi-quiz .aq-modes button,#alljoshi-quiz .aq-modes button{align-self:center;flex:0 0 auto}
+  .jq-line select{font-size:20px;font-weight:700;padding:2px 4px;margin:0 3px;border:1px solid var(--line);
+    border-radius:6px;background:#fff;color:var(--jp);cursor:pointer;font-family:inherit}
+  .jq-line select.ok{border-color:#2e9e5b;background:#eefaf1;color:#1c7a41;font-weight:700}
+  .jq-line select.ng{border-color:#d14b4b;background:#fdeeee;color:#b3261e;font-weight:700}
+  .jq-fb{height:52px;overflow-y:auto;visibility:hidden;
+    margin:0;font-size:14px;line-height:1.85;color:var(--sub);
+    background:#fbf9f4;border-left:3px solid var(--accent2);padding:8px 12px;border-radius:0 6px 6px 0}
+  .jq-fb.on{visibility:visible}
+  /* 窄螢幕改成上下排（這時撐大無可避免，但手機本來就是直向捲動） */
+  @media(max-width:820px){
+    #joshi-quiz .aq-modes,#alljoshi-quiz .aq-modes{flex-wrap:wrap}
+    .jq-line{flex:1 1 100%}
+    #joshi-quiz .aq-count,#alljoshi-quiz .aq-count{margin-left:0}
+    .jq-fb{height:auto;max-height:180px;display:none;visibility:visible;margin-top:8px}
+    .jq-fb.on{display:block}
+  }
+  .jq-fb b{color:#3a4750}
+  .jq-fb .jq-zh{display:inline;font-size:15px;color:#3a4750;font-weight:700;margin-right:14px}
+  /* 說明一則一則往右排，右邊空間用完才換行，卡片高度才不會被撐高 */
+  .jq-fb .jq-item{display:inline;margin-right:16px}
+  .jq-fb .jq-p{display:inline-block;min-width:0;margin-right:5px;font-weight:700;color:var(--accent)}
+  .aq-min{padding:0 10px 2px}
+  .aq-min .aq-modes,.aq-min .aq-body{display:none}
+  .aq-min .aq-collapse{transform:rotate(180deg)}
+  .aq-play{font-size:15px;padding:6px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}
+  .aq-a.typing{background:transparent;justify-content:flex-start;gap:8px;flex-wrap:wrap;cursor:default;padding:0}
+  @media(max-width:600px){
+    /* 小抽考在手機上的版面：題目與答案固定上下排。
+       原本 .aq-body 是 flex+wrap，題目短就跟答案並排、題目長就換行，
+       每一題的高度與位置都不一樣（2026-09-04 使用者回報）。 */
+    /* :not(.aq-min) 不能省 —— id+class 的權重蓋過 .aq-min .aq-body{display:none}，
+       收合後題目還是看得見（2026-09-06 使用者用 iPhone 回報）。 */
+    #voc-quiz:not(.aq-min) .aq-body,#all-quiz:not(.aq-min) .aq-body,#verb-quiz:not(.aq-min) .aq-body,
+      #allverb-quiz:not(.aq-min) .aq-body,#adj-quiz:not(.aq-min) .aq-body,#adv-quiz:not(.aq-min) .aq-body,#alladj-quiz:not(.aq-min) .aq-body,#gram-quiz:not(.aq-min) .aq-body,#allgram-quiz:not(.aq-min) .aq-body{display:block}
+    #voc-quiz .aq-q,#all-quiz .aq-q,#verb-quiz .aq-q,
+    #allverb-quiz .aq-q,#allgram-quiz .aq-q,#gram-quiz .aq-q{min-width:0;margin:0 0 8px;font-size:19px;line-height:1.5}
+    #voc-quiz .aq-a,#all-quiz .aq-a,#verb-quiz .aq-a,
+    #allverb-quiz .aq-a,#gram-quiz .aq-a,#allgram-quiz .aq-a{width:100%;min-height:46px;font-size:17px}
+    /* 控制列：文法點標籤自己一行，計數與「下一題／重考」才不會被擠到分兩行 */
+    .aq-modes{padding-right:42px;gap:6px}
+    .gq-g{width:100%;margin:2px 0 0}
+    .aq-count{margin-left:auto}
+    .aq-mode{font-size:12px;padding:4px 9px}
+    #vq-next,#aq-next,#vb-next,#av-next,#gq-next,#ag-next,
+    #vq-restart,#aq-restart,#vb-restart,#av-restart,#gq-restart,#ag-restart{margin-left:6px;font-size:12px}
+    .aq-a.typing .aq-in{flex:1 1 100%;min-width:0}
+    .aq-a.typing .aq-fb{flex:1 1 100%}
+  }
+  .aq-in{font-size:17px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;min-width:170px;flex:0 1 240px}
+  .aq-in:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 2px #d6ece5}
+  .aq-in.ok{border-color:#8bd3a3;background:#e7f6ec}
+  .aq-in.ng{border-color:#e6a6a0;background:#fbeaea}
+  .aq-chk{font-size:14px;padding:6px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}
+  .aq-chk:hover{background:#eef4f9}
+  .aq-fb{font-size:14px}
+  .aq-fb.good{color:#2e7d6b;font-weight:700}
+  .aq-fb.bad{color:#c0392b}
+  .gq-label{font-size:13px;font-weight:700;color:var(--accent2)}
+  .gq-g{font-size:12px;color:var(--sub)}
+  #gq-q{font-size:19px}
+  #num-quiz{background:#f7f9fb;border:1px solid var(--line);border-radius:12px;padding:10px 12px 8px;margin:0 0 14px;display:flex;flex-direction:column;align-items:center}
+  .nq-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;margin-bottom:4px;font-size:13px;color:#5a6b7a}
+  #num-quiz .aq-body{min-height:0;align-items:center;justify-content:center;gap:0;margin:0}
+  #num-quiz #nq-q{min-width:0;line-height:1.2}
+  .nq-bar input[type=number]{width:74px;padding:5px 7px;border:1px solid var(--line);border-radius:8px;font-size:14px;text-align:right}
+  #nq-next,#nq-say{font-size:13px;padding:5px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}
+  #nq-say{background:var(--accent);color:#fff;border-color:var(--accent)}
+  #nq-q{font-size:20px;font-weight:700;letter-spacing:1px;color:#1f2933}
+  .nq-collapse{align-self:center;order:9;margin-top:6px;width:28px;height:9px;border:1px solid var(--line);background:#fff;border-radius:5px;cursor:pointer;font-size:6px;line-height:1;color:#9aa5b1;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+  .nq-collapse:hover{background:#eef4f9}
+  .nq-mini-label{display:none;font-size:13px;color:#5a6b7a;font-weight:600;text-align:center;width:100%}
+  #num-quiz.nq-min{padding:2px 10px}
+  #num-quiz.nq-min .nq-bar,#num-quiz.nq-min .aq-body{display:none}
+  #num-quiz.nq-min .nq-mini-label{display:block}
+  #num-quiz.nq-min .nq-collapse{transform:rotate(180deg)}
+  .aq-play:hover{background:#eef4f9}
+  .alltable thead th{top:calc(var(--topbar-h,132px) + var(--allquiz-h,0px));z-index:16;background:var(--head)}
+  .vtable thead th{top:calc(var(--topbar-h,132px) + var(--allverbquiz-h,0px))}
+  #thd th{top:calc(var(--topbar-h,132px) + var(--vocquiz-h,0px));z-index:16;background:var(--head)}
+  #cnt-extra{max-width:640px;margin:20px auto 0}
+  .gp-form u,.gp-ex u{text-decoration-color:var(--accent2)}
+  #grammar-body ruby rt{font-size:10px;color:var(--sub);font-weight:400}
+  .gspk{font-size:12px;padding:1px 6px;margin:0 5px;vertical-align:middle;line-height:1.4}
+  #panel-quiz{padding:14px;max-width:820px;margin:0 auto}
+  .qtop{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .qscore{font-size:15px;font-weight:700;color:var(--accent)}
+  .qcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+  .qhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .qnum{font-weight:700;color:var(--sub);font-size:13px}
+  .qtag{font-size:11px;background:#fdecea;color:var(--accent2);border-radius:10px;padding:1px 8px}
+  .qtag.v{background:#e8f5ef;color:var(--accent)}
+  .qprompt{font-size:16px;color:var(--jp);font-weight:600;margin-bottom:10px}
+  .qopts{display:flex;flex-direction:column;gap:6px}
+  .qopt{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:15px}
+  .qopt:hover{background:var(--head)}
+  .qopt.ok{background:#e7f6ec;border-color:#8bd3a3}
+  .qopt.ng{background:#fbeaea;border-color:#e6a6a0}
+  .qfb{margin-top:8px;font-size:13px;display:none}
+  .qfb.good{display:block;color:var(--accent)}
+  .qfb.bad{display:block;color:var(--accent2)}
+  .qempty{color:var(--sub);text-align:center;padding:30px}
+  .qinput{width:100%;max-width:260px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:16px;outline:none}
+  .qinput:focus{border-color:var(--accent)}
+  .qinput.ok{border-color:#8bd3a3;background:#e7f6ec}
+  .qinput.ng{border-color:#e6a6a0;background:#fbeaea}
+  #panel-read{padding:14px;max-width:820px;margin:0 auto}
+  .rtop{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .rhint{font-size:13px;color:var(--sub)}
+  .rline{display:flex;gap:10px;align-items:baseline;padding:7px 10px;border-radius:8px;font-size:17px;color:var(--jp);line-height:1.9}
+  .rline.on{background:#fff3cd}
+  .rwho{flex:0 0 auto;font-size:12px;font-weight:700;border-radius:10px;padding:1px 9px}
+  .rwho.w{background:#fde2ef;color:#c0398c}
+  .rwho.m{background:#e0edfb;color:#2b6cb0}
+  .rtx{flex:1}
+  #read-text{width:100%;min-height:calc(100vh - 260px);font-size:16px;line-height:2;border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--jp);resize:vertical;font-family:inherit;outline:none}
+  #read-text:focus{border-color:var(--accent)}
+  #read-view{width:100%;min-height:calc(100vh - 260px);border:1px solid var(--line);border-radius:8px;padding:12px;cursor:text}
+  .rvline{font-size:19px;line-height:2.2;padding:3px 4px;display:flex;gap:8px;align-items:baseline;border-radius:6px}
+  #panel-allread{padding:14px}
+  #allread-view{margin:10px auto 0;max-width:820px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;max-height:calc(100vh - 300px);overflow-y:auto}
+  #allread-view .rvline{justify-content:flex-start}
+  #panel-allread .rtop{justify-content:center}
+  .rvline.cur{background:#fff8e1}
+  .rvwho{flex:0 0 auto;font-size:12px;font-weight:700;border-radius:10px;padding:1px 9px;align-self:center}
+  .rvwho.a{background:#e0edfb;color:#2b6cb0}
+  .rvwho.b{background:#fde2ef;color:#c0398c}
+  .rc{color:#c6ccd1;transition:color .1s}
+  .rc.lit{color:#141a1f}
+  body{padding-bottom:60px}
+  #readplayer{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;align-items:center;gap:14px;padding:8px 16px;background:#121417;color:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.35);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  #readplayer.collapsed{transform:translateY(100%)}
+  #rp-toggle{position:absolute;top:-22px;right:18px;width:48px;height:22px;border:none;background:#121417;color:#cdd6df;border-radius:8px 8px 0 0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 -2px 8px rgba(0,0,0,.25)}
+  #rp-toggle:hover{color:#fff}
+  #rp-toggle svg{transition:transform .28s}
+  #readplayer.collapsed #rp-toggle svg{transform:rotate(180deg)}
+  .rp-left{flex:0 1 220px;min-width:110px;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:#fff}
+  .rp-left:hover{text-decoration:underline}
+  .rp-ctrl{display:flex;align-items:center;gap:6px}
+  .rp-btn{background:transparent;border:none;color:#e6e6e6;font-size:18px;cursor:pointer;padding:5px 7px;border-radius:50%;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+  .rp-btn svg{display:block}
+  .rp-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+  .rp-main{background:#fff;color:#121417;width:34px;height:34px;font-size:15px;display:flex;align-items:center;justify-content:center}
+  .rp-main:hover{background:#e9e9e9;color:#000}
+  .rp-prog{flex:1;display:flex;align-items:center;gap:10px;min-width:120px}
+  #rp-bar{flex:1;height:6px;background:#42505c;border-radius:5px;cursor:pointer}
+  #rp-fill{height:100%;width:0;background:var(--accent);border-radius:5px;transition:width .12s}
+  #rp-cur,#rp-total{font-size:12px;color:#b7bec6;min-width:34px}
+  #rp-cur{text-align:right}
+  .rp-right{display:flex;gap:4px}
+  #rp-qlist{position:absolute;right:12px;bottom:56px;background:#1f2933;border:1px solid #33414c;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-height:50vh;overflow:auto;display:none;min-width:180px;padding:4px}
+  .ql-item{padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#e6e6e6;white-space:nowrap}
+  .ql-item:hover{background:rgba(255,255,255,.12)}
+  .ql-item.on{color:var(--accent);font-weight:700}
+  .ql-empty{padding:10px 12px;color:#9aa4ac;font-size:12px}
+  #searchresults{position:fixed;top:var(--topbar-h,60px);left:12px;right:12px;max-width:640px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:62vh;overflow:auto;z-index:60;display:none}
+  .sr-item{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+  .sr-item:hover{background:var(--head)}
+  .sr-loc{font-size:11px;color:var(--accent2);font-weight:600}
+  .sr-txt{font-size:14px;color:var(--ink)}
+  .sr-empty{padding:14px;color:var(--sub);text-align:center;font-size:13px}
+  tbody tr.hitrow td{background:#fff3b0!important}
+  .alltable{border-collapse:collapse;background:#fff;table-layout:fixed;width:auto}
+  .alltable th,.alltable td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle;overflow:hidden}
+  .alltable thead th{background:var(--head);color:#3a4750;font-size:13px}
+  .alltable td.al-les{color:#6b7280;font-size:12px;text-align:center;white-space:nowrap}
+  .alltable td.drag{cursor:grab;color:#9aa5b1;text-align:center;user-select:none}
+  .alltable td.word{font-weight:600}
+  #all-tbody tr.dragging{opacity:.4}
+  #stat.clk{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+  .exspk{font-size:12px;padding:1px 5px;margin-left:4px;vertical-align:middle}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:12px;padding:18px;width:min(460px,94vw);display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+  .modal h3{margin:0;color:var(--accent);font-size:17px}
+  .vrow{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub)}
+  .vrow select,.vrow input{font-size:14px;max-width:100%}
+  .mrow{display:flex;gap:8px;justify-content:flex-end}
+  .mhint{font-size:12px;color:var(--sub);line-height:1.6}
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#2b3a42;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:200}
+  #toast.show{opacity:1}
+  @media(max-width:600px){h1{font-size:15px}
+    #readplayer{gap:6px;padding:7px 8px}
+    .rp-left{flex:1 1 auto;min-width:0;font-size:13px}
+    .rp-ctrl{flex-shrink:0;gap:2px}
+    .rp-prog{flex:1 1 60px;min-width:0;gap:6px}
+    #rp-cur,#rp-total{display:none}
+    .rp-right{flex-shrink:0}
+    .rp-btn{padding:5px 6px}
+  }
+  @media(max-width:400px){.rp-left{display:none}}
+  @media(max-width:600px){
+    /* 手機版：表格自適應寬度（不可用 overflow-x:auto，會讓 sticky 失效） */
+    #panel-vocab table,.alltable{table-layout:auto!important;width:100%!important}
+    #panel-vocab #cg col,#allcg col{width:auto!important}
+    #panel-vocab td,#panel-vocab th,.alltable td,.alltable th{padding:6px 4px}
+    td.panote,th.panote{white-space:normal}
+  }
+  @media(max-width:600px){
+    /* 手機版分頁列：第8課起有 單字/動詞/形容詞/副詞/文法/助詞/朗讀/測驗 八個，
+       一行塞不下，朗讀與測驗會凸出畫面外（2026-10-18 使用者回報）。改成可換行，
+       樣式同時從「資料夾頁籤」換成藥丸 —— 換行後頁籤的下緣接不起來會很醜。 */
+    .subtabs{flex-wrap:wrap;row-gap:5px;padding:9px 10px 6px}
+    .subtab{padding:6px 12px;font-size:12.5px;border-radius:8px;border-bottom:1px solid var(--line)}
+    .subtab.active{top:0;border-color:var(--accent2)}
+  }
+  @media(max-width:340px){
+    .subtab{padding:5px 9px;font-size:12px}
+    #panel-vocab td,#panel-vocab th{font-size:12px;padding:5px 1px}
+    #panel-vocab .panote{font-size:10px}
+    #panel-vocab th .sub{font-size:9px}
+  }
+  /* ===== 唯讀模式：由 <head> 偵測腳本在 <html> 加上 class="ro" ===== */
+  .ro #bulkbar,.ro .hint,
+  .ro th.col-drag,.ro th.col-chk,.ro td.drag,.ro td.col-chk{display:none!important}
+  .ro #grammar-body:empty::before{content:''}
+  /* 單字總表：唯讀模式仍開放拖曳排序（順序存在訪客自己的瀏覽器） */
+  .ro #all-tbody td.drag{display:table-cell!important}
+  /* 訪客自己的備註欄 */
+  .ro td.usernote{background:#fffdf5;cursor:text;white-space:normal}
+  .ro td.usernote:focus{outline:none;background:#fffbe6;box-shadow:inset 0 0 0 2px #ffe08a}
+  .ro td.usernote.has{box-shadow:inset 3px 0 0 var(--accent2)}
+  .ro td.usernote.has:focus{box-shadow:inset 3px 0 0 var(--accent2),inset 0 0 0 2px #ffe08a}
+  /* 首頁連結（兩種模式都顯示） */
+  .homelnk{font-size:13px;text-decoration:none;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:16px;padding:4px 11px;white-space:nowrap}
+  .homelnk:hover{border-color:var(--accent2);color:var(--accent2)}
+
+  /* ===== GOGOGO 筆記專用 ===== */
+  #voc-body,#verb-body,#all-body,#joshi-body{padding:14px}
+  #panel-gplus{padding:14px}
+  #gplus-body{max-width:900px;margin:0 auto}
+  #gplus-body ruby rt{font-size:10px;color:var(--sub);font-weight:400}
+  #joshi-body{overflow-x:auto}
+  .lvtable td.word{font-weight:600}
+  .vf{display:inline-block;margin:2px 4px 2px 0;padding:1px 8px;border:1px solid var(--line);border-radius:10px;
+      background:#fff;cursor:pointer;font-size:13px;white-space:nowrap}
+  .vf:hover{background:#fff7cc}
+  .lvtable td.masked .vf{visibility:hidden}
+  .lvtable td.masked.revealed .vf{visibility:visible}
+  .gearbtn{font-size:15px;line-height:1;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px 10px;cursor:pointer;color:var(--ink)}
+  .gearbtn:hover{border-color:var(--accent2)}
+  .gg-empty{max-width:900px;margin:40px auto;text-align:center;color:var(--sub);font-size:14px;line-height:1.9}
+</style>
+<!-- GA4 -->
+<script>
+/* Google Analytics 4：只在線上 github.io 啟用，本機 file:// 打開不算。
+   ID 由 語音包工具/add_ga.py 統一寫入，要換就重跑那支，不要手改。 */
+(function(){
+  var GA_ID='G-VRBXH04WN3';
+  if(!/\.github\.io$/.test(location.hostname)||/X{6}/.test(GA_ID))return;
+  var s=document.createElement('script');s.async=true;
+  s.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){dataLayer.push(arguments);};
+  gtag('js',new Date());gtag('config',GA_ID);
+})();
+</script>
+<!-- /GA4 -->
+</head>
+<body>
+<div id="topbar">
+<header>
+  <div class="bar">
+    <h1>📗 日本語GOGOGO 1 筆記</h1>
+    <a class="homelnk" href="index.html" title="回到目錄首頁">🏠 首頁</a>
+    <span class="stat" id="stat"></span>
+    <button class="gearbtn" id="ttsbtn" title="語音設定">⚙</button>
+    <input class="search" id="search" placeholder="🔍 搜尋單詞 / 假名 / 詞義…" autocomplete="off">
+  </div>
+</header>
+<div class="tabs" id="tabs"></div>
+<div class="subtabs" id="subtabs"></div>
+<div id="searchresults" style="display:none"></div>
+</div>
+<main>
+<div id="gg-empty" class="gg-empty" style="display:none">目前還沒有課程內容。</div>
+<div id="panel-vocab"><div id="voc-body"></div></div>
+<div id="panel-verb" style="display:none"><div id="verb-body"></div></div>
+<div id="panel-adj" style="display:none"><div id="adj-body"></div></div>
+<div id="panel-adv" style="display:none"><div id="adv-body"></div></div>
+<div id="panel-grammar" style="display:none"><div id="grammar-body"></div></div>
+<div id="panel-gplus" style="display:none"><div id="gplus-body"></div></div>
+<div id="panel-joshi" style="display:none"><div id="joshi-body"></div></div>
+<div id="panel-all" style="display:none"><div id="all-body"></div></div>
+</main>
+<div class="modal-bg" id="voicemodal">
+  <div class="modal">
+    <h3>🔊 語音設定</h3>
+    <label class="vrow">聲音<select id="voicesel"></select></label>
+    <label class="vrow">語速 <span id="rateval">0.90×</span><input type="range" id="ratein" min="0.5" max="1.5" step="0.05"></label>
+    <div class="mrow"><button id="vtest" data-say="あめ、はし、かぎ、にほんご。はつおんテストです。">▶ 試聽</button><button class="btn-primary" id="vclose">關閉</button></div>
+    <div class="mhint">💡 三個聲音都是預先錄好的 VOICEVOX 音檔，按 ▶ 試聽比較。<br>這裡的設定和《大家的日本語》筆記共用，改一邊另一邊也會跟著變。</div>
+  </div>
+</div>
+<script id="vocab-data" type="application/json">{
+  "names": {
+    "1": "第1課\nどうぞよろしくお願いします",
+    "2": "第2課\nこれはだれのお金ですか",
+    "3": "第3課\nデパートは何時から何時までですか",
+    "4": "第4課\nこのりんごは一ついくらですか",
+    "5": "第5課\n夏休みはいつからですか",
+    "6": "第6課\n李さんは昨日どこかへ行きましたか",
+    "7": "第7課\n学校の本屋で本を買いました",
+    "8": "第8課\n台北はどんな所ですか",
+    "9": "第9課\nとても楽しかったです",
+    "10": "第10課\n冷蔵庫の中にチーズケーキがあります"
+  },
+  "lessons": {
+    "1": [
+      {
+        "done": 0,
+        "word": "日本人",
+        "kana": "にほんじん",
+        "cho": "待確認",
+        "mean": "日本人",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "n"
+      },
+      {
+        "done": 0,
+        "word": "会社員",
+        "kana": "かいしゃいん",
+        "cho": "待確認",
+        "mean": "公司職員",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "公務員",
+        "kana": "こうむいん",
+        "cho": "待確認",
+        "mean": "公務員",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "私",
+        "kana": "わたし",
+        "cho": "待確認",
+        "mean": "我",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "person"
+      },
+      {
+        "done": 0,
+        "word": "教師",
+        "kana": "きょうし",
+        "cho": "待確認",
+        "mean": "老師",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "說自己的職業用 教師",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "先生",
+        "kana": "せんせい",
+        "cho": "待確認",
+        "mean": "老師（敬稱）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "稱呼別人的敬稱，不能用來說自己（說自己是老師用 教師）",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "銀行員",
+        "kana": "ぎんこういん",
+        "cho": "待確認",
+        "mean": "銀行職員",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "大学生",
+        "kana": "だいがくせい",
+        "cho": "待確認",
+        "mean": "大學生",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "主婦",
+        "kana": "しゅふ",
+        "cho": "待確認",
+        "mean": "家庭主婦",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "初めまして",
+        "kana": "はじめまして",
+        "cho": "待確認",
+        "mean": "您好；初次見面；幸會",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "どうぞ よろしく",
+        "kana": "どうぞ よろしく",
+        "cho": "待確認",
+        "mean": "請多指教",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "お願いします",
+        "kana": "おねがいします",
+        "cho": "待確認",
+        "mean": "麻煩（您）；拜託（您）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "日本語",
+        "kana": "にほんご",
+        "cho": "待確認",
+        "mean": "日文",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "n"
+      },
+      {
+        "done": 0,
+        "word": "こちらこそ",
+        "kana": "こちらこそ",
+        "cho": "待確認",
+        "mean": "彼此、彼此",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "はい",
+        "kana": "はい",
+        "cho": "待確認",
+        "mean": "是的；沒錯",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "感嘆詞",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "いいえ",
+        "kana": "いいえ",
+        "cho": "待確認",
+        "mean": "不是；不對",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "感嘆詞",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "そう",
+        "kana": "そう",
+        "cho": "待確認",
+        "mean": "那樣",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "x"
+      },
+      {
+        "done": 0,
+        "word": "2年生",
+        "kana": "にねんせい",
+        "cho": "待確認",
+        "mean": "2年級學生",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "市役所",
+        "kana": "しやくしょ",
+        "cho": "待確認",
+        "mean": "市政府",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "place"
+      },
+      {
+        "done": 0,
+        "word": "職員",
+        "kana": "しょくいん",
+        "cho": "待確認",
+        "mean": "職員（通常指公家機關、學校等的職員）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "私人公司的職員用 社員",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "高校",
+        "kana": "こうこう",
+        "cho": "待確認",
+        "mean": "高中（「高等学校」之略）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "place"
+      },
+      {
+        "done": 0,
+        "word": "社員",
+        "kana": "しゃいん",
+        "cho": "待確認",
+        "mean": "職員（私人公司的職員）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "公家機關、學校的職員用 職員",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "区役所",
+        "kana": "くやくしょ",
+        "cho": "待確認",
+        "mean": "區公所",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "place"
+      },
+      {
+        "done": 0,
+        "word": "課長",
+        "kana": "かちょう",
+        "cho": "待確認",
+        "mean": "課長；科長",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "3年生",
+        "kana": "さんねんせい",
+        "cho": "待確認",
+        "mean": "3年級學生",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "job"
+      },
+      {
+        "done": 0,
+        "word": "こちら",
+        "kana": "こちら",
+        "cho": "待確認",
+        "mean": "這位（先生、女士）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "介紹人時用，比 この人 客氣",
+        "pos": "person"
+      },
+      {
+        "done": 0,
+        "word": "電話番号",
+        "kana": "でんわばんごう",
+        "cho": "待確認",
+        "mean": "電話號碼",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "n"
+      },
+      {
+        "done": 0,
+        "word": "何番",
+        "kana": "なんばん",
+        "cho": "待確認",
+        "mean": "幾號",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "疑問詞",
+        "pos": "q"
+      },
+      {
+        "done": 0,
+        "word": "会社",
+        "kana": "かいしゃ",
+        "cho": "待確認",
+        "mean": "公司",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "place"
+      },
+      {
+        "done": 0,
+        "word": "内線",
+        "kana": "ないせん",
+        "cho": "待確認",
+        "mean": "分機",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "n"
+      },
+      {
+        "done": 0,
+        "word": "家",
+        "kana": "うち",
+        "cho": "待確認",
+        "mean": "家",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "place"
+      },
+      {
+        "done": 0,
+        "word": "次",
+        "kana": "つぎ",
+        "cho": "待確認",
+        "mean": "下一個",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "n"
+      },
+      {
+        "done": 0,
+        "word": "方",
+        "kana": "かた",
+        "cho": "待確認",
+        "mean": "先生；女士（人的敬稱）",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "比 人 客氣：あの方",
+        "pos": "person"
+      },
+      {
+        "done": 0,
+        "word": "名前",
+        "kana": "なまえ",
+        "cho": "待確認",
+        "mean": "姓名",
+        "jp": "",
+        "hkana": "",
+        "zh": "",
+        "note": "",
+        "pos": "n"
+      }
+    ],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": [],
+    "6": [],
+    "7": [],
+    "8": [],
+    "9": [],
+    "10": []
+  },
+  "zh": {
+    "1": "請多多指教（課本 p.19）",
+    "2": "這是誰的錢？（課本 p.37）",
+    "3": "百貨公司從幾點開到幾點？（課本 p.51）",
+    "4": "這蘋果1個多少錢？（課本 p.63）",
+    "5": "暑假從什麼時候開始？（課本 p.81）",
+    "6": "李先生昨天有去哪裡嗎？（課本 p.97）",
+    "7": "在學校的書店買了書（課本 p.117）",
+    "8": "台北是個什麼樣的地方呢？（課本 p.143）",
+    "9": "快樂極了（課本 p.163）",
+    "10": "冰箱裡有起司蛋糕（課本 p.181）"
+  }
+}</script>
+<script id="vv-data" type="application/json">{"say": {"2年生": {"2": "4a81f975023a", "11": "27e29e6c8c58", "13": "311b7bbcd510"}, "3年生": {"2": "b029e63a5c5c", "11": "649f7fc29345", "13": "8636eaf50248"}, "いいえ": {"2": "25487f89d8b3", "11": "12e8a1e9a313", "13": "e77d1c6294af"}, "うち": {"2": "bc8a618ef8be", "11": "5dd5c5cab4e5", "13": "c9a25a3873d3"}, "おねがいしました": {"2": "888c5f3b054c", "11": "1e6f3ec8556f", "13": "25d5483a7aea"}, "おねがいします": {"2": "56b4fbd8f0f2", "11": "261652b9157a", "13": "314e5902fd00"}, "おねがいしません": {"2": "e6dae0ff66bd", "11": "527a7df9e2c5", "13": "7cf05ef05da7"}, "おねがいしませんでした": {"2": "0173aaac3c42", "11": "5a7e998be4ae", "13": "7d043f474961"}, "お願いします": {"2": "2a406fc5887c", "11": "9a5fedd53b9c", "13": "788dd662c5c7"}, "かいしゃ": {"2": "5734c1393984", "11": "a85042873666", "13": "ec2150e7c76e"}, "かいしゃいん": {"2": "137811820528", "11": "ec8a2f4bf452", "13": "f2cb8049c9ae"}, "かた": {"2": "00cee1e211ca", "11": "10f6d43ef37f", "13": "a9cb28cbc520"}, "かちょう": {"2": "7220261b0aa1", "11": "4f0c406df448", "13": "429c4dee70c2"}, "きょうし": {"2": "7c840339ed4e", "11": "6c8773593119", "13": "85a94726e6e0"}, "ぎんこういん": {"2": "21ee5633ffe8", "11": "0bdb6d523936", "13": "102f815638b2"}, "くやくしょ": {"2": "09be5c8fcbd7", "11": "211c5f13dba8", "13": "57256ec1d0c1"}, "こうこう": {"2": "1b7f6327966c", "11": "a18a8cfec330", "13": "0d847239f3f1"}, "こうむいん": {"2": "67d6d3af1087", "11": "b830d5d87f6a", "13": "3f260e503c8a"}, "こちら": {"2": "fa5db39fb5b4", "11": "c84aef2fc8f5", "13": "38f4a2b515d0"}, "こちらこそ": {"2": "cf9371ac0e6f", "11": "f6bf030b97db", "13": "3c3f964a729b"}, "さんねんせい": {"2": "2e12c6ab0b14", "11": "15820c32eca0", "13": "f1c289d1f033"}, "しゃいん": {"2": "0d30aabaa000", "11": "87ec5c2b6b1f", "13": "19b02c0a6d24"}, "しやくしょ": {"2": "1c89af6d0b0e", "11": "125c7161d5ac", "13": "3ef87162d604"}, "しゅふ": {"2": "1742bf0334e1", "11": "b22ed8686ea5", "13": "4fcc5a221c1a"}, "しょくいん": {"2": "96f444078ef6", "11": "e3e524627641", "13": "a5d9a816cf93"}, "せんせい": {"2": "1bd3d7815f85", "11": "ef71e0b146da", "13": "58dd71571501"}, "そう": {"2": "2a0d4ea44976", "11": "b51c977cbaca", "13": "8aaea0007d72"}, "だいがくせい": {"2": "7f79bf61cf7b", "11": "0b7074d5e58a", "13": "c8217d16f9ee"}, "つぎ": {"2": "4e4898956b8b", "11": "3267023ea5ea", "13": "afb703105d8e"}, "でんわばんごう": {"2": "bbbee2180453", "11": "a914f3f40c6d", "13": "c9c0ed6c1799"}, "どうぞ よろしく": {"2": "52a7050c5286", "11": "9541777f29fe", "13": "4e53c7b82058"}, "ないせん": {"2": "0533dd7b2100", "11": "0a63c4986a61", "13": "543a31b028e6"}, "なまえ": {"2": "aee0588b200c", "11": "b0d511890335", "13": "aa4c0fac8bb7"}, "なんばん": {"2": "595e4b10c057", "11": "b8305147a773", "13": "985ea4cb3571"}, "にねんせい": {"2": "e9d3fb2e8c45", "11": "c5d3e15aafd8", "13": "31bf225b4b99"}, "にほんご": {"2": "f90168857781", "11": "6b2b0e5426b5", "13": "7b95bd6a79c7"}, "にほんじん": {"2": "702503c3f9d3", "11": "529ef712b859", "13": "3c70d6178fec"}, "はい": {"2": "fb2a4c4bf1c6", "11": "0c2e9e73981f", "13": "2ef45182a17a"}, "はじめまして": {"2": "8b1fc2834c66", "11": "21673b76cb8f", "13": "394a01c6f8c1"}, "わたし": {"2": "aee486bd51ff", "11": "10015ea931fb", "13": "39f599b3af98"}, "主婦": {"2": "e95f237769b0", "11": "e898e080ee66", "13": "4fa8b7eb73ed"}, "会社": {"2": "a4a05f7042c7", "11": "6970ee88cfe9", "13": "a750a403166f"}, "会社員": {"2": "7dd444b88b4b", "11": "78fcb99a6940", "13": "63be3bf33992"}, "何番": {"2": "7cce2066877f", "11": "da3756d0adf2", "13": "6e96ba6151cc"}, "先生": {"2": "132cf3d882c7", "11": "6ea2fc532d2f", "13": "c467403b275e"}, "公務員": {"2": "cd4ad5da638d", "11": "bdb384166e10", "13": "1ef29e91d233"}, "内線": {"2": "ab1db9606b74", "11": "3d81063d1e40", "13": "41181b5b0b05"}, "初めまして": {"2": "59a578f669a6", "11": "980aca2337a7", "13": "d7a0e7b8d7b9"}, "区役所": {"2": "28aabbc2f9cf", "11": "b27339f2cc86", "13": "2bf166e1f34a"}, "名前": {"2": "4a7bb1e4a1fa", "11": "d4f2997c342e", "13": "ee171a33015c"}, "大学生": {"2": "412eae8c62f1", "11": "a62685357723", "13": "6d75143a3583"}, "市役所": {"2": "d7b922d96ab2", "11": "c6557c042a9d", "13": "aa9c6ec4f009"}, "教師": {"2": "76f49c08e7c2", "11": "3d22543ee217", "13": "aee00656472f"}, "日本語": {"2": "7f9758819db3", "11": "f37cde47670a", "13": "5563369f0439"}, "次": {"2": "a13272d62b01", "11": "c958d8b191b3", "13": "21f96ccc779a"}, "社員": {"2": "74d4c2d5ea17", "11": "614973b71766", "13": "9a4d4df16e38"}, "私": {"2": "71df5e2f321d", "11": "4ee827b98737", "13": "72b4d3ea8971"}, "職員": {"2": "792abd8b2b44", "11": "cbd788ff34c7", "13": "3f4afb880328"}, "課長": {"2": "e61a62d149ae", "11": "3bf2535853c8", "13": "900af824d28e"}, "銀行員": {"2": "de8282732fd4", "11": "bf55f0572477", "13": "56ff532152f6"}, "電話番号": {"2": "96f91fb80a0b", "11": "90b4a0df04fe", "13": "fe4e769adb07"}, "高校": {"2": "72635b7eeb8a", "11": "a890ce0da9bd", "13": "240ca1d1bf22"}, "あめ、はし、かぎ、にほんご。はつおんテストです。": {"2": "4f1756385f4b", "11": "4b397e0838b3", "13": "8015fb715245"}, "いいえ、こうむいんじゃありません": {"2": "1250c51d959a", "11": "ee5cb726c389", "13": "e3a31b043593"}, "きむらさんは しやくしょの かちょうです": {"2": "7d990d0d872f", "11": "9c8f757a845a", "13": "379b2ce385a1"}, "こちらは かちょうの きむらさんです": {"2": "7113f56a116e", "11": "db5813e28bfe", "13": "4c3a9bdb725f"}, "こちらは りんさんです": {"2": "c5db04479d3a", "11": "18a20d1d409c", "13": "0484f56a29ce"}, "こんにちは": {"2": "11b9bb66d170", "11": "52a7d6252e2b", "13": "dc7e670876b4"}, "こんばんは": {"2": "243f39cef217", "11": "33a7c2b855c4", "13": "b9a161d3b1e1"}, "すずきさんは にほんじんで、ぎんこういんです": {"2": "c539e5e8e006", "11": "6aa495a68d68", "13": "d6f6e2dd8dfc"}, "たなかさんは にほんじんです": {"2": "b4a044cf8128", "11": "a234844a9cb4", "13": "35b84c5c7161"}, "ちんさんは こうむいんですか": {"2": "0eaf40b126a9", "11": "6d5e664f09d8", "13": "8c65a24e958a"}, "はい、こうむいんです": {"2": "5e72db4959c7", "11": "0dac00ea5f94", "13": "0a6894b17019"}, "りんさんは こうこうの せんせいです": {"2": "8227e7c91c6f", "11": "b49d83a2df01", "13": "2fe7920747d7"}, "わたしは かいしゃいんで、ちんさんは しゅふです": {"2": "cab9c99dc149", "11": "d910868b815b", "13": "4a137f7edc08"}, "わたしは かいしゃいんです": {"2": "aade2034f357", "11": "d60faed4df5d", "13": "008ed058ea92"}, "わたしは ぎんこういんじゃありません": {"2": "7555342a3909", "11": "fb43f8418a0f", "13": "6069d1069ec2"}, "わたしは ぎんこういんじゃないです": {"2": "873a40e5f38e", "11": "e7b8c7428b7b", "13": "681d4e9e804d"}, "わたしは ぎんこういんではありません": {"2": "1c9f3038d5cc", "11": "618ba8c7ecb4", "13": "947ae54f8440"}, "わたしの なまえ": {"2": "1e38f544d53b", "11": "212e271a3f4f", "13": "535f9d62a3d4"}, "わたしは だいがくせいです": {"2": "acb7065708cf", "11": "aea413457d5f", "13": "e658b6f39af0"}, "いいえ、そうじゃありません": {"2": "9d7d843bad91", "11": "a12a974d82c8", "13": "faf8a4f9274d"}, "ええ、そうです": {"2": "6c7d5c48687b", "11": "5d90f7e3ea33", "13": "7d370172e445"}, "おでんわばんごうは": {"2": "b5329df42ddd", "11": "2244528f8a92", "13": "d64750c8f18d"}, "おなまえは": {"2": "50cec33ffd0d", "11": "ad22e641f4cc", "13": "578b33dbb79d"}, "おなまえは なんと おっしゃいますか": {"2": "3a16df0e2f91", "11": "28e2b7fb50b2", "13": "dd2f747f9682"}, "こちらこそ、どうぞ よろしく おねがいします。": {"2": "bd52107e66b3", "11": "fb1cdad472c2", "13": "4898dd3891df"}, "すずきさん、こちらは りんさんです": {"2": "a01b660a7306", "11": "b5249c239c24", "13": "646fbe92526a"}, "すずきさんは にほんじんですね": {"2": "dcd7e4b45bf3", "11": "c19ac824629f", "13": "5b413b5b6348"}, "ちんさんは こうむいんです": {"2": "6a023f3cedde", "11": "5248a3114c11", "13": "8571041d002e"}, "ないせん いちゼロご": {"2": "db02785d4716", "11": "9795c41ea0c8", "13": "3264668c540b"}, "はい、そうです": {"2": "8740e1942a12", "11": "8f163adf6bbf", "13": "4fe4aeeef1a3"}, "はじめまして。たなかです。どうぞ よろしく おねがいします。": {"2": "fac35573bd19", "11": "b475bdf525fd", "13": "61992e689dc1"}, "はじめまして。りんです。どうぞ よろしく おねがいします。": {"2": "929f553d836b", "11": "57fb15c988cd", "13": "d8e3c24344c7"}, "りんさんは こうこうの せんせいですか": {"2": "1e13e7d3b969", "11": "32e86b713398", "13": "d75761a3703d"}, "りんです": {"2": "3e4d859b313d", "11": "afde54fc6cc8", "13": "784861401e8d"}, "わたしの でんわばんごうは ゼロにの にさんよんごの ろくななハチきゅうです": {"2": "fc62e0ae7368", "11": "aa278305641e", "13": "20212a9c239b"}, "ゼロにの にさんよんごの ろくななハチきゅう": {"2": "49617a9de3e3", "11": "0dafbd38dfe7", "13": "f0e4bb3528d8"}, "ゼロにの にさんよんごの ろくななハチきゅうですね": {"2": "2d43e49d274c", "11": "4a819895046e", "13": "6b6e5e295777"}}, "reading": {}}</script>
+<script>
+/* 各課內容（由 Claude 依課本照片更新）
+   GRAMMAR：{課號: `<h3>…</h3><div class="gp">…</div>`}，🔊 按鈕的 data-say 放假名
+   JOSHI_ROWS：助詞表的列，格式同 minna-notes 的 JOSHI_ALL：<tr data-jo="が" data-les="3">…</tr> */
+const GRAMMAR={
+1:`<h3>第1課　〜は〜です／〜ですか／〜じゃありません・〜の〜・〜で、〜・こちらは</h3>
+<div class="gp"><div class="gp-label">① 〜は〜です：A 是 B</div><div class="gp-form">名詞A ＋ <u>は</u> ＋ 名詞B ＋ <u>です</u></div><div class="gp-note">名詞的肯定句。<b>です</b> 放在句尾表示肯定，大約等於中文的「是」。<br><b>は</b> 本來念 ha，但當<b>助詞</b>用的時候要念 <b>wa</b>：它把前面的 A 標成這句話的<b>主題</b>，は 後面接的就是關於這個主題的說明。</div><div class="gp-ex">例：<ruby>私<rt>わたし</rt></ruby><b>は</b> <ruby>会社員<rt>かいしゃいん</rt></ruby><b>です</b>。<button class="spk gspk" data-say="わたしは かいしゃいんです" title="播放發音">🔊</button>（我是公司職員）<br>例：<ruby>田中<rt>たなか</rt></ruby>さん<b>は</b> <ruby>日本人<rt>にほんじん</rt></ruby><b>です</b>。<button class="spk gspk" data-say="たなかさんは にほんじんです" title="播放發音">🔊</button>（田中先生是日本人）<br>　　↑ 主題是「田中さん」，「日本人です」是在說明他</div></div>
+<div class="gp"><div class="gp-label">💡 什麼是「助詞〈じょし〉」？</div><div class="gp-form">は、の 都是助詞</div><div class="gp-note">助詞夾在詞和詞中間，用來表示它們之間的<b>關係</b>，或替句子加上某種意思。它<b>不會單獨出現</b>，也<b>不會變化</b>。可以想成把一節節車廂（單字）扣在一起的連結器。<br>打招呼的 こんにち<b>は</b>／こんばん<b>は</b> 最後那個字也念 <b>wa</b>，因為它原本就是助詞 は。一開始分不清哪個 は 念 wa 沒關係，學下去自然會分得出來。</div><div class="gp-ex">例：こんにち<b>は</b>。<button class="spk gspk" data-say="こんにちは" title="播放發音">🔊</button>（念 konnichi<b>wa</b>）<br>例：こんばん<b>は</b>。<button class="spk gspk" data-say="こんばんは" title="播放發音">🔊</button>（念 konban<b>wa</b>）</div></div>
+<div class="gp"><div class="gp-label">② 〜は〜ですか：疑問句</div><div class="gp-form">名詞A ＋ は ＋ 名詞B ＋ です ＋ <u>か</u></div><div class="gp-note">句尾加上 <b>か</b> 就變成問句，念的時候<b>語調往上揚</b>。日文的問句通常就是這樣在最後加 か。</div><div class="gp-ex">例：<ruby>陳<rt>ちん</rt></ruby>さんは <ruby>公務員<rt>こうむいん</rt></ruby>です<b>か</b>。<button class="spk gspk" data-say="ちんさんは こうむいんですか" title="播放發音">🔊</button>（陳先生是公務員嗎？）<br>― はい、<ruby>公務員<rt>こうむいん</rt></ruby>です。<button class="spk gspk" data-say="はい、こうむいんです" title="播放發音">🔊</button>（是的，是公務員）<br>― いいえ、<ruby>公務員<rt>こうむいん</rt></ruby>じゃありません。<button class="spk gspk" data-say="いいえ、こうむいんじゃありません" title="播放發音">🔊</button>（不，不是公務員）</div></div>
+<div class="gp"><div class="gp-label">③ 〜は〜じゃありません：A 不是 B</div><div class="gp-form">名詞A ＋ は ＋ 名詞B ＋ <u>じゃありません</u></div><div class="gp-note">「〜です」的<b>否定</b>。同一句話有三種講法，正式程度不同：<br>・<b>じゃありません</b>：一般會話<br>・<b>ではありません</b>：報紙、文章這類書面或正式場合（では 的 は 一樣念 <b>wa</b>）<br>・<b>じゃないです</b>：比較口語、隨便</div><div class="gp-ex">例：<ruby>私<rt>わたし</rt></ruby>は <ruby>銀行員<rt>ぎんこういん</rt></ruby><b>じゃありません</b>。<button class="spk gspk" data-say="わたしは ぎんこういんじゃありません" title="播放發音">🔊</button>（我不是銀行職員）<br>　＝ <ruby>私<rt>わたし</rt></ruby>は <ruby>銀行員<rt>ぎんこういん</rt></ruby><b>ではありません</b>。<button class="spk gspk" data-say="わたしは ぎんこういんではありません" title="播放發音">🔊</button>（書面、正式）<br>　＝ <ruby>私<rt>わたし</rt></ruby>は <ruby>銀行員<rt>ぎんこういん</rt></ruby><b>じゃないです</b>。<button class="spk gspk" data-say="わたしは ぎんこういんじゃないです" title="播放發音">🔊</button>（口語）</div></div>
+<div class="gp"><div class="gp-label">④ 〜は〜の〜です：名詞＋の＋名詞</div><div class="gp-form">名詞1 ＋ <u>の</u> ＋ 名詞2</div><div class="gp-note"><b>の</b> 是助詞，把兩個名詞接起來，相當於中文的「的」。<br>要注意：中文講的時候常把「的」省掉（高中老師、市政府職員），<b>日文的 の 不能省</b>。</div><div class="gp-ex">例：<ruby>林<rt>りん</rt></ruby>さんは <ruby>高校<rt>こうこう</rt></ruby><b>の</b> <ruby>先生<rt>せんせい</rt></ruby>です。<button class="spk gspk" data-say="りんさんは こうこうの せんせいです" title="播放發音">🔊</button>（林先生是高中老師）<br>　　✗ 高校先生　→　○ 高校<b>の</b> 先生<br>例：<ruby>木村<rt>きむら</rt></ruby>さんは <ruby>市役所<rt>しやくしょ</rt></ruby><b>の</b> <ruby>課長<rt>かちょう</rt></ruby>です。<button class="spk gspk" data-say="きむらさんは しやくしょの かちょうです" title="播放發音">🔊</button>（木村先生是市政府的課長）</div></div>
+<div class="gp"><div class="gp-label">⑤ 〜は〜で、〜は〜です：把兩句接成一句</div><div class="gp-form">AはBです ＋ CはDです　→　A は B <u>で</u>、C は D です</div><div class="gp-note">把「〜です」改成 <b>で</b>，後面加「、」，就能把兩個句子接成一句。<br>主詞相同的兩句也可以接：「AはBです」＋「AはCです」→ <b>A は B で、C です</b>，意思是「A 是 B，同時也是 C」。</div><div class="gp-ex">例：<ruby>私<rt>わたし</rt></ruby>は <ruby>会社員<rt>かいしゃいん</rt></ruby><b>で</b>、<ruby>陳<rt>ちん</rt></ruby>さんは <ruby>主婦<rt>しゅふ</rt></ruby>です。<button class="spk gspk" data-say="わたしは かいしゃいんで、ちんさんは しゅふです" title="播放發音">🔊</button>（我是公司職員，陳太太是家庭主婦）<br>例：<ruby>鈴木<rt>すずき</rt></ruby>さんは <ruby>日本人<rt>にほんじん</rt></ruby><b>で</b>、<ruby>銀行員<rt>ぎんこういん</rt></ruby>です。<button class="spk gspk" data-say="すずきさんは にほんじんで、ぎんこういんです" title="播放發音">🔊</button>（鈴木先生是日本人，也是銀行職員）<br>　　↑ 主詞一樣（都是鈴木さん），後半句的「鈴木さんは」可以省略</div></div>
+<div class="gp"><div class="gp-label">⑥ こちらは〜です：介紹身邊的人</div><div class="gp-form"><u>こちら</u> ＋ は ＋ 人 ＋ です</div><div class="gp-note"><b>こちら</b> 原本是「這邊」（方向）。介紹站在旁邊的人時說「こちらは〜です」，就是「這位是〜」，比 この人 客氣。</div><div class="gp-ex">例：<b>こちら</b>は <ruby>林<rt>りん</rt></ruby>さんです。<button class="spk gspk" data-say="こちらは りんさんです" title="播放發音">🔊</button>（這位是林先生）<br>例：<b>こちら</b>は <ruby>課長<rt>かちょう</rt></ruby>の <ruby>木村<rt>きむら</rt></ruby>さんです。<button class="spk gspk" data-say="こちらは かちょうの きむらさんです" title="播放發音">🔊</button>（這位是木村課長）</div></div>`
+};
+const JOSHI_ROWS=`<tr data-jo="は" data-les="1"><td class="jo-c"><span class="jo">は</span></td><td class="jo-p">名詞 ＋ <span class="jo">は</span> ＋ 名詞 ＋ です</td><td class="jo-logic"><span class="jo-emo">🖼️</span>主題框線</td><td class="jo-u">提示主題（這句話在講誰／什麼）</td><td class="jo-ex"><div class="jo-one">私<span class="jo">は</span> 大学生です<button class="spk gspk" data-say="わたしは だいがくせいです" title="播放發音">🔊</button><span class="jo-zh">我是大學生</span></div><div class="jo-one">田中さん<span class="jo">は</span> 日本人です<button class="spk gspk" data-say="たなかさんは にほんじんです" title="播放發音">🔊</button><span class="jo-zh">田中先生是日本人</span></div></td><td class="jo-note">當助詞用時念 <b>wa</b>（こんにちは、こんばんは 的 は 也是）。は 前面是主題，後面是關於這個主題的說明。</td></tr><tr data-jo="の" data-les="1"><td class="jo-c"><span class="jo">の</span></td><td class="jo-p">名詞 ＋ <span class="jo">の</span> ＋ 名詞</td><td class="jo-logic"><span class="jo-emo">🔗</span>所屬・所有</td><td class="jo-u">A 的 B（哪裡的、誰的、什麼的）</td><td class="jo-ex"><div class="jo-one">林さんは 高校<span class="jo">の</span> 先生です<button class="spk gspk" data-say="りんさんは こうこうの せんせいです" title="播放發音">🔊</button><span class="jo-zh">林先生是高中老師</span></div><div class="jo-one">木村さんは 市役所<span class="jo">の</span> 課長です<button class="spk gspk" data-say="きむらさんは しやくしょの かちょうです" title="播放發音">🔊</button><span class="jo-zh">木村先生是市政府的課長</span></div><div class="jo-one">私<span class="jo">の</span> 名前<button class="spk gspk" data-say="わたしの なまえ" title="播放發音">🔊</button><span class="jo-zh">我的名字</span></div></td><td class="jo-note">相當於中文的「的」。中文常把「的」省掉（高中老師），<b>日文的 の 不能省</b>：✗ 高校先生 → ○ 高校の 先生。</td></tr>`;
+/* 文法補充（課本「其他文法事項」）：{課號: `<h3>…</h3><div class="gp">…`}，格式同 GRAMMAR */
+const GRAMMAR_PLUS={
+1:`<h3>第1課　文法補充（課本「其他文法事項」）</h3>
+<div class="gp"><div class="gp-label">1　初めまして。〜です。どうぞよろしくお願いします。</div><div class="gp-form">您好（幸會）。我是〜。請多多指教。</div><div class="gp-note"><b>初めまして</b>：只用在<b>第一次見面</b>時的招呼語。<br><b>〜です</b>：自我介紹時，前面的「わたしは」通常<b>不說出來</b>，直接講「林です」就好。<br><b>どうぞ</b>＝請；<b>お願いします</b>＝麻煩您、拜託您。合起來的「どうぞよろしくお願いします」就是「麻煩您多多指教」，比較隨意的場合可以只說<b>「どうぞよろしく」</b>。</div><div class="gp-ex"><ruby>初<rt>はじ</rt></ruby>めまして。<ruby>林<rt>りん</rt></ruby>です。どうぞよろしくお<ruby>願<rt>ねが</rt></ruby>いします。<button class="spk gspk" data-say="はじめまして。りんです。どうぞ よろしく おねがいします。" title="播放發音">🔊</button>（您好，我姓林，請多多指教）<br>簡短版：どうぞよろしく。<button class="spk gspk" data-say="どうぞ よろしく" title="播放發音">🔊</button>（請多指教）</div></div>
+<div class="gp"><div class="gp-label">2　こちらこそ、どうぞよろしくお願いします。</div><div class="gp-form">彼此彼此，我才要請您多多指教。</div><div class="gp-note">對方說了「どうぞよろしくお願いします」，要怎麼回？中文會說「哪裡哪裡」「彼此彼此」，日文則是先說<b>こちらこそ</b>（我才是〜），再接一次「どうぞよろしくお願いします」。整句的感覺就是「彼此彼此，我才要請您多指教」。</div><div class="gp-ex">A：<ruby>初<rt>はじ</rt></ruby>めまして。<ruby>田中<rt>たなか</rt></ruby>です。どうぞよろしくお<ruby>願<rt>ねが</rt></ruby>いします。<button class="spk gspk" data-say="はじめまして。たなかです。どうぞ よろしく おねがいします。" title="播放發音">🔊</button>（您好，我是田中，請多指教）<br>B：<b>こちらこそ</b>、どうぞよろしくお<ruby>願<rt>ねが</rt></ruby>いします。<button class="spk gspk" data-say="こちらこそ、どうぞ よろしく おねがいします。" title="播放發音">🔊</button>（彼此彼此，請多指教）</div></div>
+<div class="gp"><div class="gp-label">3　〜さん：加在別人名字後面</div><div class="gp-form">＝中文的「〜先生」「〜小姐」「〜太太」</div><div class="gp-note"><b>さん</b> 接在<b>別人</b>的姓或名字後面，表示禮貌，男女都能用。<br>注意：<b>說自己的時候不能加さん</b>（✗ 私は 林さんです → ○ 私は 林です）。</div><div class="gp-ex"><ruby>陳<rt>ちん</rt></ruby><b>さん</b>は <ruby>公務員<rt>こうむいん</rt></ruby>です。<button class="spk gspk" data-say="ちんさんは こうむいんです" title="播放發音">🔊</button>（陳先生是公務員）<br><ruby>鈴木<rt>すずき</rt></ruby><b>さん</b>、こちらは <ruby>林<rt>りん</rt></ruby><b>さん</b>です。<button class="spk gspk" data-say="すずきさん、こちらは りんさんです" title="播放發音">🔊</button>（鈴木先生，這位是林先生）</div></div>
+<div class="gp"><div class="gp-label">4　はい、そうです。／ええ、そうです。／いいえ、そうじゃありません。</div><div class="gp-form">是的，你說得沒錯。／不，不是你說的那樣。</div><div class="gp-note">回答問句時，<b>同意</b>用 <b>はい</b>，比較口語的說法是 <b>ええ</b>；<b>不同意</b>用 <b>いいえ</b>。<br><b>そう</b> 指的是「你剛剛說的（那件事）」，所以 <b>そうです</b>＝你說的對，<b>そうじゃありません</b>＝不是你說的那樣。</div><div class="gp-ex">A：<ruby>林<rt>りん</rt></ruby>さんは <ruby>高校<rt>こうこう</rt></ruby>の <ruby>先生<rt>せんせい</rt></ruby>ですか。<button class="spk gspk" data-say="りんさんは こうこうの せんせいですか" title="播放發音">🔊</button>（林先生是高中老師嗎？）<br>B：はい、<b>そうです</b>。<button class="spk gspk" data-say="はい、そうです" title="播放發音">🔊</button>（是的，沒錯）<br>B：ええ、<b>そうです</b>。<button class="spk gspk" data-say="ええ、そうです" title="播放發音">🔊</button>（嗯，沒錯（口語））<br>B：いいえ、<b>そうじゃありません</b>。<button class="spk gspk" data-say="いいえ、そうじゃありません" title="播放發音">🔊</button>（不，不是那樣）</div></div>
+<div class="gp"><div class="gp-label">5　電話號碼的念法</div><div class="gp-form">電話號碼一個數字一個數字念，中間的「−」念 <u>の</u></div><div class="gp-note">數字 0〜9 平常的念法：ゼロ（れい）、いち、に、さん、よん（し）、ご、ろく、なな（しち）、はち、きゅう（く）。括號裡是另一種念法，但<b>念電話號碼時有固定的選擇</b>：<br>・<b>0</b>：ゼロ、れい、まる（圓圈）都可以<br>・<b>4</b>：念 <b>よん</b>，不念 し<br>・<b>7</b>：念 <b>なな</b>，不念 しち<br>・<b>9</b>：念 <b>きゅう</b>，不念 く<br>號碼中間的<b>「−」念成「の」</b>，用來隔開區碼和號碼。分機是 <b>内線〈ないせん〉</b>。</div><div class="gp-ex">02-2345-6789<button class="spk gspk" data-say="ゼロにの にさんよんごの ろくななハチきゅう" title="播放發音">🔊</button>（0 念ゼロ、−念の）<br><ruby>内線<rt>ないせん</rt></ruby> 105<button class="spk gspk" data-say="ないせん いちゼロご" title="播放發音">🔊</button>（分機 105）</div></div>
+<div class="gp"><div class="gp-label">6　お名前は？↗／お電話番号は？↗</div><div class="gp-form">請問您的名字是…？／請問您的電話號碼是…？</div><div class="gp-note">前面的 <b>お</b> 是<b>接頭語</b>，用來尊敬聽話的人，比較有禮貌，意思接近中文的「您的〜」。<br>這兩句都是省略版的問句，句尾<b>語調上揚</b>：<br>・お名前は？＝お名前は 何と おっしゃいますか（請問您貴姓大名）<br>・お電話番号は？＝お電話番号は 何番ですか（請問您的電話是幾號）<br>⚠ お 是尊敬<b>對方</b>用的，回答<b>自己的</b>名字、電話時<b>不加 お</b>。</div><div class="gp-ex">A：お<ruby>名前<rt>なまえ</rt></ruby>は？<button class="spk gspk" data-say="おなまえは" title="播放發音">🔊</button>（請問您的名字是？）<br>B：<ruby>林<rt>りん</rt></ruby>です。<button class="spk gspk" data-say="りんです" title="播放發音">🔊</button>（我姓林）<br>A：お<ruby>電話番号<rt>でんわばんごう</rt></ruby>は？<button class="spk gspk" data-say="おでんわばんごうは" title="播放發音">🔊</button>（請問您的電話號碼是？）<br>B：○ わたしの <ruby>電話番号<rt>でんわばんごう</rt></ruby>は 02-2345-6789です。<button class="spk gspk" data-say="わたしの でんわばんごうは ゼロにの にさんよんごの ろくななハチきゅうです" title="播放發音">🔊</button>（我的電話號碼是 02-2345-6789）<br>　 ✗ わたしの <b>お</b>電話番号は…　← 自己的不加 お<br>完整說法：お<ruby>名前<rt>なまえ</rt></ruby>は <ruby>何<rt>なん</rt></ruby>と おっしゃいますか。<button class="spk gspk" data-say="おなまえは なんと おっしゃいますか" title="播放發音">🔊</button>（請問您貴姓大名）</div></div>
+<div class="gp"><div class="gp-label">7　〜ですね。↗</div><div class="gp-form">〜，沒錯吧？（請對方確認）</div><div class="gp-note">句尾加 <b>ね</b>，表示說話的人<b>不太確定</b>，想<b>請對方確認</b>一下，這時候句尾<b>語調上揚</b>。</div><div class="gp-ex">A：02-2345-6789です<b>ね</b>。<button class="spk gspk" data-say="ゼロにの にさんよんごの ろくななハチきゅうですね" title="播放發音">🔊</button>（02-2345-6789，沒錯吧？）<br>B：はい、そうです。<button class="spk gspk" data-say="はい、そうです" title="播放發音">🔊</button>（是的）<br>A：<ruby>鈴木<rt>すずき</rt></ruby>さんは <ruby>日本人<rt>にほんじん</rt></ruby>です<b>ね</b>。<button class="spk gspk" data-say="すずきさんは にほんじんですね" title="播放發音">🔊</button>（鈴木先生是日本人，對吧？）<br>B：ええ、そうです。<button class="spk gspk" data-say="ええ、そうです" title="播放發音">🔊</button>（嗯，是的）</div></div>`
+};
+</script>
+<script>
+/* ===== 日本語GOGOGO 1 筆記（2026-10-24 建立）=====
+   只有查閱用的分頁：單字／動詞／形容詞／副詞／文法／助詞，外加「總學習」的單字總表。
+   使用者定案：課程順序與大家的日本語不同，所以獨立一頁，**不做小考、朗讀、測驗、不跟大家的日本語對照**。
+   資料：<script id="vocab-data">＝{names:{課號:"第N課\n標題"}, lessons:{課號:[單字列]}}
+         單字列欄位同 minna-notes：{word,kana,mean,note,pos,…}；pos＝verb／adjna／adji／adv／n…
+         GRAMMAR（各課文法 HTML）與 JOSHI_ROWS（助詞表的列）在上一個 <script>。
+   發音與遮欄位的寫法照搬 minna-notes；聲音設定共用 localStorage 的 jp_tts_vv。 */
+const DATA=(function(){try{return JSON.parse(document.getElementById('vocab-data').textContent)||{};}catch(e){return {};}})();
+const NAMES=DATA.names||{}, LES=DATA.lessons||{};
+const LESSON_KEYS=Object.keys(NAMES).map(Number).filter(function(n){return n>0;}).sort(function(a,b){return a-b;});
+const ALL=0;                                  /* 「總學習」頁籤的課號 */
+const AKEY='gg_lesson',SKEY='gg_section',MKEY='gg_mask';
+
+/* ---- 發音（同 minna-notes）---- */
+const __VV=(function(){try{return JSON.parse(document.getElementById('vv-data').textContent)||{};}catch(e){return {};}})();
+const VV_SAY=__VV.say||{};
+const VV_BASE='audio/gogogo/';
+let ttsCfg={voiceA:'',voiceB:'',rate:0.9,pitch:1};
+try{const o=JSON.parse(localStorage.getItem('jp_tts_vv')||'{}');if(o.voice&&!o.voiceA)o.voiceA=o.voice;ttsCfg=Object.assign(ttsCfg,o);}catch(e){}
+/* 三個角色與名稱同 minna-notes；設定存在 jp_tts_vv，兩頁共用 */
+const VV_VOICES=[['2','Chloe — 快樂學生，女'],['13','Uncle Ben — 大叔，男'],['11','Darren — 聽起來是帥哥，男']];
+const VV_IDS=VV_VOICES.map(function(v){return v[0];});
+function saveTts(){try{localStorage.setItem('jp_tts_vv',JSON.stringify(ttsCfg));}catch(e){}}
+function voiceFor(which){const want=which==='B'?ttsCfg.voiceB:ttsCfg.voiceA;return VV_IDS.indexOf(String(want))>=0?String(want):(which==='B'?'11':'2');}
+const VV_PLAYER=new Audio();let VV_BTN=null;
+function vvNorm(t){return String(t||'').replace(/[〜～~［］\[\]]/g,'').replace(/　/g,' ').trim();}
+function vvClip(text,which){const m=VV_SAY[vvNorm(text)];return m?m[voiceFor(which)]:null;}
+function vvMark(btn){if(VV_BTN)VV_BTN.classList.remove('playing');VV_BTN=btn||null;if(VV_BTN)VV_BTN.classList.add('playing');}
+function vvStop(){VV_PLAYER.onended=null;VV_PLAYER.pause();try{VV_PLAYER.currentTime=0;}catch(e){}vvMark(null);}
+function speak(text,btn){
+  text=(text||'').replace(/[～~]/g,'').trim();if(!text)return;
+  const id=vvClip(text,'A');
+  if(id){if('speechSynthesis' in window)speechSynthesis.cancel();vvStop();
+    VV_PLAYER.onended=function(){vvMark(null);};VV_PLAYER.onerror=function(){vvMark(null);};
+    VV_PLAYER.src=VV_BASE+id+'.ogg';VV_PLAYER.playbackRate=+ttsCfg.rate||0.9;vvMark(btn);
+    VV_PLAYER.play().catch(function(){vvMark(null);});return;}
+  if(!('speechSynthesis' in window))return;
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';u.rate=+ttsCfg.rate||0.9;
+  speechSynthesis.speak(u);
+}
+/* 用漢字念會念錯的字改念假名（與 minna-notes 同一份；export_missing_clips.py 也讀這裡） */
+const sayForceKana=new Set(['日本人','方','静か','暇','水餃','事','揚げます','夜','道','絵','髪','車','何','薬','家','百','千','101','眼鏡','梅酒','夜市','元','何階','木','鈴','時','分','今','昼','明日','1日','2日','3日','4日','5日','6日','7日','8日','9日','10日','14日','20日','24日','年','月','日','何年','何月','何日','今年','今月','一人で','人','来ます','歩いて','船','次の','何で','実家','塾','手','二人','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月','会社の人','何ですか。']);
+function sayText(r){if(!r)return '';let w=(r.word||'').replace(/[〜～~［］\[\]]/g,'').trim();if(w&&!sayForceKana.has(w))return w;return (r.kana||'').replace(/[〜～~]/g,'').replace(/\s*\n\s*/g,'、').trim();}
+
+/* ---- 形容詞（同 minna-notes 的 adjNeg；export_missing_clips.py 讀 ADJ_YOKU 決定要合成哪些否定形）---- */
+const ADJ_YOKU=new Set(['いい','よい','かっこいい','格好いい','かっこ良い']);
+function adjNeg(w,na){if(na)return w+'じゃ ありません';if(ADJ_YOKU.has(w))return w.replace(/[いよ]い$/,'よく')+' ないです';return w.replace(/い$/,'')+'く ないです';}
+
+/* ---- 小工具 ---- */
+function hh(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function md(s){return hh(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');}       /* 備註裡的 **粗體** */
+function rowsOf(n){return (LES[String(n)]||[]).slice();}
+function lessonName(n){return n===ALL?'總學習':(NAMES[n]||('第'+n+'課'));}
+
+/* ---- 遮欄位：按下馬上放開＝開關；按住拖曳＝選字（同 minna-notes）---- */
+let maskDown=null;
+document.addEventListener('mousedown',function(e){maskDown={x:e.clientX,y:e.clientY,t:Date.now()};},true);
+function quickTap(e){const sel=getSelection();if(sel&&!sel.isCollapsed&&String(sel).trim())return false;if(!maskDown)return true;
+  return Date.now()-maskDown.t<250&&Math.abs(e.clientX-maskDown.x)<5&&Math.abs(e.clientY-maskDown.y)<5;}
+function toggleMask(td,e){if(!td.classList.contains('revealed')){td.classList.add('revealed');return;}if(quickTap(e))td.classList.remove('revealed');}
+let MASK=(function(){try{return JSON.parse(localStorage.getItem(MKEY))||{};}catch(e){return {};}})();
+
+/* ---- 表格 ---- */
+const W=['word','單詞','word'],K=['kana','假名','kana'],M=['mean','詞義',''],N=['note','備註','lv-note'];
+const COLS={vocab:[W,K,M,N],verb:[W,K,M,['forms','變化',''],N],adj:[W,K,['type','種類',''],M,['neg','否定',''],N],
+            adv:[W,K,M,N],all:[['les','課',''],W,K,M,N]};
+function cell(kind,c,r){
+  const key=kind+':'+c[0],mk=MASK[key]?' masked':'';
+  if(c[0]==='note')return '<td class="lv-note'+mk+'">'+md(r.note)+'</td>';
+  if(c[0]==='les'||c[0]==='type')return '<td class="'+mk.trim()+'">'+hh(r[c[0]])+'</td>';
+  if(c[0]==='forms'){
+    const wb=(r.word||'').replace(/ます$/,''),kb=(r.kana||'').replace(/ます$/,'');
+    return '<td class="'+mk.trim()+'">'+['ません','ました','ませんでした'].map(function(s){
+      return '<span class="vf" data-say="'+hh(kb+s)+'" title="播放發音">'+hh(wb+s)+'</span>';}).join('')+'</td>';}
+  const say=c[0]==='neg'?r.negk:sayText(r);
+  return '<td class="'+(c[2]+' spk-c'+mk).trim()+'" data-say="'+hh(say)+'">'+hh(r[c[0]])+'</td>';
+}
+function table(kind,rows,title){
+  const cols=COLS[kind];
+  const head=cols.map(function(c){return '<th><label class="colvis" title="取消勾選＝遮住此欄，用來練習"><input type="checkbox" class="colvis-cb" data-key="'+kind+':'+c[0]+'"'+(MASK[kind+':'+c[0]]?'':' checked')+'> '+c[1]+'</label></th>';}).join('');
+  return '<h3 class="lv-h">'+hh(title)+'（'+rows.length+' 個）</h3><table class="alltable lvtable"><thead><tr>'+head+'</tr></thead><tbody>'
+    +rows.map(function(r,i){return '<tr data-i="'+i+'">'+cols.map(function(c){return cell(kind,c,r);}).join('')+'</tr>';}).join('')+'</tbody></table>';
+}
+function adjRows(n){return rowsOf(n).filter(function(r){return r.pos==='adjna'||r.pos==='adji';}).map(function(r){
+  const na=r.pos==='adjna',w=r.word||r.kana||'',k=r.kana||'';
+  return Object.assign({},r,{type:na?'な形容詞':'い形容詞',neg:adjNeg(w,na),negk:adjNeg(k,na)});});}
+function allRows(){const seen={},out=[];LESSON_KEYS.forEach(function(n){rowsOf(n).forEach(function(r){
+  const k=(r.word||'')+'|'+(r.kana||'');if(seen[k])return;seen[k]=1;out.push(Object.assign({},r,{les:'第'+n+'課'}));});});return out;}
+
+/* ---- 助詞表：整張表每一課都一樣，只有顏色隨課次變（同 minna-notes）---- */
+function joshiHTML(n){
+  return '<div class="jo-legend"><span class="lg lg-key">本課新學</span><span class="lg lg-past">之前學過</span><span class="lg lg-future">還沒學</span>'
+    +'<span class="lg-txt">課次依《日本語GOGOGO 1》。</span></div>'
+    +'<table class="jotable"><thead><tr><th>助詞</th><th>組合</th><th>用法</th><th>功能</th><th>例句</th><th>筆記</th></tr></thead><tbody>'
+    +JOSHI_ROWS+'</tbody></table>';
+}
+
+/* ---- 分頁：該課有內容才出現 ---- */
+function subsFor(n){
+  if(n===ALL)return [['all','單字總表']];
+  const rs=rowsOf(n),has=function(ps){return rs.some(function(r){return ps.indexOf(r.pos)>=0;});};
+  const out=[['vocab','單字']];
+  if(has(['verb']))out.push(['verb','動詞']);
+  if(has(['adjna','adji']))out.push(['adj','形容詞']);
+  if(has(['adv']))out.push(['adv','副詞']);
+  if(GRAMMAR[n])out.push(['grammar','文法']);
+  if(GRAMMAR_PLUS[n])out.push(['gplus','文法補充']);
+  if(JOSHI_ROWS.indexOf('data-les="'+n+'"')>=0)out.push(['joshi','助詞']);
+  return out;
+}
+const PANELS=['vocab','verb','adj','adv','grammar','gplus','joshi','all'];
+/* 沒存過時 getItem 是 null，+null 會變 0＝總學習，第一次打開就跑到總學習去了 */
+let lesson=(function(){const s=localStorage.getItem(AKEY);return s===null?NaN:+s;})();
+if(!(lesson===ALL||LESSON_KEYS.indexOf(lesson)>=0))lesson=LESSON_KEYS.length?LESSON_KEYS[0]:ALL;
+let section=localStorage.getItem(SKEY)||'vocab';
+
+function renderTabs(){
+  const el=document.getElementById('tabs');el.innerHTML='';
+  LESSON_KEYS.concat([ALL]).forEach(function(n,i){
+    const t=document.createElement('div');t.className='tab'+(n===lesson?' active':'');
+    /* 頁籤的熊貓沿用 minna 的圖：各課輪流用 02〜13 號，總學習用 15 號 */
+    const im=document.createElement('img');im.className='tabimg';im.alt='';im.draggable=false;
+    im.src='img/tab/panda-'+String(n===ALL?15:((i%12)+2)).padStart(2,'0')+'.png';t.appendChild(im);
+    const nm=document.createElement('span');nm.className='tname';nm.innerHTML=hh(lessonName(n)).replace(/\n/g,'<br>');t.appendChild(nm);
+    const zh=(DATA.zh||{})[n];if(zh)t.title=zh;
+    t.addEventListener('click',function(){switchLesson(n);});el.appendChild(t);
+  });
+}
+function renderSubtabs(){
+  const el=document.getElementById('subtabs');el.innerHTML='';
+  subsFor(lesson).forEach(function(s){const b=document.createElement('div');b.className='subtab'+(s[0]===section?' active':'');
+    b.textContent=s[1];b.addEventListener('click',function(){switchSection(s[0]);});el.appendChild(b);});
+}
+function renderPanel(){
+  PANELS.forEach(function(p){document.getElementById('panel-'+p).style.display=p===section?'':'none';});
+  const n=lesson,empty=document.getElementById('gg-empty');
+  empty.style.display=(!LESSON_KEYS.length)?'':'none';
+  if(section==='vocab')document.getElementById('voc-body').innerHTML=rowsOf(n).length?table('vocab',rowsOf(n),'本課單字'):'<div class="ghint">這一課還沒有單字。</div>';
+  if(section==='verb')document.getElementById('verb-body').innerHTML=table('verb',rowsOf(n).filter(function(r){return r.pos==='verb';}),'本課動詞');
+  if(section==='adj')document.getElementById('adj-body').innerHTML=table('adj',adjRows(n),'本課形容詞');
+  if(section==='adv')document.getElementById('adv-body').innerHTML=table('adv',rowsOf(n).filter(function(r){return r.pos==='adv';}),'本課副詞');
+  if(section==='grammar')document.getElementById('grammar-body').innerHTML=GRAMMAR[n]||'';
+  if(section==='gplus')document.getElementById('gplus-body').innerHTML=GRAMMAR_PLUS[n]||'';
+  if(section==='joshi'){const b=document.getElementById('joshi-body');b.innerHTML=joshiHTML(n);
+    b.querySelectorAll('tr[data-les]').forEach(function(tr){const les=+tr.dataset.les;
+      tr.classList.toggle('jo-key',les===n);tr.classList.toggle('jo-future',les>n);
+      const nt=tr.querySelector('td.jo-note');if(nt)nt.insertAdjacentHTML('afterbegin','<span class="jo-les">第'+les+'課</span>');});}
+  if(section==='all'){const rs=allRows();document.getElementById('all-body').innerHTML=rs.length?table('all',rs,'單字總表'):'<div class="ghint">還沒有單字。</div>';}
+}
+function switchLesson(n){lesson=n;localStorage.setItem(AKEY,n);
+  const subs=subsFor(n).map(function(s){return s[0];});if(subs.indexOf(section)<0)section=subs[0];
+  localStorage.setItem(SKEY,section);renderTabs();renderSubtabs();renderPanel();}
+function switchSection(s){section=s;localStorage.setItem(SKEY,s);renderSubtabs();renderPanel();}
+
+document.querySelector('main').addEventListener('click',function(e){
+  const m=e.target.closest('.lvtable td.masked');if(m){toggleMask(m,e);return;}
+  const s=e.target.closest('[data-say]');if(s){e.preventDefault();speak(s.getAttribute('data-say'),s);}
+});
+document.querySelector('main').addEventListener('change',function(e){
+  const cb=e.target.closest('.colvis-cb');if(!cb)return;
+  if(cb.checked)delete MASK[cb.dataset.key];else MASK[cb.dataset.key]=true;
+  try{localStorage.setItem(MKEY,JSON.stringify(MASK));}catch(err){}renderPanel();
+});
+(function(){const n=allRows().length;document.getElementById('stat').textContent='共 '+n+' 筆單字';})();
+switchLesson(lesson);
+
+/* ---- 搜尋（同 minna-notes）：單詞／假名／詞義／備註，加上各課文法內容；點結果跳到那一課並標亮那一列 ---- */
+function setTopbarH(){const tb=document.getElementById('topbar');if(tb)document.documentElement.style.setProperty('--topbar-h',tb.offsetHeight+'px');}
+setTopbarH();window.addEventListener('resize',setTopbarH);
+function globalSearch(q){
+  q=q.trim().toLowerCase();const out=[];if(!q)return out;
+  for(const n of LESSON_KEYS){
+    rowsOf(n).forEach(function(r,i){
+      if(out.length>=60)return;
+      const hay=((r.word||'')+(r.kana||'')+(r.mean||'')+(r.note||'')).toLowerCase();
+      if(hay.indexOf(q)>=0)out.push({n:n,sec:'vocab',i:i,label:(r.word||r.kana||'')+'　'+(r.kana||'')+'　'+(r.mean||'')});
+    });
+    const g=GRAMMAR[n]||'';
+    if(g&&g.replace(/<[^>]+>/g,' ').toLowerCase().indexOf(q)>=0)out.push({n:n,sec:'grammar',i:-1,label:'（文法內容含「'+q+'」）'});
+    const gp=GRAMMAR_PLUS[n]||'';
+    if(gp&&gp.replace(/<[^>]+>/g,' ').toLowerCase().indexOf(q)>=0)out.push({n:n,sec:'gplus',i:-1,label:'（文法補充含「'+q+'」）'});
+    if(out.length>=60)break;
+  }
+  return out;
+}
+function showSearchResults(q){
+  const box=document.getElementById('searchresults');
+  if(!q.trim()){box.style.display='none';box.innerHTML='';return;}
+  setTopbarH();
+  const res=globalSearch(q);
+  if(!res.length){box.innerHTML='<div class="sr-empty">找不到「'+hh(q)+'」</div>';box.style.display='block';return;}
+  box.innerHTML=res.map(function(r){return '<div class="sr-item" data-n="'+r.n+'" data-sec="'+r.sec+'" data-i="'+r.i+'"><span class="sr-loc">'
+    +hh(lessonName(r.n).replace(/\n/g,' '))+' · '+({vocab:'單字',grammar:'文法',gplus:'文法補充'}[r.sec]||r.sec)+'</span><span class="sr-txt">'+hh(r.label)+'</span></div>';}).join('');
+  box.style.display='block';
+}
+function jumpTo(n,sec,i){
+  document.getElementById('searchresults').style.display='none';
+  switchLesson(n);switchSection(sec);
+  if(sec==='vocab'&&i>=0){const tr=document.querySelector('#voc-body tr[data-i="'+i+'"]');
+    if(tr){tr.scrollIntoView({block:'center'});tr.classList.add('hitrow');setTimeout(function(){tr.classList.remove('hitrow');},2200);}}
+}
+document.getElementById('search').addEventListener('input',function(){showSearchResults(this.value);});
+document.getElementById('search').addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('searchresults').style.display='none';});
+document.getElementById('searchresults').addEventListener('click',function(e){const it=e.target.closest('.sr-item');if(!it)return;jumpTo(+it.dataset.n,it.dataset.sec,+it.dataset.i);});
+document.addEventListener('click',function(e){if(!e.target.closest('#searchresults')&&e.target.id!=='search'){const b=document.getElementById('searchresults');if(b)b.style.display='none';}});
+
+/* ---- 語音設定（⚙）：聲音（三個角色）＋語速 ---- */
+function openVoiceModal(){
+  const sel=document.getElementById('voicesel');
+  sel.innerHTML=VV_VOICES.map(function(v){return '<option value="'+v[0]+'">'+hh(v[1])+'</option>';}).join('');
+  sel.value=voiceFor('A');
+  document.getElementById('ratein').value=+ttsCfg.rate||0.9;
+  document.getElementById('rateval').textContent=(+ttsCfg.rate||0.9).toFixed(2)+'×';
+  document.getElementById('voicemodal').classList.add('show');
+}
+document.getElementById('ttsbtn').addEventListener('click',openVoiceModal);
+document.getElementById('voicesel').addEventListener('change',function(){ttsCfg.voiceA=this.value;saveTts();});
+document.getElementById('ratein').addEventListener('input',function(){ttsCfg.rate=+this.value;
+  document.getElementById('rateval').textContent=ttsCfg.rate.toFixed(2)+'×';saveTts();});
+document.getElementById('vtest').addEventListener('click',function(){speak(this.getAttribute('data-say'),this);});
+document.getElementById('vclose').addEventListener('click',function(){document.getElementById('voicemodal').classList.remove('show');});
+document.getElementById('voicemodal').addEventListener('click',function(e){if(e.target.id==='voicemodal')e.currentTarget.classList.remove('show');});
+</script>
+</body>
+</html>

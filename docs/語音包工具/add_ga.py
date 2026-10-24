@@ -15,7 +15,7 @@ import os, re, sys
 
 DOCS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 PAGES = ['index.html', 'minna-notes.html', 'kana.html', 'n5-vocab.html', 'n5-grammar.html',
-         'n5-mock-easy.html', 'n5-mock-full.html']
+         'n5-mock-easy.html', 'n5-mock-full.html', 'gogogo-notes.html']
 PLACEHOLDER = 'G-XXXXXXXXXX'
 BLOCK_RE = re.compile(r'<!-- GA4 -->.*?<!-- /GA4 -->\n?', re.S)
 
