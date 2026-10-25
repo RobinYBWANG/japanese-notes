@@ -30,6 +30,23 @@
   .btn:hover{opacity:.88}
   .btn.ghost{background:transparent;color:var(--jp);border:1px solid var(--line)}
   .btn:disabled{opacity:.45;cursor:default}
+  /* 選卷頁（10 回固定考卷，2026-10-26） */
+  .papers{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .paper{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px}
+  .paper h3{margin:0;font-size:18px;color:var(--jp)}
+  .paper .meta{color:var(--sub);font-size:13px;margin:2px 0 10px}
+  .paper .best{font-size:13px;color:var(--ok);font-weight:700;margin-left:8px}
+  .paper .btn{padding:7px 16px;font-size:15px}
+  .paper details{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;font-size:14px}
+  .paper summary{cursor:pointer;color:var(--sub)}
+  .hist{width:100%;border-collapse:collapse;margin-top:6px}
+  .hist td{padding:4px 4px;border-bottom:1px solid #f0ece3;font-size:13px;white-space:nowrap}
+  .hist td.d{color:var(--sub);white-space:nowrap}
+  .hist .pass{color:var(--ok);font-weight:700}
+  .hist .fail{color:var(--ng);font-weight:700}
+  .hist .void{color:var(--sub)}
+  .hist button,.clr{font-size:12px;padding:2px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--sub);cursor:pointer;font-family:inherit}
+  .msg{background:#fff3e0;border:1px solid #f3d9b5;border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:12px}
   .opts label{display:block;font-size:14px;color:var(--sub);margin-top:8px;cursor:pointer}
   .opts input{margin-right:6px}
 
@@ -151,21 +168,22 @@
 <div class="wrap">
   <a class="homelnk" href="index.html">🏠 首頁</a>
   <h1>📝 N5 模擬考</h1>
-  <div class="sub">簡易版 ‧ 每次 38 題 ‧ 三科依序作答（10／20／15 分）</div>
+  <div class="sub">簡易版 ‧ 10 回固定考卷 ‧ 每回 38 題 ‧ 三科依序作答（10／20／15 分）</div>
 
   <!-- ===== 開始畫面 ===== -->
   <div id="start">
     <div class="card">
       <h2>考試說明</h2>
-      <p>題型、順序、計分都照正式 N5，只把題數減半：文字・語彙 12 題（10 分）、文法・讀解 13 題（20 分）、聽解 13 題（15 分）。三科依序作答，按「下一科」之後不能回頭，最後一科按「交卷」。每次從題庫 <span id="poolsize"></span> 題中抽，考過的題目下次優先不出，全部考完才會重來。</p>
+      <p>題型、順序、計分都照正式 N5，只把題數減半：文字・語彙 12 題（10 分）、文法・讀解 13 題（20 分）、聽解 13 題（15 分）。三科依序作答，按「下一科」之後不能回頭，最後一科按「交卷」。</p>
+      <p>共 <b>10 回固定考卷</b>（從題庫 <span id="poolsize"></span> 題選出 <span id="usedsize"></span> 題分成 10 回，題目和選項順序每次都一樣），可以重考同一回比較進步；每回的成績都會留在歷史紀錄。考到一半重新整理或關掉分頁，那一次作廢。</p>
       <p>聽解題按「▶ 播放」聽，可以重複播放。交卷後會顯示分數、每題解說與聽力原文。</p>
       <div class="opts">
         <label><input type="checkbox" id="opt-timer" checked> 開啟計時（各科 10／20／15 分，時間到自動進下一科）</label>
       </div>
-      <p id="best" class="hide" style="margin-top:14px"></p>
-      <p id="pool" style="margin-top:14px;color:#6b6b6b"></p>
-      <p style="margin-top:16px"><button class="btn" id="go">開始作答</button> <button class="btn ghost hide" id="last">上次考試結果</button></p>
     </div>
+    <div id="msg" class="msg hide"></div>
+    <div class="papers" id="papers"></div>
+    <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--sub)"><button class="clr hide" id="clrall">清空全部考卷的紀錄</button></p>
   </div>
 
   <!-- ===== 作答區 ===== -->
@@ -176,7 +194,7 @@
   <!-- ===== 結果 ===== -->
   <div id="result" class="hide"></div>
 
-  <footer>成績存在這台裝置的瀏覽器中<br>音声：VOICEVOX:四国めたん／VOICEVOX:玄野武宏／VOICEVOX:青山龍星</footer>
+  <footer>成績存在這台裝置的瀏覽器中，換裝置不會同步<br>音声：VOICEVOX:四国めたん／VOICEVOX:玄野武宏／VOICEVOX:青山龍星</footer>
 </div>
 
 <div id="bar" class="hide">
@@ -2629,9 +2647,11 @@ var SEC_NAME = { 1:"文字・語彙", 2:"文法・読解", 3:"聴解" };
 var SECS = [1, 2, 3];
 var LIMITS = { 1: 10 * 60, 2: 20 * 60, 3: 15 * 60 };   // 各科時間（正式 20／40／30 分的一半）
 var PASS = { total: 80, know: 38, listen: 19 };        // 合格線：總分 80，言語知識・読解 38/120，聴解 19/60
-var BEST_KEY = "jp_n5mock_best2";  // 最佳紀錄（180 分制；舊的 % 制 key 不再用）
-var SEEN_KEY = "jp_n5mock_seen";   // 考過的題目（交卷時記錄），抽題時優先避開
-var LAST_KEY = "jp_n5mock_last";   // 上次考卷：題目、作答、日期（交卷時存，開始畫面可回看）
+var OLD_KEYS = ["jp_n5mock_best2", "jp_n5mock_best", "jp_n5mock_seen", "jp_n5mock_last"];  // 隨機抽題時代的 key，載入時清掉
+var NPAPER = 10;                    // 固定考卷回數（2026-10-26：隨機抽題改成固定 10 回）
+var HIST_KEY = function(p){ return "jp_n5mock_hist_" + p; };   // 第 p 回（0 起算）的歷史紀錄
+var RUN_KEY = "jp_n5mock_running";  // 考試中的回數；重新整理後還在 → 那一次作廢
+var MAXHIST = 20;
 
 /* 每次抽題的配額（題數）= 正式 N5 各大題題數的一半，key = 科目|題型；
    讀解／文章文法同一篇的連續題是一個單位（一篇 2 題就整篇抽） */
@@ -2677,42 +2697,37 @@ function unitsOf(){
   return units;
 }
 
-function loadSeen(){
-  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); } catch(e){ return []; }
-}
-
-/* 依配額抽一份考卷：每個題型先抽沒考過的，不夠再從考過的補；全部考過就從頭來 */
-function pickExam(){
-  var units = unitsOf(), seen = loadSeen();
-  if (units.every(function(u){ return seen.indexOf(u.key) >= 0; })){
-    seen = []; localStorage.removeItem(SEEN_KEY);
-  }
-  var groups = {}, order = [];
+/* 固定 10 回考卷：每個題型的抽題單位（讀解一篇一個單位）依題庫順序輪流發給第 1〜10 回——
+   第 1 回拿第 1、11、21… 個，第 2 回拿第 2、12、22… 個，湊滿 QUOTA 為止。題庫順序不變，考卷就不變；
+   用不到的題目（某些題型比 10 回所需多）就留著，之後題庫加題也不會打亂前面幾回（只要加在各題型的最後面）。 */
+function buildPapers(){
+  var units = unitsOf(), groups = {}, order = [], papers = [];
   units.forEach(function(u){
     var g = u.qs[0].sec + "|" + u.qs[0].type;
     if (!groups[g]){ groups[g] = []; order.push(g); }
     groups[g].push(u);
   });
-  var out = [];
+  for (var p = 0; p < NPAPER; p++) papers.push([]);
   order.forEach(function(g){
     var want = QUOTA[g];
     if (!want) throw new Error("QUOTA 沒有這個題型：" + g);
-    var fresh = [], old = [];
-    groups[g].forEach(function(u){ (seen.indexOf(u.key) < 0 ? fresh : old).push(u); });
-    var chosen = [], n = 0;
-    shuffle(fresh).concat(shuffle(old)).forEach(function(u){
-      if (n < want){ chosen.push(u); n += u.qs.length; }
-    });
-    chosen.sort(function(a, b){ return units.indexOf(a) - units.indexOf(b); });
-    chosen.forEach(function(u){ out = out.concat(u.qs); });
+    for (var p = 0; p < NPAPER; p++){
+      var n = 0;
+      for (var i = p; i < groups[g].length && n < want; i += NPAPER){ papers[p] = papers[p].concat(groups[g][i].qs); n += groups[g][i].qs.length; }
+      if (n !== want) throw new Error("第 " + (p + 1) + " 回的「" + g + "」題目不夠（" + n + "／" + want + "）");
+    }
   });
-  return out;
+  return papers;
 }
+var PAPERS = buildPapers();
+function paperName(p){ return "第 " + (p + 1) + " 回"; }
 
-function markSeen(){
-  var seen = loadSeen();
-  qs.forEach(function(q){ var k = keyOf(q); if (seen.indexOf(k) < 0) seen.push(k); });
-  localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+function loadHist(p){ try { return JSON.parse(localStorage.getItem(HIST_KEY(p)) || "[]"); } catch(e){ return []; } }
+function saveHist(p, list){ try { localStorage.setItem(HIST_KEY(p), JSON.stringify(list.slice(0, MAXHIST))); } catch(e){} }
+
+/* Google Analytics 自訂事件（GA 只在 github.io 上載入；本機打開時 gtag 不存在，什麼都不送） */
+function track(name, params){
+  try { if (typeof gtag === "function") gtag("event", name, Object.assign({ exam_type: "easy" }, params || {})); } catch(e){}
 }
 
 var qs = [];        // 本次題目（可能被打亂）
@@ -2721,6 +2736,7 @@ var submitted = false;
 var timerOn = true;
 var left = 0;
 var cur = 1;         // 目前作答的科目（1→2→3，交了就不能回頭）
+var paperNo = 0;     // 目前這份是第幾回（0 起算）
 var tid = null;
 
 var $ = function(id){ return document.getElementById(id); };
@@ -2733,10 +2749,20 @@ function shuffle(arr){
   return arr;
 }
 
-/* 選項每次都重排，避免正解固定在同一個位置（選項數 3 或 4 都適用） */
+/* 選項重排，避免正解老是在第一個（題庫裡大多寫在第一個）。用題目本身當種子，所以同一題每次的順序都一樣——
+   固定考卷不管考幾次、換哪台裝置，選項位置都相同（2026-10-26）。選項數 3 或 4 都適用 */
+function seededShuffle(arr, key){
+  var r = 2166136261;
+  for (var i = 0; i < key.length; i++){ r ^= key.charCodeAt(i); r = Math.imul(r, 16777619) >>> 0; }
+  for (var k = arr.length - 1; k > 0; k--){
+    r = (Math.imul(r, 1103515245) + 12345) >>> 0;
+    var j = (r >>> 8) % (k + 1), t = arr[k]; arr[k] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
 function shuffleChoices(q){
   var idx = q.c.map(function(_, i){ return i; });
-  if (!q.fixed) shuffle(idx);           // 圖片題的 1〜4 對應圖上的格子，不能洗
+  if (!q.fixed) seededShuffle(idx, keyOf(q));   // 圖片題的 1〜4 對應圖上的格子，不能洗
   return {
     sec:q.sec, type:q.type, pass:q.pass, passZh:q.passZh, scene:q.scene,
     audio:q.audio, readChoices:q.readChoices, img:q.img, fixed:q.fixed, q:q.q, e:q.e,
@@ -2990,9 +3016,12 @@ function tick(){
   if (left <= 0) nextSection(true);
 }
 
-function start(){
+function start(p){
   timerOn = $("opt-timer").checked;
-  qs = pickExam().map(shuffleChoices);
+  paperNo = p;
+  qs = PAPERS[p].map(shuffleChoices);
+  try { localStorage.setItem(RUN_KEY, String(p)); } catch(e){}
+  track("exam_start", { paper: paperName(p), attempt: loadHist(p).filter(function(r){ return !r.void; }).length + 1, timer: timerOn ? "on" : "off" });
   picked = qs.map(function(){ return null; });
   submitted = false;
   cur = 1;
@@ -3027,6 +3056,7 @@ function nextSection(auto){
   if (!auto && blank > 0 && !confirm("這科還有 " + blank + " 題沒作答，交了就不能回頭，確定進下一科嗎？")) return;
   stopPlay();
   cur++;
+  track("exam_section", { paper: paperName(paperNo), section: SEC_NAME[cur], time_up: auto ? "yes" : "no" });
   left = LIMITS[cur];
   $("timer").textContent = fmt(left);
   $("timer").classList.remove("warn");
@@ -3052,22 +3082,25 @@ function submit(auto){
     if (!confirm("還有 " + unanswered + " 題沒作答，確定要交卷嗎？")) return;
   }
   submitted = true;
-  markSeen();
   stopPlay();
   if (tid){ clearInterval(tid); tid = null; }
   $("submit").disabled = true;
-  var rec = { at: Date.now(), auto: !!auto, qs: qs, picked: picked };
-  try { localStorage.setItem(LAST_KEY, JSON.stringify(rec)); } catch(e){}
+  try { localStorage.removeItem(RUN_KEY); } catch(e){}
+  var g = gradeOf(qs, picked);
+  var rec = { at: Date.now(), auto: !!auto, picked: picked, total: g.total, know: g.know, listen: g.listen, pass: g.passed };
+  var hist = loadHist(paperNo); hist.unshift(rec); saveHist(paperNo, hist);
+  track("exam_finish", { paper: paperName(paperNo), score: g.total, passed: g.passed ? "yes" : "no", time_up: auto ? "yes" : "no" });
   showGraded(rec, false);
   $("result").scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
-/* 上次考試結果：把存起來的考卷原樣畫出來，直接進交卷後的狀態（正解、錯題、詳解、聽力原文） */
-function showLast(){
-  var rec = loadLast();
-  if (!rec) return;
+/* 歷史紀錄的「看詳解」：同一回的考卷照原樣畫出來，直接進交卷後的狀態（正解、錯題、詳解、聽力原文） */
+function showReview(p, i){
+  var rec = loadHist(p)[i];
+  if (!rec || rec.void) return;
   stopPlay();
-  qs = rec.qs; picked = rec.picked; submitted = true;
+  paperNo = p;
+  qs = PAPERS[p].map(shuffleChoices); picked = rec.picked; submitted = true;
   render();
   $("start").classList.add("hide");
   $("bar").classList.add("hide");
@@ -3075,11 +3108,8 @@ function showLast(){
   switchTab(1);
   checkVoice();
   showGraded(rec, true);
+  track("exam_review", { paper: paperName(p) });
   window.scrollTo(0, 0);
-}
-
-function loadLast(){
-  try { return JSON.parse(localStorage.getItem(LAST_KEY) || "null"); } catch(e){ return null; }
 }
 
 function fmtDate(ms){
@@ -3087,11 +3117,9 @@ function fmtDate(ms){
   return d.getFullYear() + "/" + p(d.getMonth() + 1) + "/" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
 }
 
-/* 批改並畫成績卡。review=true 是回看上次考卷：不更新最佳紀錄 */
-function showGraded(rec, review){
-  $("quiz").classList.add("done");
-  lockTabs();
-
+/* 計分：正式 N5 是言語知識（文字・語彙・文法）・読解 120 分、聴解 60 分，合格 = 總分 80 且兩部分各過門檻。
+   正式是量尺分數（統計換算），這裡用答對比例換算，屬估計值 */
+function gradeOf(qs, picked){
   var got = {}, tot = {}, byType = {}, order = [];
   SECS.forEach(function(s){ got[s] = 0; tot[s] = 0; });
   qs.forEach(function(q, i){
@@ -3099,64 +3127,58 @@ function showGraded(rec, review){
     var k = q.sec + "|" + q.type;
     if (!byType[k]){ byType[k] = { sec:q.sec, type:q.type, got:0, tot:0 }; order.push(k); }
     byType[k].tot++;
+    if (picked[i] === q.a){ got[q.sec]++; byType[k].got++; }
+  });
+  var scaled = function(g, t, full){ return t ? Math.round(g / t * full) : 0; };
+  var know = scaled(got[1] + got[2], tot[1] + tot[2], 120), listen = scaled(got[3], tot[3], 60);
+  return { got:got, tot:tot, byType:byType, order:order, know:know, listen:listen, total:know + listen,
+           passed: know + listen >= PASS.total && know >= PASS.know && listen >= PASS.listen };
+}
+
+/* 批改並畫成績卡。review=true 是從歷史紀錄回看 */
+function showGraded(rec, review){
+  $("quiz").classList.add("done");
+  lockTabs();
+  var g = gradeOf(qs, picked);
+  qs.forEach(function(q, i){
     var right = picked[i] === q.a;
-    if (right){ got[q.sec]++; byType[k].got++; }
-    var box = $("c" + i);
-    var btns = box.querySelectorAll(".ch");
+    var btns = $("c" + i).querySelectorAll(".ch");
     btns[q.a].classList.add("ans");
     if (picked[i] !== null && !right) btns[picked[i]].classList.add("wrong");
     var m = $("m" + i);
     m.textContent = right ? "✓ 正解" : (picked[i] === null ? "－ 未答" : "✗ 錯");
     m.className = "mark " + (right ? "ok" : "ng");
   });
-
-  var all = 0, allTot = 0;
-  SECS.forEach(function(s){
-    $("tc" + s).textContent = "得分 " + got[s] + " / " + tot[s];
-    all += got[s]; allTot += tot[s];
-  });
-  /* 正式 N5 的計分：言語知識（文字・語彙・文法）・読解 120 分、聴解 60 分，合格 = 總分 80 且兩部分各過門檻。
-     正式是量尺分數（統計換算），這裡用答對比例換算，屬估計值 */
-  var scaled = function(g, t, full){ return t ? Math.round(g / t * full) : 0; };
-  var know = scaled(got[1] + got[2], tot[1] + tot[2], 120);
-  var listen = scaled(got[3], tot[3], 60);
-  var total = know + listen;
-  var passed = total >= PASS.total && know >= PASS.know && listen >= PASS.listen;
-  var best = +(localStorage.getItem(BEST_KEY) || 0);
-  var isBest = !review && total > best;
-  if (isBest) localStorage.setItem(BEST_KEY, String(total));
-  var rows = order.map(function(k){
-    var b = byType[k], no = b.type.split("　")[0];
+  SECS.forEach(function(s){ $("tc" + s).textContent = "得分 " + g.got[s] + " / " + g.tot[s]; });
+  var done = loadHist(paperNo).filter(function(r){ return !r.void; });
+  var best = done.reduce(function(m, r){ return Math.max(m, r.total); }, 0);
+  var isBest = !review && done.length > 1 && g.total >= best && done.slice(1).every(function(r){ return g.total > r.total; });
+  var rows = g.order.map(function(k){
+    var b = g.byType[k], no = b.type.split("　")[0];
     return '<tr><td>' + SEC_NAME[b.sec] + '</td><td>' + no + '　' + (LABEL[b.sec + "|" + no] || '') + '</td>' +
            '<td>' + b.got + ' / ' + b.tot + '</td></tr>';
   }).join('');
 
   $("result").innerHTML =
     '<div class="card" style="text-align:center">' +
-      (review ? '<p style="color:var(--sub)">📂 上次考試結果　' + fmtDate(rec.at) + '</p>' : '') +
+      '<p style="color:var(--sub)">' + (review ? '📂 ' : '') + paperName(paperNo) + '　' + fmtDate(rec.at) + '</p>' +
       (rec.auto ? '<p style="color:#c0392b">⏰ 時間到，自動交卷</p>' : '') +
-      '<div class="score">' + total + ' <small>/ 180</small></div>' +
-      '<div class="brk">言語知識（文字・語彙・文法）・読解 <b>' + know + '</b> / 120（門檻 ' + PASS.know + '）　｜　聴解 <b>' + listen + '</b> / 60（門檻 ' + PASS.listen + '）</div>' +
-      '<div class="brk" style="font-size:20px;font-weight:700;color:' + (passed ? 'var(--ok)' : 'var(--ng)') + '">' + (passed ? '✅ 合格' : '❌ 不合格') + '</div>' +
+      '<div class="score">' + g.total + ' <small>/ 180</small></div>' +
+      '<div class="brk">言語知識（文字・語彙・文法）・読解 <b>' + g.know + '</b> / 120（門檻 ' + PASS.know + '）　｜　聴解 <b>' + g.listen + '</b> / 60（門檻 ' + PASS.listen + '）</div>' +
+      '<div class="brk" style="font-size:20px;font-weight:700;color:' + (g.passed ? 'var(--ok)' : 'var(--ng)') + '">' + (g.passed ? '✅ 合格' : '❌ 不合格') + '</div>' +
       '<div class="brk">合格：總分 ' + PASS.total + ' 以上，且兩部分都達門檻。分數依答對比例換算成 180 分制（估計值）。</div>' +
       '<table class="brkdown">' + rows + '</table>' +
-      '<div class="brk">' + (isBest ? "🎉 刷新最佳紀錄！" : "最佳紀錄：" + Math.max(best, total) + " / 180") + '</div>' +
+      '<div class="brk">' + (isBest ? "🎉 這一回刷新最佳紀錄！" : "這一回最佳紀錄：" + Math.max(best, g.total) + " / 180（考過 " + done.length + " 次）") + '</div>' +
       '<p style="margin-top:18px">' +
-        '<button class="btn" id="again">再考一次</button> ' +
-        '<button class="btn ghost" id="wrongonly">只看錯題</button>' +
+        '<button class="btn" id="again">重考這一回</button> ' +
+        '<button class="btn ghost" id="wrongonly">只看錯題</button> ' +
+        '<button class="btn ghost" id="home">回選卷頁</button>' +
       '</p>' +
     '</div>';
   $("result").classList.remove("hide");
 
-  $("again").addEventListener("click", function(){
-    $("quiz").classList.remove("done");
-    $("quiz").classList.add("hide");
-    $("result").classList.add("hide");
-    $("bar").classList.add("hide");
-    $("start").classList.remove("hide");
-    showBest();
-    window.scrollTo(0, 0);
-  });
+  $("again").addEventListener("click", function(){ resetView(); start(paperNo); });
+  $("home").addEventListener("click", function(){ resetView(); renderHome(); });
   $("wrongonly").addEventListener("click", function(){
     var on = $("wrongonly").dataset.on === "1";
     qs.forEach(function(q, i){
@@ -3168,24 +3190,89 @@ function showGraded(rec, review){
   });
 }
 
-function showBest(){
-  var best = localStorage.getItem(BEST_KEY);
-  if (best){
-    $("best").textContent = "上次最佳成績：" + best + " / 180";
-    $("best").classList.remove("hide");
-  }
-  var seen = loadSeen();
-  var done = BANK.filter(function(q){ return seen.indexOf(keyOf(q)) >= 0; }).length;
-  $("poolsize").textContent = BANK.length;
-  $("pool").textContent = "題庫 " + BANK.length + " 題，已考過 " + done + " 題";
-  $("last").classList.toggle("hide", !loadLast());
+function resetView(){
+  stopPlay();
+  $("quiz").classList.remove("done");
+  $("quiz").classList.add("hide");
+  $("result").classList.add("hide");
+  $("bar").classList.add("hide");
 }
 
-$("go").addEventListener("click", start);
-$("last").addEventListener("click", showLast);
+/* 選卷頁：10 回，每回一張卡（開始考試、最佳成績、歷史紀錄） */
+function renderHome(msg){
+  $("poolsize").textContent = BANK.length;
+  $("usedsize").textContent = PAPERS.reduce(function(n, ps){ return n + ps.length; }, 0);
+  $("msg").textContent = msg || "";
+  $("msg").classList.toggle("hide", !msg);
+  var any = false, h = "";
+  PAPERS.forEach(function(ps, p){
+    var hist = loadHist(p), done = hist.filter(function(r){ return !r.void; });
+    if (hist.length) any = true;
+    var best = done.length ? Math.max.apply(null, done.map(function(r){ return r.total; })) : null;
+    h += '<div class="paper"><h3>' + paperName(p) +
+           (best !== null ? '<span class="best">最佳 ' + best + ' / 180</span>' : '') + '</h3>' +
+         '<div class="meta">' + ps.length + ' 題・45 分鐘' + (done.length ? '・考過 ' + done.length + ' 次' : '・還沒考過') + '</div>' +
+         '<button class="btn" data-start="' + p + '">' + (done.length ? '重考' : '開始考試') + '</button>';
+    if (hist.length){
+      h += '<details><summary>歷史紀錄（' + hist.length + '）</summary><table class="hist">';
+      hist.forEach(function(r, i){
+        h += '<tr><td class="d" title="' + fmtDate(r.at) + '">' + fmtDate(r.at).slice(5) + '</td>';   // 選卷頁只顯示 月/日 時:分，手機才放得下
+        if (r.void) h += '<td class="void" colspan="3">未完成（作廢）</td>';
+        else h += '<td>' + r.total + ' / 180</td><td class="' + (r.pass ? 'pass' : 'fail') + '">' + (r.pass ? '合格' : '不合格') + (r.auto ? '⏰' : '') + '</td>' +
+                  '<td style="text-align:right"><button data-review="' + p + ':' + i + '">看詳解</button></td>';
+        h += '</tr>';
+      });
+      h += '</table><p style="margin:6px 0 0;text-align:right"><button class="clr" data-clear="' + p + '">清空這一回的紀錄</button></p></details>';
+    }
+    h += '</div>';
+  });
+  $("papers").innerHTML = h;
+  $("clrall").classList.toggle("hide", !any);
+  $("start").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+function clearHist(p){
+  var all = p === "*";
+  if (!confirm((all ? "全部 10 回" : paperName(+p)) + "的歷史紀錄會全部刪掉，確定嗎？")) return;
+  for (var i = 0; i < NPAPER; i++) if (all || i === +p) try { localStorage.removeItem(HIST_KEY(i)); } catch(e){}
+  track("history_clear", { paper: all ? "全部" : paperName(+p) });
+  renderHome((all ? "全部" : paperName(+p)) + "的歷史紀錄已經清空。");
+}
+
+$("papers").addEventListener("click", function(e){
+  var b = e.target.closest("[data-start]");
+  if (b){ start(+b.dataset.start); return; }
+  b = e.target.closest("[data-review]");
+  if (b){ var v = b.dataset.review.split(":"); showReview(+v[0], +v[1]); return; }
+  b = e.target.closest("[data-clear]");
+  if (b) clearHist(b.dataset.clear);
+});
+$("clrall").addEventListener("click", function(){ clearHist("*"); });
 $("submit").addEventListener("click", function(){ nextSection(false); });
 $("quiz").addEventListener("click", onPick);
-showBest();
+
+/* 載入：清掉隨機抽題時代的舊紀錄；上次考到一半離開的那一回記成作廢（跟正式版一樣） */
+(function init(){
+  var msg = "";
+  try {
+    OLD_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+    var running = localStorage.getItem(RUN_KEY);
+    if (running !== null){
+      localStorage.removeItem(RUN_KEY);
+      var p = +running;
+      if (p >= 0 && p < NPAPER){
+        var hist = loadHist(p); hist.unshift({ at: Date.now(), void: true }); saveHist(p, hist);
+        track("exam_abandon", { paper: paperName(p) });
+        msg = "上一次考" + paperName(p) + "考到一半離開了，那一次已作廢。";
+      }
+    }
+  } catch(e){}
+  window.addEventListener("beforeunload", function(e){
+    if (!submitted && !$("quiz").classList.contains("hide")){ e.preventDefault(); e.returnValue = ""; }
+  });
+  renderHome(msg);
+})();
 </script>
 </body>
 </html>

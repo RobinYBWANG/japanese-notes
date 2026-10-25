@@ -204,6 +204,8 @@ const P_OPENING = 1500, P_INSTR = 2000, P_EX = 2500;
 const HIST_KEY = p => 'mf_hist_' + p;
 const RUN_KEY = 'mf_running';
 const MAXHIST = 20;
+/* Google Analytics 自訂事件（GA 只在 github.io 上載入；本機打開時 gtag 不存在，什麼都不送；2026-10-26） */
+function track(name, params){ try{ if (typeof gtag === 'function') gtag('event', name, Object.assign({exam_type: 'full'}, params || {})); }catch(e){} }
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s);
@@ -303,6 +305,7 @@ function renderHome(msg){
     const all = id === '*';
     if (!confirm((all ? '三份考卷的歷史紀錄' : id + ' 卷的歷史紀錄') + '會全部刪掉，確定嗎？')) return;
     try{ (all ? ['A','B','C'] : [id]).forEach(x => localStorage.removeItem(HIST_KEY(x))); }catch(e){}
+    track('history_clear', {paper: all ? '全部' : id + ' 卷'});
     renderHome((all ? '全部' : id + ' 卷') + '的歷史紀錄已經清空。');
   }));
   el.querySelectorAll('[data-review]').forEach(b => b.addEventListener('click', () => {
@@ -385,12 +388,14 @@ function startExam(id){
   paper = PAPERS[id];
   state = {id, ans: {}, si: 0, started: today()};
   try{ localStorage.setItem(RUN_KEY, id); }catch(e){}
+  track('exam_start', {paper: id + ' 卷', attempt: loadHist(id).filter(r => !r.void).length + 1});
   runSection(0);
 }
 
 function runSection(si){
   state.si = si;
   const sec = paper.sections[si];
+  if (si > 0) track('exam_section', {paper: state.id + ' 卷', section: sec.label});
   show('exam');
   $('secname').textContent = '試験' + 'ⅠⅡⅢ'[si] + '　' + sec.label;
   $('secmeta').textContent = sec.n + ' 題';
@@ -540,6 +545,7 @@ function finishExam(){
   const res = grade(paper, state.ans);
   const rec = {date: today(), ans: state.ans, total: res.total, sa: res.sa, sb: res.sb, pass: res.pass};
   const hist = loadHist(state.id); hist.unshift(rec); saveHist(state.id, hist);
+  track('exam_finish', {paper: state.id + ' 卷', score: res.total, passed: res.pass ? 'yes' : 'no'});
   renderResult(res, rec);
 }
 
@@ -567,6 +573,7 @@ function renderResult(res, rec){
 /* ───────── 檢討 ───────── */
 function openReview(id, rec){
   paper = PAPERS[id];
+  track('exam_review', {paper: id + ' 卷'});
   const ans = rec.ans || {};
   const res = grade(paper, ans);
   let h = '<div class="score"><div class="note">' + esc(paper.name) + '　' + esc(rec.date) + '　'
@@ -606,6 +613,7 @@ function openReview(id, rec){
       const hist = loadHist(running);
       hist.unshift({date: today(), void: true});
       saveHist(running, hist);
+      track('exam_abandon', {paper: running + ' 卷'});
       msg = '上一次考到一半離開了，那一份已作廢（正式考試沒有第二次機會）。';
     }
   }catch(e){}

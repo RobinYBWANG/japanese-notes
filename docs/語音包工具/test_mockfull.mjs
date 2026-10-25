@@ -18,6 +18,8 @@ const errs = [];
 page.on('pageerror', e => errs.push(String(e)));
 page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 page.on('dialog', d => d.accept());
+// GA 只在 github.io 上載入；這裡先放一個假的 gtag 把送出的自訂事件記下來（2026-10-26）
+await page.addInitScript(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); }; });
 await page.goto(URL);
 await page.waitForTimeout(500);
 
@@ -194,6 +196,15 @@ ok('回到選卷頁、歷史多一筆', (await page.textContent('#home')).includ
 const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('mf_hist_A') || '[]'));
 ok('歷史紀錄存進 localStorage', hist.length === 1 && hist[0].total === 180 && hist[0].pass, hist[0]);
 
+// ───────── Google Analytics 自訂事件 ─────────
+const ga = await page.evaluate(() => window.__ga.filter(a => a[0] === 'event').map(a => [a[1], a[2]]));
+const ev = n => ga.filter(e => e[0] === n);
+ok('GA：exam_start（full、A 卷、第 1 次）', ev('exam_start').length === 1 && ev('exam_start')[0][1].exam_type === 'full'
+   && ev('exam_start')[0][1].paper === 'A 卷' && ev('exam_start')[0][1].attempt === 1, ev('exam_start'));
+ok('GA：exam_section 兩次（第2科、聴解）', ev('exam_section').length === 2, ev('exam_section'));
+ok('GA：exam_finish 180 分、合格', ev('exam_finish').length === 1 && ev('exam_finish')[0][1].score === 180 && ev('exam_finish')[0][1].passed === 'yes', ev('exam_finish'));
+ok('GA：看詳解送出 exam_review', ev('exam_review').length === 1, ev('exam_review'));
+
 // ───────── 考到一半重新整理 = 作廢 ─────────
 await page.click('[data-start="A"]');
 await page.waitForTimeout(200);
@@ -202,6 +213,7 @@ await page.waitForTimeout(400);
 const h2 = await page.evaluate(() => JSON.parse(localStorage.getItem('mf_hist_A') || '[]'));
 ok('中途離開會記成作廢', h2.length === 2 && h2[0].void === true, h2[0]);
 ok('重新進來有提示', (await page.textContent('#home')).includes('作廢'));
+ok('GA：作廢送出 exam_abandon', await page.evaluate(() => window.__ga.some(a => a[0] === 'event' && a[1] === 'exam_abandon' && a[2].paper === 'A 卷')));
 
 // ───────── 其他考卷（B／C）─────────
 const others = await page.evaluate(() => {

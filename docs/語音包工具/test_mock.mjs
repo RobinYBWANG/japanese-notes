@@ -1,5 +1,5 @@
-// n5-mock-easy.html 回歸測試：題庫結構、配額（正式 N5 各大題的一半）、音檔覆蓋、三科依序作答、180 分制計分、
-// 交卷記錄、上次考卷回看、兩次抽題不重複、版面
+// n5-mock-easy.html 回歸測試：題庫結構、配額（正式 N5 各大題的一半）、音檔覆蓋、10 回固定考卷、三科依序作答、
+// 180 分制計分、歷史紀錄（看詳解／重考／清空／作廢）、Google Analytics 自訂事件、版面
 // 用法：node test_mock.mjs [要驗的 html，預設 ..\n5-mock-easy.html]
 import { chromium } from 'playwright';
 import path from 'node:path';
@@ -14,6 +14,8 @@ const page = await browser.newPage();
 page.on('dialog', d => d.accept());   // 「還有 N 題沒作答」的 confirm 一律接受
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', e => errors.push(String(e)));
+// GA 只在 github.io 上載入；這裡先放一個假的 gtag 把送出的事件記下來
+await page.addInitScript(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); }; });
 console.log('驗證：' + HTML);
 await page.goto(pathToFileURL(HTML).href, { timeout: 90000 });
 await page.waitForTimeout(800);
@@ -58,10 +60,10 @@ const info = await page.evaluate(() => {
   BANK.forEach(q => { const k = [q.sec, +q.type.match(/問題(\d+)/)[1]]; if (prev && (k[0] < prev[0] || (k[0] === prev[0] && k[1] < prev[1]))) orderOk = false; prev = k; });
   const quotaOk = Object.keys(types).every(k => QUOTA[k] > 0) && Object.keys(QUOTA).every(k => types[k] > 0);
   const quotaTotal = Object.values(QUOTA).reduce((a, b) => a + b, 0);
-  const enough = Object.keys(QUOTA).every(k => types[k] >= QUOTA[k] * 5);
+  const enough = Object.keys(QUOTA).every(k => types[k] >= QUOTA[k] * 10);
   const uncovered = BANK.filter(q => q.audio && !vvCover(q)).length;
   // 選項洗牌後也要有音檔（2026-09-12：以前「1ばん。選項」整句合成，洗牌後就退回瀏覽器語音）
-  const uncoveredDrawn = pickExam().map(shuffleChoices).filter(q => q.audio && !vvCover(q)).length;
+  const uncoveredDrawn = PAPERS.flat().map(shuffleChoices).filter(q => q.audio && !vvCover(q)).length;
   return { n: BANK.length, types, bad, passOk, orderOk, quotaOk, quotaTotal, enough, uncovered, uncoveredDrawn, hasAll: VV_HAS_ALL,
            clips: Object.keys(VV.audio).length, texts: Object.keys(VV.say).length };
 });
@@ -70,9 +72,9 @@ ok('每題結構正確', info.bad.length === 0);
 ok('讀解／文章文法每篇題數正確、短文不重複', info.passOk);
 ok('題庫依 科目→問題N 排序', info.orderOk);
 ok('配額表 14 個題型一一對應、合計 ' + N, info.quotaOk && info.quotaTotal === N && Object.keys(info.types).length === 14);
-ok('每個題型夠抽 5 份', info.enough);
+ok('每個題型夠出 10 回', info.enough);
 ok('聴解音檔全覆蓋（含題目旁白與選項朗讀）', info.uncovered === 0 && info.hasAll);
-ok('抽出的考卷（選項洗牌後）音檔也全覆蓋', info.uncoveredDrawn === 0);
+ok('10 回考卷（選項重排後）音檔也全覆蓋', info.uncoveredDrawn === 0);
 
 // 圖片：14 題四格圖（選項 1〜4、固定順序）、15 題發話表現有場景圖，圖檔都載得進來
 const pics = await page.evaluate(() => new Promise(res => {
@@ -94,25 +96,42 @@ ok('發話表現 27 題有場景圖（其餘用 emoji 場景）', pics.scenes ==
 ok('29 張圖都載得進來、寬度夠', pics.bad.length === 0);
 if (pics.bad.length) console.log('壞圖:', pics.bad);
 
-// 第一次考：抽 38 題、三科 12/13/13、各題型合配額、讀解四篇各顯示一次、只有第一科能作答
+// 10 回固定考卷：每回 38 題、合配額、回與回之間題目不重複、選項順序固定、正解位置分散
+const pp = await page.evaluate(() => {
+  const keys = PAPERS.flat().map(keyOf);
+  const quotaOk = PAPERS.every(ps => { const t = {}; ps.forEach(q => { const k = q.sec + '|' + q.type; t[k] = (t[k] || 0) + 1; });
+                                         return Object.keys(QUOTA).every(k => t[k] === QUOTA[k]); });
+  const fixedOk = PAPERS.every(ps => ps.map(shuffleChoices).map(q => q.c.join('|')).join() === ps.map(shuffleChoices).map(q => q.c.join('|')).join());
+  const pos = [0, 0, 0, 0]; let n4 = 0;
+  PAPERS.flat().forEach(q => { if (q.fixed || q.c.length !== 4) return; pos[shuffleChoices(q).a]++; n4++; });
+  return { n: PAPERS.length, sizes: PAPERS.map(ps => ps.length), uniq: new Set(keys).size === keys.length, quotaOk, fixedOk,
+           posMin: Math.min.apply(null, pos) / n4, cards: document.querySelectorAll('#papers .paper').length };
+});
+ok('10 回考卷、每回 ' + N + ' 題、選卷頁 10 張卡', pp.n === 10 && pp.sizes.every(n => n === N) && pp.cards === 10);
+ok('每回都符合配額、回與回之間題目不重複', pp.quotaOk && pp.uniq);
+ok('選項順序固定（同一回打開兩次一樣）', pp.fixedOk);
+ok('四選一的正解位置分散（每個位置至少 15%）', pp.posMin >= 0.15);
+
+// 考第 1 回：三科 12/13/13、各題型合配額、讀解四篇各顯示一次、只有第一科能作答
 await page.evaluate(() => localStorage.clear());
-await page.click('#go');
+await page.click('[data-start="0"]');
 await page.waitForTimeout(500);
 const ex1 = await page.evaluate(() => {
   const sec = {}, types = {};
   qs.forEach(q => { sec[q.sec] = (sec[q.sec] || 0) + 1; const k = q.sec + '|' + q.type; types[k] = (types[k] || 0) + 1; });
-  return { keys: qs.map(keyOf), sec, types,
+  return { keys: qs.map(keyOf), choices: qs.map(q => q.c.join('|')), sec, types,
            cards: document.querySelectorAll('#quiz .card').length,
            passages: document.querySelectorAll('#quiz .passage').length,
            quotaMatch: Object.keys(QUOTA).every(k => types[k] === QUOTA[k]),
-           left, btn: $('submit').textContent,
+           left, btn: $('submit').textContent, running: localStorage.getItem('jp_n5mock_running'),
            locked: document.querySelectorAll('#tabs .tab.lock').length };
 });
-ok('抽 ' + N + ' 題', ex1.keys.length === N && ex1.cards === N);
+ok('第 1 回 ' + N + ' 題、就是 PAPERS[0]', ex1.keys.length === N && ex1.cards === N && await page.evaluate(k => PAPERS[0].map(keyOf).join() === k.join(), ex1.keys));
 ok('三科 12／13／13', ex1.sec[1] === 12 && ex1.sec[2] === 13 && ex1.sec[3] === 13);
 ok('各題型符合配額', ex1.quotaMatch);
 ok('讀解四篇（文章文法／短文／中文／情報検索）各顯示一次', ex1.passages === 4);
 ok('第一科：計時 10:00、按鈕是「下一科」、另外兩科鎖住', ex1.left >= 10 * 60 - 2 && ex1.btn.indexOf('下一科') === 0 && ex1.locked === 2);
+ok('考試中記下「正在考第 1 回」（離開會作廢）', ex1.running === '0');
 
 // 鎖住的分頁點了不會切
 await page.click('#tabs .tab[data-sec="3"]');
@@ -147,31 +166,37 @@ await page.waitForTimeout(800);
 await page.evaluate(() => stopPlay());
 ok('點播放不噴錯', errors.length === 0);
 
-// 交卷：180 分制、合格判定、14 個大題的答對數、記錄 38 題為考過
+// 交卷：180 分制、合格判定、14 個大題的答對數、寫進第 1 回的歷史紀錄
 await page.click('#submit');
 await page.waitForTimeout(500);
 const res = await page.evaluate(() => ({
   score: ($('result').querySelector('.score') || {}).textContent || '',
   text: $('result').textContent || '',
   rows: $('result').querySelectorAll('.brkdown tr').length,
-  seen: JSON.parse(localStorage.getItem('jp_n5mock_seen') || '[]').length,
+  hist: JSON.parse(localStorage.getItem('jp_n5mock_hist_0') || '[]'),
+  running: localStorage.getItem('jp_n5mock_running'),
   locked: document.querySelectorAll('#tabs .tab.lock').length,
   choiceShown: getComputedStyle(document.querySelector('.choices.row.hid .ch > span:last-child')).display !== 'none',
 }));
-ok('交卷：成績是 180 分制', /\d+ \/ 180/.test(res.score) && res.text.includes('/ 120') && res.text.includes('/ 60'));
+ok('交卷：成績是 180 分制、標示第 1 回', /\d+ \/ 180/.test(res.score) && res.text.includes('/ 120') && res.text.includes('/ 60') && res.text.includes('第 1 回'));
 ok('交卷後只唸不顯示的選項文字出現', res.choiceShown);
 ok('交卷：有合格判定與 14 個大題的答對數', /合格/.test(res.text) && res.rows === 14 && res.locked === 0);
-ok('交卷後記錄 ' + N + ' 題為考過', res.seen === N);
+ok('交卷：第 1 回歷史紀錄 1 筆（分數與畫面一致）、不再標示考試中', res.hist.length === 1 && res.score.indexOf(String(res.hist[0].total)) === 0 && res.running === null);
 
-// 再考一次：開始畫面顯示已考過、有「上次考試結果」
-await page.click('#again');
+// 回選卷頁：第 1 回顯示考過 1 次、最佳分數、歷史紀錄一列
+await page.click('#home');
 await page.waitForTimeout(300);
-ok('開始畫面顯示已考過', (await page.textContent('#pool') || '').includes('已考過 ' + N + ' 題'));
-const lastBtn = await page.evaluate(() => !$('last').classList.contains('hide') && !!localStorage.getItem('jp_n5mock_last'));
-ok('交卷後開始畫面有「上次考試結果」', lastBtn);
+const home = await page.evaluate(() => {
+  const c = document.querySelectorAll('#papers .paper')[0];
+  return { text: c.textContent, rows: c.querySelectorAll('.hist tr').length, review: !!c.querySelector('[data-review="0:0"]'),
+           btn: c.querySelector('[data-start]').textContent, others: document.querySelectorAll('#papers .paper')[1].textContent };
+});
+ok('選卷頁：第 1 回顯示考過 1 次、最佳分數、按鈕變「重考」', /考過 1 次/.test(home.text) && /最佳 \d+ \/ 180/.test(home.text) && home.btn === '重考');
+ok('選卷頁：第 1 回歷史紀錄一列、有「看詳解」；第 2 回還沒考過', home.rows === 1 && home.review && /還沒考過/.test(home.others));
 
-// 上次考試結果：回看時 38 題已批改、錯題標紅數量與作答一致、成績卡標示日期、題目與交卷時相同
-await page.click('#last');
+// 看詳解：38 題已批改、錯題標紅數量與作答一致、題目與交卷時那份相同
+await page.evaluate(() => document.querySelectorAll('#papers details').forEach(d => { d.open = true; }));
+await page.click('[data-review="0:0"]');
 await page.waitForTimeout(400);
 const rv = await page.evaluate(() => ({
   shown: $('quiz').classList.contains('done') && !$('quiz').classList.contains('hide') && $('start').classList.contains('hide'),
@@ -180,21 +205,60 @@ const rv = await page.evaluate(() => ({
   ans: document.querySelectorAll('#quiz .ch.ans').length,
   wrong: document.querySelectorAll('#quiz .ch.wrong').length,
   wrongExpected: picked.filter((p, i) => p !== null && p !== qs[i].a).length,
-  title: ($('result').textContent || '').includes('上次考試結果'),
+  title: ($('result').textContent || '').includes('📂'),
   score: ($('result').querySelector('.score') || {}).textContent || '',
   keys: qs.map(keyOf),
 }));
-ok('回看：' + N + ' 題已批改、進入交卷後狀態', rv.shown && rv.cards === N && rv.marks === N && rv.ans === N);
-ok('回看：錯題標紅與作答一致、成績卡有日期與分數', rv.wrong === rv.wrongExpected && rv.title && /\d+ \/ 180/.test(rv.score));
-ok('回看的題目與交卷時那份相同', rv.keys.join() === ex1.keys.join());
-await page.click('#again');
-await page.waitForTimeout(300);
+ok('看詳解：' + N + ' 題已批改、進入交卷後狀態', rv.shown && rv.cards === N && rv.marks === N && rv.ans === N);
+ok('看詳解：錯題標紅與作答一致、成績卡有日期與分數', rv.wrong === rv.wrongExpected && rv.title && /\d+ \/ 180/.test(rv.score));
+ok('看詳解的題目與交卷時那份相同', rv.keys.join() === ex1.keys.join());
 
-// 第二次抽題：與第一次完全不重複
-await page.click('#go');
+// 重考這一回：題目、選項順序都跟第一次一樣
+await page.click('#again');
 await page.waitForTimeout(500);
-const ex2 = await page.evaluate(() => qs.map(keyOf));
-ok('第二次抽題與第一次完全不重複', ex2.length === N && ex2.every(k => !ex1.keys.includes(k)));
+const ex2 = await page.evaluate(() => ({ keys: qs.map(keyOf), choices: qs.map(q => q.c.join('|')), submitted, running: localStorage.getItem('jp_n5mock_running') }));
+ok('重考這一回：題目與選項順序完全相同、重新開始作答', ex2.keys.join() === ex1.keys.join() && ex2.choices.join() === ex1.choices.join() && !ex2.submitted && ex2.running === '0');
+
+// 考到一半重新整理 → 那一次作廢（跟正式版一樣）
+await page.reload();
+await page.waitForTimeout(1200);
+const ab = await page.evaluate(() => ({ msg: $('msg').textContent, hist: JSON.parse(localStorage.getItem('jp_n5mock_hist_0') || '[]') }));
+ok('考到一半離開：選卷頁提示作廢、歷史紀錄多一筆「作廢」', /作廢/.test(ab.msg) && ab.hist.length === 2 && ab.hist[0].void === true);
+ok('作廢那筆顯示「未完成（作廢）」、不算進考過次數', await page.evaluate(() => {
+  const c = document.querySelectorAll('#papers .paper')[0];
+  return /未完成（作廢）/.test(c.textContent) && /考過 1 次/.test(c.textContent);
+}));
+
+// Google Analytics 自訂事件（重新整理後 __ga 清空，作廢事件在新頁面；前面的事件在舊頁面已經送出，另外檢查）
+const ga2 = await page.evaluate(() => window.__ga.filter(a => a[0] === 'event').map(a => a[1] + ':' + a[2].exam_type + ':' + a[2].paper));
+ok('GA：作廢送出 exam_abandon（easy／第 1 回）', ga2.includes('exam_abandon:easy:第 1 回'));
+
+// 清空這一回的紀錄
+await page.evaluate(() => { document.querySelector('#papers .paper details').open = true; });
+await page.click('[data-clear="0"]');
+await page.waitForTimeout(300);
+const cl = await page.evaluate(() => ({ hist: localStorage.getItem('jp_n5mock_hist_0'), msg: $('msg').textContent,
+                                       ga: window.__ga.filter(a => a[0] === 'event').map(a => a[1]) }));
+ok('清空這一回的紀錄：紀錄刪掉、有提示、送出 history_clear', cl.hist === null && /清空/.test(cl.msg) && cl.ga.includes('history_clear'));
+
+// 第 2 回：開始 → 下一科 → 交卷，一路檢查送出的事件
+await page.evaluate(() => { window.__ga = []; });
+await page.click('[data-start="1"]');
+await page.waitForTimeout(400);
+await page.click('#submit'); await page.waitForTimeout(200);
+await page.click('#submit'); await page.waitForTimeout(200);
+await page.click('#submit'); await page.waitForTimeout(400);
+await page.click('#home'); await page.waitForTimeout(200);
+await page.evaluate(() => document.querySelectorAll('#papers details').forEach(d => { d.open = true; })); await page.click('[data-review="1:0"]'); await page.waitForTimeout(300);
+const ga = await page.evaluate(() => window.__ga.filter(a => a[0] === 'event').map(a => [a[1], a[2]]));
+const ev = n => ga.filter(e => e[0] === n);
+ok('GA：exam_start（easy、第 2 回、第 1 次、計時 on）', ev('exam_start').length === 1 && ev('exam_start')[0][1].exam_type === 'easy' &&
+   ev('exam_start')[0][1].paper === '第 2 回' && ev('exam_start')[0][1].attempt === 1 && ev('exam_start')[0][1].timer === 'on');
+ok('GA：exam_section 兩次（文法・読解、聴解）', ev('exam_section').map(e => e[1].section).join() === '文法・読解,聴解');
+ok('GA：exam_finish 帶分數與合格與否', ev('exam_finish').length === 1 && typeof ev('exam_finish')[0][1].score === 'number' && /^(yes|no)$/.test(ev('exam_finish')[0][1].passed));
+ok('GA：看詳解送出 exam_review', ev('exam_review').length === 1 && ev('exam_review')[0][1].paper === '第 2 回');
+await page.click('#home'); await page.waitForTimeout(200);
+await page.click('[data-start="1"]'); await page.waitForTimeout(300);
 
 // 音檔真的能解碼
 const played = await page.evaluate(() => new Promise(res => {

@@ -62,6 +62,17 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 - 樣式表整份沿用 minna;程式是另寫的精簡版(沒有編輯、沒有小考)
 - 音檔:`docs\audio\gogogo\`,補音檔跑 `本機補音檔.py ..\gogogo-notes.html`;驗證跑 `test_gogogo.mjs`
 
+## N5 模擬考（簡易版）—— 2026-10-26 改成固定 10 回
+
+`docs\n5-mock-easy.html`:題庫 445 題,**依題庫順序輪流分成 10 回固定考卷**(`buildPapers()`,每回 38 題照 `QUOTA`),
+選項順序用題目當種子固定打亂;選卷頁、重考、歷史紀錄(`jp_n5mock_hist_<回>`)、考到一半離開作廢,機制同正式版。
+**題庫加題要加在各題型的最後面**,不然前面幾回的題目會跟著換。驗證跑 `test_mock.mjs`。
+
+## Google Analytics 自訂事件 —— 2026-10-26
+
+兩個模擬考都會送:`exam_start`(paper、attempt)、`exam_section`、`exam_finish`(score、passed)、`exam_review`、
+`exam_abandon`、`history_clear`,參數都帶 `exam_type`(easy／full)。只在 github.io 上送(本機 gtag 不存在)。
+
 ## N5 模擬考（正式版）—— 2026-10-11 開始
 
 `docs\n5-mock-full.html`:**題目固定的 A/B/C 三份考卷**,比照正式 N5 的題數(67 題)、時間
