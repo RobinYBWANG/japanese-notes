@@ -146,6 +146,11 @@ const browser = await chromium.launch();
     ok('總學習：數字頁特殊念法有標色（300・600・800・3,000・8,000、¥4、¥9）',
        ['300', '600', '800', '3,000', '8,000', '¥4', '¥9'].every(x => nm.hl.includes(x)) && !nm.hl.includes('200') && !nm.hl.includes('¥5'));
     ok('🔍 找不到時有提示、Esc 會收起', none && esc);
+    // Google Analytics：切換課次／分頁送虛擬 page_view（頁面標題＝書名｜課名｜分頁），同一頁不重送（2026-10-26）
+    const gav = await page.evaluate(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); };
+      switchLesson(2); switchSection(subsFor(2)[0][0]); switchLesson(3); switchLesson(3);
+      return window.__ga.map(a => a[1] + '｜' + a[2].page_title); });
+    ok('GA：切換課次送出 page_view（標題含書名與課名）、同一頁不重送', gav.length === 2 && gav.every(x => x.indexOf('page_view｜GOGOGO｜') === 0) && /第2課/.test(gav[0]) && /第3課/.test(gav[1]), gav);
   }
   await page.close();
 }

@@ -790,3 +790,5 @@ ode_modules`)。
   要在 GA 後台「自訂定義」註冊維度/指標才看得到參數。
 - test_mock 改寫（49 項）、test_mockfull 加 GA 檢查（59 項）全過。
 - 同日：GA 後台（資源 japanese-notes）建好自訂定義（使用者登入、要求代設）：維度 考試類型 exam_type／考卷 paper／是否合格 passed／科目 section／時間到 time_up；指標 分數 score、第幾次考 attempt（皆事件範圍、標準單位）。
+- 同日：筆記頁（minna、gogogo）切換課次／分頁送虛擬 page_view（gaView，標題「書名｜課名｜分頁」，初始化與同一頁不重送）；test_voice_full、test_gogogo 各 +1。
+  使用者說考了沒看到事件：查線上版已部署、實測 exam_start 有送出（攔截不送）；原因應是看「自訂定義」或「事件」報表（要等約一天），即時報表才看得到。

@@ -9879,6 +9879,7 @@ function switchLesson(n){
   renderTabs();renderSubtabs();
   if(lesson>0)render();
   applySection();
+  gaView();
 }
 
 /* ===== 子分頁：單字 / 文法 / 測驗 ===== */
@@ -9906,7 +9907,21 @@ function renderSubtabs(){
     b.addEventListener('click',()=>switchSection(k));subtabsEl.appendChild(b);
   });
 }
-function switchSection(k){section=k;localStorage.setItem(SKEY,k);renderSubtabs();applySection();}
+var BOOK='大家的日本語';
+/* Google Analytics：切換課次或分頁時送一次虛擬 page_view（頁面標題＝「書名｜第N課 標題｜分頁」），
+   報表「網頁和畫面」就能看到每一課、每個分頁各停了多久。GA 只在 github.io 上載入，本機打開不送。
+   GA_READY 在頁面初始化跑完才打開（剛打開網頁那次已經有一般的 page_view，不重送）。2026-10-26 */
+var GA_READY=false,GA_LAST='';
+function gaView(){
+  try{
+    if(!GA_READY||typeof gtag!=='function')return;
+    const s=subsFor(lesson).filter(function(x){return x[0]===section;})[0];
+    const t=BOOK+'｜'+String(lessonName(lesson)).replace(/\n/g,' ')+'｜'+(s?s[1]:section);
+    if(t===GA_LAST)return;GA_LAST=t;
+    gtag('event','page_view',{page_title:t,page_location:location.origin+location.pathname+'#'+encodeURIComponent(lesson+'-'+section)});
+  }catch(e){}
+}
+function switchSection(k){section=k;localStorage.setItem(SKEY,k);renderSubtabs();applySection();gaView();}
 function applySection(){
   document.getElementById('panel-vocab').style.display=section==='vocab'?'':'none';
   document.getElementById('panel-grammar').style.display=section==='grammar'?'':'none';
@@ -11359,6 +11374,7 @@ renderHead();renderTabs();renderSubtabs();render();applySection();
 (function(){let pl=parseInt(localStorage.getItem('jp_playlesson'));if(!(pl>=1&&pl<=12))pl=(lesson>=1&&lesson<=12)?lesson:1;setPlayLesson(pl);})();
 setTopbarH();
 setDirty(false);
+GA_READY=true;GA_LAST='';
 </script>
 <script>
 /* ===== 唯讀模式：停用編輯功能，但開放「備註」與「單字總表排序」 =====

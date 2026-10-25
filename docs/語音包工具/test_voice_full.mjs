@@ -475,6 +475,11 @@ ok('數字小考按發音不噴錯', errors.length === 0);
 ok('試聽A有音檔', await page.evaluate(() => !!vvClip('あめ、はし、かぎ、にほんご。はつおんテストです。','A')));
 ok('試聽B有音檔', await page.evaluate(() => !!vvClip('こんにちは。べつの こえで はなします。','B')));
 
+// Google Analytics：切換課次／分頁送虛擬 page_view（頁面標題＝書名｜課名｜分頁），同一頁不重送（2026-10-26）
+const gav = await page.evaluate(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); };
+  switchLesson(2); switchSection(subsFor(2)[0][0]); switchLesson(3); switchLesson(3);
+  return window.__ga.map(a => a[1] + '｜' + a[2].page_title); });
+ok('GA：切換課次送出 page_view（標題含書名與課名）、同一頁不重送', gav.length === 2 && gav.every(x => x.indexOf('page_view｜大家的日本語｜') === 0) && /第2課/.test(gav[0]) && /第3課/.test(gav[1]), gav);
 ok('無 console 錯誤', errors.length === 0);
 
 let fail = 0;
