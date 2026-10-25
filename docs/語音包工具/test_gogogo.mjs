@@ -121,9 +121,9 @@ const browser = await chromium.launch();
       const hl = rows.filter(t => t.classList.contains('tok-hl')).map(t => t.children[0].textContent);
       return { n: document.querySelectorAll('#time-body .kana[data-say]').length, hl,
                miss: [...document.querySelectorAll('#time-body [data-say]')].map(e => e.dataset.say).filter(t => !vvClip(t, 'A')) }; });
-    ok('總學習：時間頁（時／分／其他＋季節／月／星期／日期 共 ' + tm.n + ' 格、全有音檔）', tm.n === 13 + 25 + 5 + 5 + 13 + 8 + 32 && tm.miss.length === 0);
+    ok('總學習：時間頁（時／分／其他＋季節／月／星期／日期＋年月週日早晚 共 ' + tm.n + ' 格、全有音檔）', tm.n === 13 + 25 + 5 + 5 + 13 + 8 + 32 + 36 && tm.miss.length === 0);
     const dh = await page.evaluate(() => [...document.querySelectorAll('#time-body td.kana.hl')].map(t => t.dataset.say));
-    ok('總學習：日期特殊念法有標色（ついたち、はつか、じゅうよっか、じゅうくにち），一般的不標', ['ついたち', 'はつか', 'じゅうよっか', 'じゅうくにち', 'にじゅうしちにち'].every(x => dh.includes(x)) && !dh.includes('じゅういちにち'));
+    ok('總學習：日期特殊念法有標色（ついたち、はつか、じゅうよっか、じゅうくにち），一般的不標', ['ついたち', 'はつか', 'じゅうよっか', 'じゅうくにち', 'にじゅうしちにち', 'けさ', 'ゆうべ', 'ことし'].every(x => dh.includes(x)) && !dh.includes('じゅういちにち'));
     ok('總學習：特殊念法有標色（4時・7時・9時、ぷん 結尾）',
        ['4時', '7時', '9時', '1分', '6分', '10分', '何分'].every(x => tm.hl.includes(x)) && !tm.hl.includes('2分') && !tm.hl.includes('5時'));
     // 助詞表：同一個助詞排在一起、第一欄合併；組合一樣的（の 的 名詞＋の＋名詞）第二欄也合併（2026-10-25）
@@ -133,8 +133,9 @@ const browser = await chromium.launch();
       const span = j => { const c = trs.find(t => t.dataset.jo === j).querySelector('td.jo-c'); return c ? c.rowSpan : 0; };
       const cells = j => trs.filter(t => t.dataset.jo === j).filter(t => t.querySelector('td.jo-c')).length;
       return { seq: seq.join(''), toSpan: span('と'), deSpan: span('で'), toCells: cells('と'),
+               toRows: seq.filter(j => j === 'と').length, deRows: seq.filter(j => j === 'で').length,
                noP: trs.filter(t => t.dataset.jo === 'の').map(t => t.querySelectorAll('td.jo-p').length).join() }; });
-    ok('助詞表：同一個助詞排在一起並合併第一欄（と、で）', /とと/.test(jm.seq) && /でで/.test(jm.seq) && jm.toSpan === 2 && jm.deSpan === 2 && jm.toCells === 1);
+    ok('助詞表：同一個助詞排在一起並合併第一欄（と、で）', /とと/.test(jm.seq) && /でで/.test(jm.seq) && jm.toSpan === jm.toRows && jm.deSpan === jm.deRows && jm.toCells === 1);
     ok('助詞表：組合不一樣就各自一格（の 的兩列）', jm.noP === '1,1');
     // 總學習 → 數字（2026-10-25）：數字 0〜1億、價錢〜円、〜つ；特殊念法有標色、全有音檔
     const nm = await page.evaluate(() => { switchLesson(ALL); switchSection('num');
