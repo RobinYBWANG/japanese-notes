@@ -262,6 +262,7 @@
     .jotable tr::before{content:attr(data-jo);display:inline-block;font-family:"Yu Mincho","Hiragino Mincho ProN",serif;
       color:#c0392b;font-weight:800;font-size:20px;margin-right:8px;vertical-align:-2px}
     .jotable td.jo-p{display:none}
+    .jotable td.jo-ex{white-space:normal;min-width:0}   /* 長例句在手機卡片裡要能換行（2026-10-25） */
   }
   @media(max-width:600px){
     /* 手機版動詞總表：一個動詞一張卡（六欄在 390px 會擠到每個字換行）
@@ -2699,7 +2700,28 @@ function joshiHTML(n){
   return '<div class="jo-legend"><span class="lg lg-key">本課新學</span><span class="lg lg-past">之前學過</span><span class="lg lg-future">還沒學</span>'
     +'<span class="lg-txt">課次依《日本語GOGOGO 1》。</span></div>'
     +'<table class="jotable"><thead><tr><th>助詞</th><th>組合</th><th>用法</th><th>功能</th><th>例句</th><th>筆記</th></tr></thead><tbody>'
-    +JOSHI_ROWS+'</tbody></table>';
+    +joshiMerged()+'</tbody></table>';
+}
+/* 同一個助詞排在一起，第一欄（助詞）合併成一格；第二欄（組合）一樣的也合併，不一樣就各自一列（同 minna 的助詞表，2026-10-25） */
+function joshiMerged(){
+  const tb=document.createElement('tbody');tb.innerHTML=JOSHI_ROWS;
+  const rows=[].slice.call(tb.querySelectorAll('tr[data-jo]')),order=[],groups={};
+  rows.forEach(function(tr){const j=tr.dataset.jo;if(!groups[j]){groups[j]=[];order.push(j);}groups[j].push(tr);});
+  tb.innerHTML='';
+  order.forEach(function(j){
+    const g=groups[j];
+    g.forEach(function(tr,i){
+      const c=tr.querySelector('td.jo-c');
+      if(i===0)c.rowSpan=g.length;else c.remove();
+      tb.appendChild(tr);
+    });
+    let head=null;
+    g.forEach(function(tr){
+      const p=tr.querySelector('td.jo-p');
+      if(head&&head.innerHTML===p.innerHTML){head.rowSpan++;p.remove();}else head=p;
+    });
+  });
+  return tb.innerHTML;
 }
 
 /* ---- 分頁：該課有內容才出現 ---- */
