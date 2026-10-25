@@ -121,7 +121,9 @@ const browser = await chromium.launch();
       const hl = rows.filter(t => t.classList.contains('tok-hl')).map(t => t.children[0].textContent);
       return { n: document.querySelectorAll('#time-body .kana[data-say]').length, hl,
                miss: [...document.querySelectorAll('#time-body [data-say]')].map(e => e.dataset.say).filter(t => !vvClip(t, 'A')) }; });
-    ok('總學習：時間頁（時／分／其他 共 ' + tm.n + ' 格、全有音檔）', tm.n === 13 + 25 + 5 && tm.miss.length === 0);
+    ok('總學習：時間頁（時／分／其他＋季節／月／星期／日期 共 ' + tm.n + ' 格、全有音檔）', tm.n === 13 + 25 + 5 + 5 + 13 + 8 + 32 && tm.miss.length === 0);
+    const dh = await page.evaluate(() => [...document.querySelectorAll('#time-body td.kana.hl')].map(t => t.dataset.say));
+    ok('總學習：日期特殊念法有標色（ついたち、はつか、じゅうよっか、じゅうくにち），一般的不標', ['ついたち', 'はつか', 'じゅうよっか', 'じゅうくにち', 'にじゅうしちにち'].every(x => dh.includes(x)) && !dh.includes('じゅういちにち'));
     ok('總學習：特殊念法有標色（4時・7時・9時、ぷん 結尾）',
        ['4時', '7時', '9時', '1分', '6分', '10分', '何分'].every(x => tm.hl.includes(x)) && !tm.hl.includes('2分') && !tm.hl.includes('5時'));
     // 助詞表：同一個助詞排在一起、第一欄合併；組合一樣的（の 的 名詞＋の＋名詞）第二欄也合併（2026-10-25）
