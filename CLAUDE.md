@@ -73,6 +73,14 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 表記題的錯誤選項可以用表外字,正解一定是 N5 字;解說與中文翻譯不受限。**文法程度不管**(使用者定案)。
 正式版在 `paper_lib.build()` 自動轉,簡易版 BANK 是手寫,加題時自己寫平假名,`test_mock.mjs` 會擋。
 
+## N4 模擬考（簡易版）—— 2026-10-26 開始
+
+`docs\n4-mock-easy.html`:頁面程式沿用 N5 簡易版,每回 45 題(正式 N4 各大題的一半,含 N5 沒有的「用法」),
+時間 13／28／18 分,合格總分 90(38／19)。先做 5 回,規劃與圖片 prompt 在 `output\N4簡易模擬考規劃_v1.md`。
+- **題目只改 `n4_bank.py`**(每個題型一個 list,新題加在最後面;考卷依序切,第 1 回＝各題型最前面的題,回數自動算)
+- 管線:`build_n4mock.py`(嵌進頁面＋體檢:N4 漢字 `n4_level.py`、缺圖、讀解切回)→ `mock_audio.py ..\n4-mock-easy.html --prune` → `test_n4mock.mjs`(`NP` 改成目前回數)
+- 圖:四格圖 `img/mock/n4-l1-XX.png`、場景圖 `n4-l3-XX.png`(使用者用 ChatGPT 產,我切)。GA 的 `exam_type` 是 `n4easy`
+
 ## Google Analytics 自訂事件 —— 2026-10-26
 
 兩個模擬考都會送:`exam_start`(paper、attempt)、`exam_section`、`exam_finish`(score、passed)、`exam_review`、

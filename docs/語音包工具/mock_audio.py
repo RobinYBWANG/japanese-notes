@@ -1,6 +1,6 @@
 # mock_audio.py —— 補齊 n5-mock-easy.html 聽解題缺的 VOICEVOX 音檔（本機一步跑完）
 #
-# 用法：python3 mock_audio.py        # 引擎沒開會自動叫 本機補音檔.py --engine-only
+# 用法：python3 mock_audio.py [html] [--prune]   # 預設 n5-mock-easy.html；引擎沒開會自動叫 本機補音檔.py --engine-only
 #
 # 這頁的音檔跟 minna-notes / kana 的管線分開：
 #   - key 是「角色|文本」，角色 F/M/N 對應 speaker 2/11/13（從既有 clip id 反推，2026-09-11）
@@ -11,7 +11,8 @@
 import base64, hashlib, json, os, re, subprocess, sys, tempfile, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HTML = os.path.normpath(os.path.join(HERE, '..', 'n5-mock-easy.html'))
+_args = [a for a in sys.argv[1:] if not a.startswith('--')]   # 可以指定別頁（N4 簡易版：../n4-mock-easy.html）
+HTML = os.path.abspath(_args[0]) if _args else os.path.normpath(os.path.join(HERE, '..', 'n5-mock-easy.html'))
 BASE = 'http://127.0.0.1:50021'
 SPEAKER = {'F': 2, 'M': 11, 'N': 13}   # 四国めたん／玄野武宏／青山龍星
 
