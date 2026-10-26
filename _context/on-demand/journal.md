@@ -821,3 +821,4 @@ ode_modules`)。
 - 使用者要求：休息畫面寫「休息時間，聽個音樂吧」並放一支 YT 音樂，倒數照舊。`BREAK_MUSIC` 常數放影片 ID（Ado「好きでいて」iTNwVheLpj8，oEmbed 查過可嵌入），
   用 youtube-nocookie 嵌入、autoplay；跳過或倒數結束時清掉 iframe，避免音樂播進聴解。test_mockfull 加 2 項（測試時攔截 YouTube 請求）。
 - 同日：第二次休息改放 Kechiang「你我」（0i5r07B1Iz4，可嵌入）；`BREAK_MUSIC` 改成陣列 [第一次, 第二次]。test_mockfull 加「第二次休息放第二首」「進聴解時影片已拿掉」。
+- 同日：第二首改成 IU「너의 의미（Meaning of you）」（LajvR3lH1cg，可嵌入）。
