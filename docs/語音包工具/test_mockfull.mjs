@@ -20,6 +20,8 @@ page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
 page.on('dialog', d => d.accept());
 // GA 只在 github.io 上載入；這裡先放一個假的 gtag 把送出的自訂事件記下來（2026-10-26）
 await page.addInitScript(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); }; });
+// 休息時的 YouTube 影片：測試不連外網，回一頁空白
+await page.route(/youtube(-nocookie)?\.com/, r => r.fulfill({ contentType: 'text/html', body: '<html></html>' }));
 await page.goto(URL);
 await page.waitForTimeout(500);
 
@@ -132,10 +134,15 @@ await page.waitForTimeout(300);
 ok('進入休息畫面、倒數 20:00', !(await page.locator('#brk').isHidden())
    && (await page.textContent('#brkclock')) === '20:00');
 ok('休息畫面有預告下一科', (await page.textContent('#brknext')).includes('文法'));
+const music = await page.evaluate(() => BREAK_MUSIC);
+ok('休息畫面：有設定音樂就顯示「聽個音樂吧」和影片，沒設定就不顯示',
+   music ? !(await page.locator('#brkmusic').isHidden()) && await page.locator('#brkyt iframe').count() === 1
+         : await page.locator('#brkmusic').isHidden());
 
 // ───────── 第2科 ─────────
 await page.click('#brkskip');
 await page.waitForTimeout(300);
+ok('離開休息後影片拿掉（音樂不會播進下一科）', await page.locator('#brkyt iframe').count() === 0);
 ok('跳過休息後進入第2科、計時 40:00', (await page.textContent('#secname')).includes('文法')
    && (await page.textContent('#clock')).startsWith('40:'));
 ok('第2科 22 張題卡', await page.locator('#qbody .q').count() === 22);

@@ -816,3 +816,7 @@ ode_modules`)。
 - 同日：第 2〜5 回寫完（題庫 225 題，5 回 × 45）。各回的四格圖用 n4-l1-05〜20、場景圖 n4-l3-04〜15；n4-l1-08 第 3 格是羽絨外套、
   n4-l1-11 第 2 格是層架，對話照圖寫。音檔共 365 句，逐句核對念法；read_fix 加三條（「の 中は」→なかは、「何て」→なんて、
   「しょは」的助詞念 ha），重錄 3 句。test_n4mock（NP=5）50 項全過。
+
+## 2026-10-26 N5 正式版：休息時間播 YouTube 音樂（未 commit）
+- 使用者要求：休息畫面寫「休息時間，聽個音樂吧」並放一支 YT 音樂，倒數照舊。`BREAK_MUSIC` 常數放影片 ID（Ado「好きでいて」iTNwVheLpj8，oEmbed 查過可嵌入），
+  用 youtube-nocookie 嵌入、autoplay；跳過或倒數結束時清掉 iframe，避免音樂播進聴解。test_mockfull 加 2 項（測試時攔截 YouTube 請求）。

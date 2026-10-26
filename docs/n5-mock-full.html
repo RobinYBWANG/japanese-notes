@@ -103,6 +103,10 @@
   /* ── 休息 ── */
   .center{text-align:center;padding:60px 0}
   .big{font-size:52px;font-weight:700;color:var(--jp);font-variant-numeric:tabular-nums;letter-spacing:2px}
+  .brkmusic{max-width:560px;margin:18px auto 6px}
+  .brkmusic h3{margin:0 0 10px;font-size:18px;color:var(--jp)}
+  .brkmusic .yt{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
+  .brkmusic iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
   /* ── 成績 ── */
   .score{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;
@@ -166,6 +170,10 @@
     <div class="center">
       <div class="note" id="brknext"></div>
       <div class="big" id="brkclock">20:00</div>
+      <div class="brkmusic" id="brkmusic" hidden>
+        <h3>🎵 休息時間，聽個音樂吧</h3>
+        <div class="yt" id="brkyt"></div>
+      </div>
       <p class="note">正式考試兩科之間會休息（含收發考卷）。不想等可以直接跳過。</p>
       <button class="btn-primary" id="brkskip">跳過休息，直接開始</button>
     </div>
@@ -202,6 +210,7 @@ const PAPERS = {};
 const SAY = JSON.parse(document.getElementById('mf-say').textContent);
 const AUDIO_BASE = 'audio/mockfull/';
 const BREAK_SEC = 20 * 60;          /* 兩科之間的休息，依官方時程表 */
+const BREAK_MUSIC = 'iTNwVheLpj8';  /* 休息時播的 YouTube 影片 ID（網址 watch?v= 後面那串）；空字串就不顯示 */
 /* 說明→例題→第一題 之間要留白，不然會聽不出來從哪裡開始換段（2026-10-11 使用者要求） */
 const P_OPENING = 1500, P_INSTR = 2000, P_EX = 2500;
 const HIST_KEY = p => 'mf_hist_' + p;
@@ -531,15 +540,20 @@ function startBreak(nextSi){
   $('brknext').textContent = '下一科：試験' + 'ⅠⅡⅢ'[nextSi] + '　' + paper.sections[nextSi].label
     + (paper.sections[nextSi].key === 'choukai'
        ? '（聴解：音檔會一次播到底，請戴耳機；手機切到別的 App 或鎖螢幕音檔會停）' : '');
+  /* 休息時的音樂：進休息才放 iframe，離開就整個拿掉（不然音樂會一路播進下一科、蓋過聴解） */
+  $('brkmusic').hidden = !BREAK_MUSIC;
+  if (BREAK_MUSIC) $('brkyt').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + BREAK_MUSIC +
+    '?autoplay=1&rel=0" title="休息時間的音樂" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+  const leave = () => { clearInterval(timer); $('brkyt').innerHTML = ''; runSection(nextSi); };
   let left = BREAK_SEC;
   const tick = () => {
     $('brkclock').textContent = mmss(left);
-    if (left <= 0){ clearInterval(timer); runSection(nextSi); }
+    if (left <= 0) return leave();
     left--;
   };
   tick();
   clearInterval(timer); timer = setInterval(tick, 1000);
-  $('brkskip').onclick = () => { clearInterval(timer); runSection(nextSi); };
+  $('brkskip').onclick = leave;
 }
 
 function finishExam(){
