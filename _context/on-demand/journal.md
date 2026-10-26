@@ -822,3 +822,4 @@ ode_modules`)。
   用 youtube-nocookie 嵌入、autoplay；跳過或倒數結束時清掉 iframe，避免音樂播進聴解。test_mockfull 加 2 項（測試時攔截 YouTube 請求）。
 - 同日：第二次休息改放 Kechiang「你我」（0i5r07B1Iz4，可嵌入）；`BREAK_MUSIC` 改成陣列 [第一次, 第二次]。test_mockfull 加「第二次休息放第二首」「進聴解時影片已拿掉」。
 - 同日：第二首改成 IU「너의 의미（Meaning of you）」（LajvR3lH1cg，可嵌入）。
+- 同日：正式版加 GA 事件 `exam_break`（使用者想間接知道有沒有人聽休息音樂）：休息停留秒數、是否按跳過、有沒有點影片（外層 window blur 且焦點在 iframe）。test_mockfull 加 1 項。

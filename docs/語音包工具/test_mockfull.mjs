@@ -139,6 +139,10 @@ const musicOk = async n => music[n]
   ? !(await page.locator('#brkmusic').isHidden()) && (await page.getAttribute('#brkyt iframe', 'src') || '').includes('/embed/' + music[n])
   : await page.locator('#brkmusic').isHidden();
 ok('第一次休息：有設定音樂就顯示「聽個音樂吧」和第一首，沒設定就不顯示', await musicOk(0));
+// 模擬使用者點了影片（焦點跑進 iframe、外層視窗 blur），第二次休息則不點
+await page.waitForTimeout(1100);
+await page.evaluate(() => { const f = document.querySelector('#brkyt iframe'); if (f) f.focus(); window.dispatchEvent(new Event('blur')); });
+await page.waitForTimeout(100);
 
 // ───────── 第2科 ─────────
 await page.click('#brkskip');
@@ -214,6 +218,12 @@ ok('GA：exam_start（full、A 卷、第 1 次）', ev('exam_start').length === 
 ok('GA：exam_section 兩次（第2科、聴解）', ev('exam_section').length === 2, ev('exam_section'));
 ok('GA：exam_finish 180 分、合格', ev('exam_finish').length === 1 && ev('exam_finish')[0][1].score === 180 && ev('exam_finish')[0][1].passed === 'yes', ev('exam_finish'));
 ok('GA：看詳解送出 exam_review', ev('exam_review').length === 1, ev('exam_review'));
+const brk = ev('exam_break').map(e => e[1]);
+ok('GA：exam_break 兩次（第幾次休息、停留秒數、按了跳過、第一次有點影片／第二次沒點）',
+   brk.length === 2 && brk[0].break_no === 1 && brk[1].break_no === 2 && brk[0].seconds >= 1 && typeof brk[1].seconds === 'number'
+   && brk.every(b => b.skipped === 'yes' && b.paper === 'A 卷')
+   && (music[0] ? brk[0].video_clicked === 'yes' : brk[0].video_clicked === 'none')
+   && (music[1] ? brk[1].video_clicked === 'no' : brk[1].video_clicked === 'none'), brk);
 
 // ───────── 考到一半重新整理 = 作廢 ─────────
 await page.click('[data-start="A"]');

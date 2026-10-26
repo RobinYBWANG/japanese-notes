@@ -546,16 +546,28 @@ function startBreak(nextSi){
   $('brkmusic').hidden = !vid;
   if (vid) $('brkyt').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + vid +
     '?autoplay=1&rel=0" title="休息時間的音樂" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
-  const leave = () => { clearInterval(timer); $('brkyt').innerHTML = ''; runSection(nextSi); };
+  /* GA：休息停留幾秒、有沒有點影片。點進 iframe 時外層視窗會 blur，焦點落在 iframe 上（切分頁、切 App 不會） */
+  const t0 = Date.now();
+  let clicked = false;
+  const onBlur = () => setTimeout(() => { if (document.activeElement && document.activeElement.tagName === 'IFRAME') clicked = true; }, 0);
+  window.addEventListener('blur', onBlur);
+  const leave = skipped => {
+    clearInterval(timer);
+    window.removeEventListener('blur', onBlur);
+    $('brkyt').innerHTML = '';
+    track('exam_break', {paper: state.id + ' 卷', break_no: nextSi, seconds: Math.round((Date.now() - t0) / 1000),
+                         skipped: skipped ? 'yes' : 'no', video_clicked: vid ? (clicked ? 'yes' : 'no') : 'none'});
+    runSection(nextSi);
+  };
   let left = BREAK_SEC;
   const tick = () => {
     $('brkclock').textContent = mmss(left);
-    if (left <= 0) return leave();
+    if (left <= 0) return leave(false);
     left--;
   };
   tick();
   clearInterval(timer); timer = setInterval(tick, 1000);
-  $('brkskip').onclick = leave;
+  $('brkskip').onclick = () => leave(true);
 }
 
 function finishExam(){

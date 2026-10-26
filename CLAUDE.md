@@ -84,7 +84,7 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 ## Google Analytics 自訂事件 —— 2026-10-26
 
 兩個模擬考都會送:`exam_start`(paper、attempt)、`exam_section`、`exam_finish`(score、passed)、`exam_review`、
-`exam_abandon`、`history_clear`,參數都帶 `exam_type`(easy／full)。只在 github.io 上送(本機 gtag 不存在)。
+`exam_abandon`、`history_clear`,參數都帶 `exam_type`(easy／full／n4easy)。正式版另有 `exam_break`(休息結束時送:`break_no`、停留 `seconds`、`skipped`、`video_clicked` yes／no／none——點進 YouTube iframe 會讓外層視窗 blur 來判斷)。只在 github.io 上送(本機 gtag 不存在)。
 筆記頁(minna、gogogo)切換課次／分頁時送虛擬 `page_view`(標題「書名｜課名｜分頁」,`gaView()`),報表「網頁和畫面」看得到每課每分頁停多久。
 
 ## N5 模擬考（正式版）—— 2026-10-11 開始
