@@ -210,7 +210,8 @@ const PAPERS = {};
 const SAY = JSON.parse(document.getElementById('mf-say').textContent);
 const AUDIO_BASE = 'audio/mockfull/';
 const BREAK_SEC = 20 * 60;          /* 兩科之間的休息，依官方時程表 */
-const BREAK_MUSIC = 'iTNwVheLpj8';  /* 休息時播的 YouTube 影片 ID（網址 watch?v= 後面那串）；空字串就不顯示 */
+/* 休息時播的 YouTube 影片 ID（網址 watch?v= 後面那串）：[第一次休息, 第二次休息]；空字串就不顯示 */
+const BREAK_MUSIC = ['iTNwVheLpj8', '0i5r07B1Iz4'];   // Ado「好きでいて」／Kechiang「你我」
 /* 說明→例題→第一題 之間要留白，不然會聽不出來從哪裡開始換段（2026-10-11 使用者要求） */
 const P_OPENING = 1500, P_INSTR = 2000, P_EX = 2500;
 const HIST_KEY = p => 'mf_hist_' + p;
@@ -541,8 +542,9 @@ function startBreak(nextSi){
     + (paper.sections[nextSi].key === 'choukai'
        ? '（聴解：音檔會一次播到底，請戴耳機；手機切到別的 App 或鎖螢幕音檔會停）' : '');
   /* 休息時的音樂：進休息才放 iframe，離開就整個拿掉（不然音樂會一路播進下一科、蓋過聴解） */
-  $('brkmusic').hidden = !BREAK_MUSIC;
-  if (BREAK_MUSIC) $('brkyt').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + BREAK_MUSIC +
+  const vid = BREAK_MUSIC[nextSi - 1] || '';   // 第 1 次休息在第 2 科前（nextSi = 1）
+  $('brkmusic').hidden = !vid;
+  if (vid) $('brkyt').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + vid +
     '?autoplay=1&rel=0" title="休息時間的音樂" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
   const leave = () => { clearInterval(timer); $('brkyt').innerHTML = ''; runSection(nextSi); };
   let left = BREAK_SEC;

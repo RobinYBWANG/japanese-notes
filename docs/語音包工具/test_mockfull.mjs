@@ -135,9 +135,10 @@ ok('進入休息畫面、倒數 20:00', !(await page.locator('#brk').isHidden())
    && (await page.textContent('#brkclock')) === '20:00');
 ok('休息畫面有預告下一科', (await page.textContent('#brknext')).includes('文法'));
 const music = await page.evaluate(() => BREAK_MUSIC);
-ok('休息畫面：有設定音樂就顯示「聽個音樂吧」和影片，沒設定就不顯示',
-   music ? !(await page.locator('#brkmusic').isHidden()) && await page.locator('#brkyt iframe').count() === 1
-         : await page.locator('#brkmusic').isHidden());
+const musicOk = async n => music[n]
+  ? !(await page.locator('#brkmusic').isHidden()) && (await page.getAttribute('#brkyt iframe', 'src') || '').includes('/embed/' + music[n])
+  : await page.locator('#brkmusic').isHidden();
+ok('第一次休息：有設定音樂就顯示「聽個音樂吧」和第一首，沒設定就不顯示', await musicOk(0));
 
 // ───────── 第2科 ─────────
 await page.click('#brkskip');
@@ -153,11 +154,13 @@ await page.click('#foot button');
 await page.waitForTimeout(300);
 ok('第2科交卷後又是休息畫面', !(await page.locator('#brk').isHidden()));
 ok('休息畫面提醒聴解不能重聽', (await page.textContent('#brknext')).includes('耳機'));
+ok('第二次休息放的是第二首', await musicOk(1));
 
 // ───────── 第3科 聴解 ─────────
 await page.click('#brkskip');
 await page.waitForTimeout(600);
 await page.evaluate(() => { state.stop = true; if (window.player) player.pause(); });  // 測試不等 10 分鐘的音檔
+ok('進聴解時休息的影片已拿掉（音樂不會蓋過聴解）', await page.locator('#brkyt iframe').count() === 0);
 ok('聴解沒有倒數計時器', await page.locator('#clock').isHidden());
 ok('聴解顯示進度', !(await page.locator('#prog').isHidden()));
 ok('聴解 24 張題卡＋4 張例題卡', await page.locator('#qbody .q').count() === 28
