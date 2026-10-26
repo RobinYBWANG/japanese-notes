@@ -4,6 +4,7 @@
 import { chromium } from 'playwright';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const HTML = path.resolve(process.argv[2] || path.join(HERE, '..', 'n5-mock-easy.html'));
@@ -75,6 +76,22 @@ ok('配額表 14 個題型一一對應、合計 ' + N, info.quotaOk && info.quot
 ok('每個題型夠出 10 回', info.enough);
 ok('聴解音檔全覆蓋（含題目旁白與選項朗讀）', info.uncovered === 0 && info.hasAll);
 ok('10 回考卷（選項重排後）音檔也全覆蓋', info.uncoveredDrawn === 0);
+
+// 漢字程度：題目、選項、文章、聴解台詞只能出現 N5 漢字（n5_level.py）；表記題（文字語彙 問題2）只看正解
+const N5 = execFileSync('python3', ['-c', 'from n5_level import N5_KANJI; print("".join(sorted(N5_KANJI)))'], { cwd: HERE, encoding: 'utf8' }).trim();
+const overKanji = await page.evaluate(n5 => {
+  const bad = [];
+  for (const q of BANK) {
+    const hyouki = q.sec === 1 && q.type.startsWith('問題2');
+    const fs = [q.q, q.pass || ''].concat(hyouki ? [q.c[q.a]] : q.c, (q.audio || []).map(l => l.t));
+    const k = fs.join(' ').replace(/<[^>]+>/g, '').match(/[一-龥々]/g) || [];
+    const out = k.filter(c => !n5.includes(c));
+    if (out.length) bad.push(out.join('') + '：' + q.q.replace(/<[^>]+>/g, '').slice(0, 20));
+  }
+  return bad;
+}, N5);
+ok('只用到 N5 漢字（表外漢字已改平假名）', overKanji.length === 0);
+if (overKanji.length) console.log('表外漢字：', overKanji.slice(0, 6));
 
 // 圖片：14 題四格圖（選項 1〜4、固定順序）、15 題發話表現有場景圖，圖檔都載得進來
 const pics = await page.evaluate(() => new Promise(res => {

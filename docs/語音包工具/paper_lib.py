@@ -2,7 +2,8 @@
 """正式版模擬考的考卷共用樣板：helper、聴解的秒數與播放結構、正解打散、檢查、寫檔。
    各卷（paper_A.py / paper_B.py / paper_C.py）只寫題目內容，其餘都走這裡。
    規格見 正式版考卷規格.md。"""
-import json, os, collections
+import json, os, re, collections
+from n5_level import n5ify
 
 UL = lambda w: '<span class="ul">' + w + '</span>'
 BK = '<span class="bk">　　</span>'
@@ -158,7 +159,26 @@ def paper(pid, name, s1, s2, s3, ex):
 
 
 def build(PAPER, OUT):
-    """正解打散 → 檢查 → 寫 JSON"""
+    """表外漢字改平假名 → 正解打散 → 檢查 → 寫 JSON"""
+    # 題目、選項、文章、聴解台詞裡的表外漢字改成平假名（n5_level.TO_KANA）；
+    # 表記題（文字語彙 問題2）的選項本來就是在考漢字，不動。解說、中文翻譯不動。
+    for sec in PAPER['sections']:
+        for pi, part in enumerate(sec['parts']):
+            for k in ('pass', 'passage'):
+                if part.get(k):
+                    part[k] = n5ify(part[k])
+            for it in part['items'] + ([part['ex']] if part.get('ex') else []):
+                for k in ('q', 'pass'):
+                    if it.get(k):
+                        it[k] = n5ify(it[k])
+                if it.get('c') and not (sec['key'] == 'moji' and pi == 1):
+                    it['c'] = [n5ify(x) for x in it['c']]
+                if 'class="star"' in it.get('q', ''):   # 組み立て題：解說裡的正確語序跟著選項改
+                    it['e'] = re.sub(r'(正しい順序：)(.*?)(＝)', lambda m: m[1] + n5ify(m[2]) + m[3], it['e'])
+                    it['e'] = re.sub(r'答案是「(.*?)」', lambda m: '答案是「' + n5ify(m[1]) + '」', it['e'])
+                for ln in it.get('play') or []:
+                    if isinstance(ln, dict) and ln.get('t'):
+                        ln['t'] = n5ify(ln['t'])
     # 輪流把正解放到第 1→2→3→4 格，其餘選項維持原本的相對順序
     # （時間、價錢那種選項還是照順序排）。圖片題與組み立て題不能動。
     k = 0

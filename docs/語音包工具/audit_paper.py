@@ -253,6 +253,18 @@ for tag, sec, part, it in qs:
     if joined.replace(' ', '') not in plain.replace(' ', ''):
         B(tag, '解說裡的正確語序和選項對不上')
 
+# ── 8. 漢字程度：題目、選項、文章、台詞只能有 N5 漢字（表記題的選項本來就在考漢字，不算） ──
+from n5_level import outside
+for tag, sec, part, it in qs:
+    fs = [it.get('q') or '', it.get('pass') or ''] + [l['t'] for l in it.get('play') or [] if isinstance(l, dict) and l.get('t')]
+    if sec['key'] == 'moji' and sec['parts'].index(part) == 1:
+        fs.append(it['c'][it['a']])     # 表記題只看正解
+    else:
+        fs += it['c']
+    k = outside(re.sub(r'<[^>]+>', '', ' '.join(fs)))
+    if k:
+        B(tag, '表外漢字 %s' % ''.join(k))
+
 print('\n' + ('=' * 60))
 if bad:
     print('找到 %d 個問題：' % len(bad))

@@ -68,6 +68,11 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 選項順序用題目當種子固定打亂;選卷頁、重考、歷史紀錄(`jp_n5mock_hist_<回>`)、考到一半離開作廢,機制同正式版。
 **題庫加題要加在各題型的最後面**,不然前面幾回的題目會跟著換。驗證跑 `test_mock.mjs`。
 
+**兩個模擬考都只用 N5 漢字**(2026-10-26):標準是 `docs\語音包工具\n5_level.py` 的 `N5_KANJI`(Tanos 103 字＋田)。
+題目、選項、文章、聴解台詞裡的表外漢字詞一律寫平假名(`TO_KANA` 轉換表、`n5ify()`;星期寫「〇よう日」、樓層次數寫「五かい」);
+表記題的錯誤選項可以用表外字,正解一定是 N5 字;解說與中文翻譯不受限。**文法程度不管**(使用者定案)。
+正式版在 `paper_lib.build()` 自動轉,簡易版 BANK 是手寫,加題時自己寫平假名,`test_mock.mjs` 會擋。
+
 ## Google Analytics 自訂事件 —— 2026-10-26
 
 兩個模擬考都會送:`exam_start`(paper、attempt)、`exam_section`、`exam_finish`(score、passed)、`exam_review`、
