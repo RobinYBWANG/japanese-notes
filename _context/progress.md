@@ -6,6 +6,7 @@
 > Single source:歷史進 journal.md、耐久事實進 reference.md;這裡只放指標。
 
 ## Now
+- **目前進度(2026-11-01)**:minna 做到**第9課**(單字 80、文法 ①〜⑩、文法小考 141 題、測驗 46 題、朗讀 4 套);GOGOGO 做到第6課;模擬考有 N5 簡易 10 回、N5 正式 A/B/C、N4 簡易 5 回(都已限制漢字程度)。
 - 檔案配置:**整個專案資料夾就是 git repo**(2026-09-08 合併,F17);網站檔全在 `docs\`(Pages = main /docs),CLAUDE.md、_context/ 也在 git 裡,Windows／Mac 兩台靠 git 同步。
 - git:**直接在 main 上做、不開分支**;**開工先 `git pull`**(另一台可能推過)。repo 合併步驟見 journal 2026-09-08。
 - **MacBook 已建好(2026-09-10)**:筆記、補音檔、Playwright 驗證都能做,與 Windows 等價;細節 toolchain §6、journal 2026-09-10。
@@ -37,7 +38,7 @@
 - 聲音仍是三個(Chloe/Uncle Ben/Darren);加第四個的成本見 toolchain.md,已評估過不划算。
 
 ## Next (1–3)
-- 第8課起同樣流程(單字→文法→小考→朗讀→測驗→總表 99)。
+- 第10課起同樣流程(單字→文法→小考→朗讀→測驗→總表 99)。
 - 手機版:實機再看一次小考版面與收合(09-04、09-06 各修一次)。
 - 「測驗」分頁出題品質的五個問題,使用者還在想要不要動(見 todo)。
 
@@ -45,6 +46,7 @@
 - 無。
 
 ## Pointers
+- 2026-10-24〜11-01 -> journal.md(GOGOGO 4〜6 課、第9課、N5 模擬考限漢字、N4 模擬考、GA 自訂事件、休息音樂)。
 - 2026-10-01〜02 -> journal.md(模擬考 +50 題、送ります 備註、備註欄遮罩的點擊規則)。
 - 2026-09-20〜25 -> journal.md(第6課上課筆記、第7課單字/文法/朗讀、各課測驗 20 題、助詞小考上線與調校、模擬考 +100 題)。
 - 2026-09-08 -> journal.md(整個資料夾合併成 repo、Pages 改 /docs、output/input 不上 git;Mac clone 步驟在 toolchain §6)。

@@ -11,6 +11,7 @@
 | n5-vocab | `n5vocab_audio.py`（單一聲音 14；`--prune` 刪用不到的） | test_n5vocab.mjs |
 | n5-grammar | `n5grammar_audio.py`（單一聲音 14；表格格子的中文註解不念，念法特例寫在 OVERRIDE） | test_grammar.mjs |
 | n5-mock-easy | `mock_audio.py` | test_mock.mjs |
+| n4-mock-easy | `mock_audio.py ../n4-mock-easy.html --prune` | test_n4mock.mjs |
 | n5-mock-full | `mockfull_audio.py`（自己的讀音規則＋語速 0.85） | test_mockfull.mjs |
 
 - **讀音修正 `read_fix.py`**：export_missing_clips／mock_audio／n5vocab_audio／n5grammar_audio 共用。

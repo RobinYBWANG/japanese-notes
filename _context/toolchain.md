@@ -129,6 +129,7 @@ fd=os.open(P, os.O_WRONLY|os.O_TRUNC); os.write(fd, out.encode('utf-8')); os.fsy
 - **clip id = `md5(speaker + '|' + text)` 前 12 碼**；文本正規化要去掉 `～ ~ ［ ］ [ ]`、全形空白→半形、trim。
   這兩條跟前端對不上 → 音檔存在但查不到，**不會報錯**。
 - 新增漢字詞先問引擎它會怎麼唸（`/audio_query` 回傳的 moras），對不上就加進 `sayForceKana`。
+- `gen_grammar_quiz.py` 的 `REPL` 是子字串取代，太短會誤傷（話します→会はなします，踩過）；整句讀音寫 `FIXED_SAY`。
   實例：「水餃」被唸成「ミズ」。
 - 三角色：Chloe=四国めたん(2，聲音A預設)、Darren=玄野武宏(11，聲音B預設)、Uncle Ben=青山龍星(13)。
 - **n5-mock-easy.html 的音檔是獨立一套**（2026-09-11）：`mock_audio.py` 一步跑完。key 是「角色|文本」，F/M/N = speaker 2/11/13；
@@ -164,6 +165,7 @@ fd=os.open(P, os.O_WRONLY|os.O_TRUNC); os.write(fd, out.encode('utf-8')); os.fsy
 
 ## 5. 雜項
 
+- **「照片」圖庫裡的檔案讀不到**（macOS 擋，`Operation not permitted`；`@` 只傳路徑不傳圖）。打不開要當場講，請他把圖拖進對話或匯出到 `input/`，不要憑別張圖推測內容（2026-11-01 踩到）。
 - **HEIC 照片**（使用者的手寫筆記）：ffmpeg 開不了（`moov atom not found`）。
   用 `pip install pillow-heif` 再走 PIL 轉 PNG。橫拍的要 `rotate(90, expand=True)` 才看得懂。
 - **Playwright**：本機已裝在 `docs\語音包工具\node_modules`（`npm install playwright` + `npx playwright install chromium`），
