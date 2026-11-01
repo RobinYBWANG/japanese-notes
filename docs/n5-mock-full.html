@@ -440,6 +440,30 @@ function countAnswered(si){
   return done;
 }
 
+function countCorrect(si){
+  let done = 0;
+  paper.sections[si].parts.forEach((p, pi) => p.items.forEach((it, ii) => { if (state.ans[si+'-'+pi+'-'+ii] === it.a) done++; }));
+  return done;
+}
+
+/* GA 心跳：頁面顯示在螢幕上時每 2 分鐘送一次目前狀態（still_here），切走或關掉時送 page_leave */
+let beatT = null;
+function gaState(){
+  const view = ['exam', 'brk', 'result', 'review'].find(v => !$(v).hidden);
+  if (!view) return {state: 'home'};
+  if (view === 'exam') return {state: 'exam', paper: paper.name, section: paper.sections[state.si].label, answered: countAnswered(state.si)};
+  return {state: view === 'brk' ? 'break' : 'review', paper: paper.name};
+}
+function beatSync(){
+  clearInterval(beatT);
+  if (document.visibilityState === 'visible') beatT = setInterval(() => track('still_here', gaState()), 120000);
+}
+document.addEventListener('visibilitychange', () => {
+  track(document.visibilityState === 'visible' ? 'still_here' : 'page_leave', gaState());
+  beatSync();
+});
+beatSync();
+
 function updateAnswered(){
   $('secmeta').textContent = '已作答 ' + countAnswered(2) + ' / ' + paper.sections[2].n + ' 題';
 }
@@ -536,7 +560,7 @@ function finishSection(auto){
   /* GA：剛交的這一科。交卷當下就結算，不等休息結束（秒數不含休息，中途關掉也不會少資料） */
   const seconds = Math.round((Date.now() - state.secT0) / 1000);
   state.totalSec += seconds;
-  const done = {paper: state.id + ' 卷', section: paper.sections[state.si].label, answered: countAnswered(state.si), seconds, time_up: auto ? 'yes' : 'no'};
+  const done = {paper: state.id + ' 卷', section: paper.sections[state.si].label, answered: countAnswered(state.si), correct: countCorrect(state.si), seconds, time_up: auto ? 'yes' : 'no'};
   const next = state.si + 1;
   if (next >= paper.sections.length) return finishExam(done);
   track('exam_section', done);
@@ -585,7 +609,7 @@ function finishExam(done){
   const rec = {date: today(), ans: state.ans, total: res.total, sa: res.sa, sb: res.sb, pass: res.pass};
   const hist = loadHist(state.id); hist.unshift(rec); saveHist(state.id, hist);
   const n = paper.sections.reduce((a, s, i) => a + countAnswered(i), 0), all = res.aN + res.bN;
-  track('exam_finish', Object.assign(done, {score: res.total, passed: res.pass ? 'yes' : 'no', answered_total: n, total_seconds: state.totalSec,
+  track('exam_finish', Object.assign(done, {score: res.total, score_lang: res.sa, score_listen: res.sb, passed: res.pass ? 'yes' : 'no', answered_total: n, total_seconds: state.totalSec,
                                             answered_band: n === 0 ? 'none' : n === all ? 'all' : n * 2 < all ? 'under_half' : 'over_half'}));
   renderResult(res, rec);
 }

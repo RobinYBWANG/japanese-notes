@@ -294,6 +294,10 @@ for (const [p, n, band] of [[2, 0, 'none'], [3, Math.ceil(N / 2), 'over_half'], 
   await page.click('#submit'); await page.waitForTimeout(300);
   const f = await page.evaluate(() => window.__ga.find(a => a[1] === 'exam_finish')[2]);
   ok('GA：答 ' + n + ' 題 → ' + band, f.answered_total === n && f.answered_band === band, f);
+  const card = await page.evaluate(() => { const e = n => window.__ga.filter(a => a[1] === n).map(a => a[2]), g = gradeOf(qs, picked);
+    return { secs: e('exam_section'), fin: e('exam_finish')[0], got: g.got, know: g.know, listen: g.listen }; });
+  ok('GA：答 ' + n + ' 題時，各科答對題數與兩個區分分數都和成績單相同', card.secs[0].correct === card.got[1] && card.secs[1].correct === card.got[2]
+     && card.fin.correct === card.got[3] && card.fin.score_lang === card.know && card.fin.score_listen === card.listen, card);
 }
 await page.click('#home'); await page.waitForTimeout(200);
 await page.click('[data-start="' + P2 + '"]'); await page.waitForTimeout(300);
@@ -322,6 +326,34 @@ for (const w of [320, 390, 768, 1280]) {
 ok('320/390/768/1280 無橫向溢出', over.length === 0);
 
 ok('無 console 錯誤', errors.length === 0);
+
+// 心跳：顯示中每 2 分鐘送目前狀態、切走送 page_leave 且不再送、切回立刻送；用假時鐘才不用真的等
+const hb = await browser.newPage();
+await hb.addInitScript(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); }; });
+await hb.clock.install();
+await hb.goto(pathToFileURL(HTML).href, { timeout: 90000 });
+await hb.waitForTimeout(300);
+const hbEv = () => hb.evaluate(() => { const r = window.__ga.filter(a => a[0] === 'event' && /still_here|page_leave/.test(a[1])).map(a => a[1] + ':' + a[2].state + ':' + a[2].paper + ':' + a[2].section + ':' + a[2].answered); window.__ga = []; return r; });
+const hbVis = v => hb.evaluate(v => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v }); document.dispatchEvent(new Event('visibilitychange')); }, v);
+await hbVis('hidden');
+ok('心跳：選卷頁切走送 page_leave、state=home', (await hbEv()).join() === 'page_leave:home:undefined:undefined:undefined');
+await hbVis('visible'); await hbEv();
+await hb.click('[data-start="1"]'); await hb.waitForTimeout(300);
+await hb.evaluate(() => { [...document.querySelectorAll('.pane[data-sec="1"] .card')].slice(0, 2).forEach(c => c.querySelector('.ch').click()); });
+await hb.clock.runFor(119000);
+ok('心跳：滿 2 分鐘前不送', (await hbEv()).length === 0);
+await hb.clock.runFor(1000);
+ok('心跳：滿 2 分鐘送 still_here，帶考卷、科目、已答題數', (await hbEv()).join() === 'still_here:exam:第 2 回:文字・語彙:2');
+await hbVis('hidden');
+ok('心跳：切走送 page_leave', (await hbEv()).join() === 'page_leave:exam:第 2 回:文字・語彙:2');
+await hb.clock.runFor(120000);
+ok('心跳：切走後不再送', (await hbEv()).length === 0);
+await hbVis('visible');
+ok('心跳：切回來立刻送 still_here', (await hbEv()).join() === 'still_here:exam:第 2 回:文字・語彙:2');
+await hb.evaluate(() => { submit(true); });
+await hb.clock.runFor(120000);
+ok('心跳：交卷後 state=review', (await hbEv()).join() === 'still_here:review:第 2 回:undefined:undefined');
+await hb.close();
 
 let fail = 0;
 for (const [n, c] of checks) { console.log((c ? 'PASS' : 'FAIL') + '  ' + n); if (!c) fail++; }

@@ -3806,12 +3806,31 @@ var BOOK='GOGOGO';
 /* Google Analytics：切換課次或分頁時送一次虛擬 page_view（頁面標題＝「書名｜第N課 標題｜分頁」），
    報表「網頁和畫面」就能看到每一課、每個分頁各停了多久。GA 只在 github.io 上載入，本機打開不送。
    GA_READY 在頁面初始化跑完才打開（剛打開網頁那次已經有一般的 page_view，不重送）。2026-10-26 */
-var GA_READY=false,GA_LAST='';
+var GA_READY=false,GA_LAST='',GA_BEAT=null;
+function gaTitle(){
+  const s=subsFor(lesson).filter(function(x){return x[0]===section;})[0];
+  return BOOK+'｜'+String(lessonName(lesson)).replace(/\n/g,' ')+'｜'+(s?s[1]:section);
+}
+/* GA 心跳：頁面顯示在螢幕上時每 2 分鐘送一次目前看的頁（still_here），切走或關掉時送 page_leave */
+function gaBeat(name){
+  try{
+    if(!GA_READY||typeof gtag!=='function')return;
+    gtag('event',name,{state:'notes',page_title:gaTitle()});
+  }catch(e){}
+}
+function gaBeatSync(){
+  clearInterval(GA_BEAT);
+  if(document.visibilityState==='visible')GA_BEAT=setInterval(function(){gaBeat('still_here');},120000);
+}
+document.addEventListener('visibilitychange',function(){
+  gaBeat(document.visibilityState==='visible'?'still_here':'page_leave');
+  gaBeatSync();
+});
+gaBeatSync();
 function gaView(){
   try{
     if(!GA_READY||typeof gtag!=='function')return;
-    const s=subsFor(lesson).filter(function(x){return x[0]===section;})[0];
-    const t=BOOK+'｜'+String(lessonName(lesson)).replace(/\n/g,' ')+'｜'+(s?s[1]:section);
+    const t=gaTitle();
     if(t===GA_LAST)return;GA_LAST=t;
     gtag('event','page_view',{page_title:t,page_location:location.origin+location.pathname+'#'+encodeURIComponent(lesson+'-'+section)});
   }catch(e){}

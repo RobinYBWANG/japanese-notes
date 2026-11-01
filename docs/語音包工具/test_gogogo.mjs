@@ -151,6 +151,19 @@ const browser = await chromium.launch();
       switchLesson(2); switchSection(subsFor(2)[0][0]); switchLesson(3); switchLesson(3);
       return window.__ga.map(a => a[1] + '｜' + a[2].page_title); });
     ok('GA：切換課次送出 page_view（標題含書名與課名）、同一頁不重送', gav.length === 2 && gav.every(x => x.indexOf('page_view｜GOGOGO｜') === 0) && /第2課/.test(gav[0]) && /第3課/.test(gav[1]), gav);
+    // 心跳：滿 2 分鐘送目前看的頁、切走送 page_leave 且不再送（假時鐘要在切回來重設計時器之後才接得到）
+    await page.clock.install();
+    const hbVis = v => page.evaluate(v => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v }); document.dispatchEvent(new Event('visibilitychange')); }, v);
+    const hbEv = () => page.evaluate(() => { const r = window.__ga.filter(a => /still_here|page_leave/.test(a[1])).map(a => a[1] + '｜' + a[2].state + '｜' + a[2].page_title); window.__ga = []; return r; });
+    await hbVis('hidden');
+    ok('心跳：切走送 page_leave，帶目前看的頁', /^page_leave｜notes｜GOGOGO｜第3課/.test((await hbEv()).join()));
+    await hbVis('visible'); await hbEv();
+    await page.clock.runFor(120000);
+    ok('心跳：滿 2 分鐘送 still_here', /^still_here｜notes｜GOGOGO｜第3課/.test((await hbEv()).join()));
+    await hbVis('hidden'); await hbEv();
+    await page.clock.runFor(120000);
+    ok('心跳：切走後不再送', (await hbEv()).length === 0);
+    await hbVis('visible');
   }
   await page.close();
 }

@@ -867,11 +867,30 @@ function start(p){
 }
 
 /* GA：結算剛交的這一科（要在 cur 換科之前叫）。秒數看實際時間，不計時模式的 left 不會動 */
+function secAnswered(){ return qs.filter(function(q, i){ return q.sec === cur && picked[i] !== null; }).length; }
 function secStats(){
   var seconds = Math.round((Date.now() - secT0) / 1000);
   totalSec += seconds; secT0 = Date.now();
-  return { section: SEC_NAME[cur], answered: qs.filter(function(q, i){ return q.sec === cur && picked[i] !== null; }).length, seconds: seconds };
+  return { section: SEC_NAME[cur], answered: secAnswered(), seconds: seconds,
+           correct: qs.filter(function(q, i){ return q.sec === cur && picked[i] === q.a; }).length };
 }
+
+/* GA 心跳：頁面顯示在螢幕上時每 2 分鐘送一次目前狀態（still_here），切走或關掉時送 page_leave */
+var beatT = null;
+function gaState(){
+  if (!$("start").classList.contains("hide")) return { state: "home" };
+  if (submitted) return { state: "review", paper: paperName(paperNo) };
+  return { state: "exam", paper: paperName(paperNo), section: SEC_NAME[cur], answered: secAnswered() };
+}
+function beatSync(){
+  clearInterval(beatT);
+  if (document.visibilityState === "visible") beatT = setInterval(function(){ track("still_here", gaState()); }, 120000);
+}
+document.addEventListener("visibilitychange", function(){
+  track(document.visibilityState === "visible" ? "still_here" : "page_leave", gaState());
+  beatSync();
+});
+beatSync();
 
 /* 三科依序作答（正式考試的規則）：交了這科就不能回頭；最後一科才是交卷 */
 function nextSection(auto){
@@ -917,6 +936,7 @@ function submit(auto){
   var hist = loadHist(paperNo); hist.unshift(rec); saveHist(paperNo, hist);
   var done = secStats(), n = picked.filter(function(v){ return v !== null; }).length;
   track("exam_finish", Object.assign({ paper: paperName(paperNo), score: g.total, passed: g.passed ? "yes" : "no", time_up: auto ? "yes" : "no",
+    score_lang: g.know, score_listen: g.listen,
     answered_total: n, total_seconds: totalSec, answered_band: n === 0 ? "none" : n === qs.length ? "all" : n * 2 < qs.length ? "under_half" : "over_half" }, done));
   showGraded(rec, false);
   $("result").scrollIntoView({ behavior:"smooth", block:"start" });

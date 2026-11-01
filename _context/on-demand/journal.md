@@ -846,3 +846,5 @@ ode_modules`)。
 - GA 後台：新維度 作答比例，新指標 答題數／全卷答題數／全卷秒數；指標「休息秒數」改名「秒數」（共用參數 seconds）；更新 科目、時間到 的說明。
 - 使用者表明不看 GA、會直接問我：查法記在 CLAUDE.md。實測即時報表可用 Chrome 讀，能點到參數值（當下看到有人在考 full）。
 - 驗證：test_mock、test_n4mock、test_mockfull 全 PASS。
+- 同日：使用者問「看詳解中或關掉了」分不出來，加心跳（未 commit）：三個模擬考＋minna、gogogo，顯示中每 2 分鐘 still_here（使用者要 2 分鐘試試）、切走或關掉 page_leave，帶 state 等；GA 後台登記維度 狀態 state。心跳測試用 Playwright 假時鐘。ntfy 手機推播使用者先不做（todo 已有）。
+- 同日：使用者想看三科各幾分，三個模擬考加 correct（每科答對題數）與 exam_finish 的 score_lang、score_listen（未 commit）；GA 後台登記指標 答對題數、言語知識分數、聴解分數。這之前的考試（含今天 A 卷 136 分那場）只有總分。

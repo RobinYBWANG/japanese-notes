@@ -85,14 +85,15 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 
 三個模擬考都會送:`exam_start`(paper、attempt)、`exam_section`、`exam_finish`(score、passed)、`exam_review`、
 `exam_abandon`、`history_clear`,參數都帶 `exam_type`(easy／full／n4easy)。
-`exam_section`(第一、二科)與 `exam_finish`(第三科)都在**交卷當下**送、帶**剛交的那科**:`section`、`answered`、`seconds`(不含休息)、`time_up`;
-`exam_finish` 另有 `answered_total`、`total_seconds`、`answered_band`(none／under_half／over_half／all,判斷有沒有認真考看這個;聴解音檔會播到底,時間參考價值低)。`section` 2026-11-01 前是「要進去的那科」。
+`exam_section`(第一、二科)與 `exam_finish`(第三科)都在**交卷當下**送、帶**剛交的那科**:`section`、`answered`、`correct`(答對幾題)、`seconds`(不含休息)、`time_up`;
+`exam_finish` 另有 `score_lang`(言語知識・読解,滿 120)、`score_listen`(聴解,滿 60)、`answered_total`、`total_seconds`、`answered_band`(none／under_half／over_half／all,判斷有沒有認真考看這個;聴解音檔會播到底,時間參考價值低)。`section` 2026-11-01 前是「要進去的那科」。
 正式版另有 `exam_break`(休息結束時送:`break_no`、停留 `seconds`、`skipped`、`video_clicked` yes／no／none——點進 YouTube iframe 會讓外層視窗 blur 來判斷)。只在 github.io 上送(本機 gtag 不存在)。
 筆記頁(minna、gogogo)切換課次／分頁時送虛擬 `page_view`(標題「書名｜課名｜分頁」,`gaView()`),報表「網頁和畫面」看得到每課每分頁停多久。
+**心跳**(2026-11-01,三個模擬考＋minna、gogogo):頁面顯示在螢幕上時每 2 分鐘送 `still_here`,切走或關掉時送 `page_leave`,切回來立刻送 `still_here`。都帶 `state`(home／exam／break／review／notes);考試帶 `paper`、`section`、`answered`(這科已答),筆記帶 `page_title`。超過 2 分鐘沒有 `still_here` = 離開或切走;手機關頁時 `page_leave` 可能送不出去,以心跳有沒有停為準。
 
 **使用者不看 GA,會直接問我**(有人在看筆記嗎、看哪頁多久;有人在考試嗎、哪份、有沒有休息、幾分)。查法:用 Claude in Chrome 開
 `https://analytics.google.com/analytics/web/#/a412685377p559817851/realtime/overview`,`get_page_text` 讀過去 30 分鐘的人數、頁面標題、事件數;
-點事件名稱→參數名稱→看參數值(例:exam_break→exam_type→full)。即時報表每個參數分開統計,多人同時考時配不起來;超過 30 分鐘的看報表(延遲約一天)。
+點事件名稱→參數名稱→看參數值(例:exam_break→exam_type→full)。看某人現在在做什麼,看 `still_here`、`page_leave` 的 state 與 page_title。**城市別當真**:GA 用 IP 推測,台北的手機會顯示台中,只講到國家。即時報表每個參數分開統計,多人同時考時配不起來;超過 30 分鐘的看報表(延遲約一天)。
 
 ## N5 模擬考（正式版）—— 2026-10-11 開始
 

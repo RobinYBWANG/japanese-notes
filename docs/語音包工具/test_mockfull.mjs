@@ -219,11 +219,13 @@ const secs = ev('exam_section').map(e => e[1]);
 ok('GA：exam_section 兩次，帶剛交的那科（第1科 21 題、第2科 22 題、沒時間到）',
    secs.length === 2 && secs[0].section === '言語知識（文字・語彙）' && secs[1].section === '言語知識（文法）・読解'
    && secs[0].answered === 21 && secs[1].answered === 22 && secs.every(s => s.time_up === 'no'), secs);
+ok('GA：exam_section 帶各科答對題數', secs[0].correct === 21 && secs[1].correct === 22, secs);
 ok('GA：exam_section 在交卷當下送（早於休息結束的 exam_break）',
    ga.findIndex(e => e[0] === 'exam_section') < ga.findIndex(e => e[0] === 'exam_break'), ga.map(e => e[0]));
 ok('GA：exam_finish 180 分、合格', ev('exam_finish').length === 1 && ev('exam_finish')[0][1].score === 180 && ev('exam_finish')[0][1].passed === 'yes', ev('exam_finish'));
 const fin = ev('exam_finish')[0][1];
 ok('GA：exam_finish 帶聴解 24 題、全卷 67 題、全答', fin.section === '聴解' && fin.answered === 24 && fin.answered_total === 67 && fin.answered_band === 'all' && fin.time_up === 'no', fin);
+ok('GA：exam_finish 帶聴解答對題數與兩個區分分數', fin.correct === 24 && fin.score_lang === 120 && fin.score_listen === 60, fin);
 ok('GA：total_seconds 是三科加總', fin.total_seconds === secs[0].seconds + secs[1].seconds + fin.seconds, fin);
 ok('GA：看詳解送出 exam_review', ev('exam_review').length === 1, ev('exam_review'));
 const brk = ev('exam_break').map(e => e[1]);
@@ -235,11 +237,14 @@ ok('GA：exam_break 兩次（第幾次休息、停留秒數、按了跳過、第
 
 ok('GA：第2科的秒數不含第一次休息', secs[1].seconds < brk[0].seconds, [secs[1], brk[0]]);
 
-// 時間到自動交卷：time_up 要是 yes，沒答的科目 answered 是 0
-await page.evaluate(() => { window.__ga = []; startExam('B'); finishSection(true); });
+// 時間到自動交卷：time_up 要是 yes；只答了一題而且答錯，answered 是 1、correct 是 0
+await page.evaluate(() => { window.__ga = []; startExam('B');
+  const it = PAPERS.B.sections[0].parts[0].items[0];
+  document.querySelector('[data-pick="0-0-0:' + ((it.a + 1) % it.c.length) + '"]').click();
+  finishSection(true); });
 await page.waitForTimeout(200);
 const tu = await page.evaluate(() => window.__ga.find(a => a[1] === 'exam_section')[2]);
-ok('GA：時間到 time_up=yes、答 0 題', tu.time_up === 'yes' && tu.answered === 0 && tu.paper === 'B 卷', tu);
+ok('GA：時間到 time_up=yes、答 1 題、對 0 題', tu.time_up === 'yes' && tu.answered === 1 && tu.correct === 0 && tu.paper === 'B 卷', tu);
 await page.evaluate(() => { clearInterval(timer); localStorage.removeItem(RUN_KEY); paper = null; state = null; renderHome(); });
 await page.waitForTimeout(200);
 
@@ -295,6 +300,37 @@ for (const w of [320, 390, 768, 1280]){
 }
 ok('320/390/768/1280 無橫向溢出', over.length === 0, over);
 ok('無 console 錯誤', errs.length === 0, errs.slice(0, 3));
+
+// 心跳：顯示中每 2 分鐘送目前狀態、切走送 page_leave 且不再送、切回立刻送；用假時鐘才不用真的等
+const hb = await browser.newPage();
+await hb.addInitScript(() => { window.__ga = []; window.gtag = function(){ window.__ga.push([].slice.call(arguments)); }; });
+await hb.clock.install();
+await hb.goto(URL);
+await hb.waitForTimeout(300);
+const hbEv = () => hb.evaluate(() => { const r = window.__ga.filter(a => a[0] === 'event' && /still_here|page_leave/.test(a[1])).map(a => a[1] + ':' + a[2].state + ':' + a[2].paper + ':' + a[2].section + ':' + a[2].answered); window.__ga = []; return r; });
+const hbVis = v => hb.evaluate(v => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v }); document.dispatchEvent(new Event('visibilitychange')); }, v);
+await hbVis('hidden');
+ok('心跳：選卷頁切走送 page_leave、state=home', (await hbEv()).join() === 'page_leave:home:undefined:undefined:undefined');
+await hbVis('visible'); await hbEv();
+await hb.click('[data-start="B"]'); await hb.waitForTimeout(300);
+await hb.evaluate(() => { const it = PAPERS.B.sections[0].parts[0].items[0]; document.querySelector('[data-pick="0-0-0:' + it.a + '"]').click(); });
+await hb.clock.runFor(119000);
+ok('心跳：滿 2 分鐘前不送', (await hbEv()).length === 0);
+await hb.clock.runFor(1000);
+ok('心跳：滿 2 分鐘送 still_here，帶考卷、科目、已答題數', (await hbEv()).join() === 'still_here:exam:B 卷:言語知識（文字・語彙）:1');
+await hbVis('hidden');
+ok('心跳：切走送 page_leave', (await hbEv()).join() === 'page_leave:exam:B 卷:言語知識（文字・語彙）:1');
+await hb.clock.runFor(120000);
+ok('心跳：切走後不再送', (await hbEv()).length === 0);
+await hbVis('visible');
+ok('心跳：切回來立刻送 still_here', (await hbEv()).join() === 'still_here:exam:B 卷:言語知識（文字・語彙）:1');
+await hb.evaluate(() => { startBreak(1); });
+await hb.clock.runFor(120000);
+ok('心跳：休息中 state=break', (await hbEv()).join() === 'still_here:break:B 卷:undefined:undefined');
+await hb.evaluate(() => { finishExam({paper: 'B 卷'}); });
+await hb.clock.runFor(120000);
+ok('心跳：交卷後 state=review', (await hbEv()).join() === 'still_here:review:B 卷:undefined:undefined');
+await hb.close();
 
 await browser.close();
 console.log(fail ? ('\n' + fail + ' 項 FAIL') : '\n全部 PASS');
