@@ -399,7 +399,7 @@ function wirePicks(root, ans, onPick){
 /* ───────── 考試流程 ───────── */
 function startExam(id){
   paper = PAPERS[id];
-  state = {id, ans: {}, si: 0, started: today()};
+  state = {id, ans: {}, si: 0, started: today(), totalSec: 0};
   try{ localStorage.setItem(RUN_KEY, id); }catch(e){}
   track('exam_start', {paper: id + ' 卷', attempt: loadHist(id).filter(r => !r.void).length + 1});
   runSection(0);
@@ -407,8 +407,8 @@ function startExam(id){
 
 function runSection(si){
   state.si = si;
+  state.secT0 = Date.now();
   const sec = paper.sections[si];
-  if (si > 0) track('exam_section', {paper: state.id + ' 卷', section: sec.label});
   show('exam');
   $('secname').textContent = '試験' + 'ⅠⅡⅢ'[si] + '　' + sec.label;
   $('secmeta').textContent = sec.n + ' 題';
@@ -434,11 +434,14 @@ function startTimed(sec){
   }]]);
 }
 
-function updateAnswered(){
-  const sec = paper.sections[2];
+function countAnswered(si){
   let done = 0;
-  sec.parts.forEach((p, pi) => p.items.forEach((it, ii) => { if (state.ans['2-'+pi+'-'+ii] != null) done++; }));
-  $('secmeta').textContent = '已作答 ' + done + ' / ' + sec.n + ' 題';
+  paper.sections[si].parts.forEach((p, pi) => p.items.forEach((it, ii) => { if (state.ans[si+'-'+pi+'-'+ii] != null) done++; }));
+  return done;
+}
+
+function updateAnswered(){
+  $('secmeta').textContent = '已作答 ' + countAnswered(2) + ' / ' + paper.sections[2].n + ' 題';
 }
 
 /* ── 聴解：一次播到底 ── */
@@ -530,8 +533,13 @@ async function preload(sec){
 
 function finishSection(auto){
   clearInterval(timer);
+  /* GA：剛交的這一科。交卷當下就結算，不等休息結束（秒數不含休息，中途關掉也不會少資料） */
+  const seconds = Math.round((Date.now() - state.secT0) / 1000);
+  state.totalSec += seconds;
+  const done = {paper: state.id + ' 卷', section: paper.sections[state.si].label, answered: countAnswered(state.si), seconds, time_up: auto ? 'yes' : 'no'};
   const next = state.si + 1;
-  if (next >= paper.sections.length) return finishExam();
+  if (next >= paper.sections.length) return finishExam(done);
+  track('exam_section', done);
   if (auto) alert('時間到，自動交卷。');
   startBreak(next);
 }
@@ -570,13 +578,15 @@ function startBreak(nextSi){
   $('brkskip').onclick = () => leave(true);
 }
 
-function finishExam(){
+function finishExam(done){
   clearInterval(timer);
   try{ localStorage.removeItem(RUN_KEY); }catch(e){}
   const res = grade(paper, state.ans);
   const rec = {date: today(), ans: state.ans, total: res.total, sa: res.sa, sb: res.sb, pass: res.pass};
   const hist = loadHist(state.id); hist.unshift(rec); saveHist(state.id, hist);
-  track('exam_finish', {paper: state.id + ' 卷', score: res.total, passed: res.pass ? 'yes' : 'no'});
+  const n = paper.sections.reduce((a, s, i) => a + countAnswered(i), 0), all = res.aN + res.bN;
+  track('exam_finish', Object.assign(done, {score: res.total, passed: res.pass ? 'yes' : 'no', answered_total: n, total_seconds: state.totalSec,
+                                            answered_band: n === 0 ? 'none' : n === all ? 'all' : n * 2 < all ? 'under_half' : 'over_half'}));
   renderResult(res, rec);
 }
 

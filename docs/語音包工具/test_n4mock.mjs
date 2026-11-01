@@ -264,6 +264,9 @@ const P2 = NP >= 2 ? 1 : 0, P2N = '第 ' + (P2 + 1) + ' 回';
 await page.evaluate(() => { window.__ga = []; });
 await page.click('[data-start="' + P2 + '"]');
 await page.waitForTimeout(400);
+// 第一科答 3 題、放 1 秒多，後兩科不答：每一科的題數秒數要算在「剛交的那科」
+await page.evaluate(() => { [...document.querySelectorAll('.pane[data-sec="1"] .card')].slice(0, 3).forEach(c => c.querySelector('.ch').click()); });
+await page.waitForTimeout(1100);
 await page.click('#submit'); await page.waitForTimeout(200);
 await page.click('#submit'); await page.waitForTimeout(200);
 await page.click('#submit'); await page.waitForTimeout(400);
@@ -273,9 +276,25 @@ const ga = await page.evaluate(() => window.__ga.filter(a => a[0] === 'event').m
 const ev = n => ga.filter(e => e[0] === n);
 ok('GA：exam_start（n4easy、' + P2N + '、第 1 次、計時 on）', ev('exam_start').length === 1 && ev('exam_start')[0][1].exam_type === 'n4easy' &&
    ev('exam_start')[0][1].paper === P2N && ev('exam_start')[0][1].attempt === 1 && ev('exam_start')[0][1].timer === 'on');
-ok('GA：exam_section 兩次（文法・読解、聴解）', ev('exam_section').map(e => e[1].section).join() === '文法・読解,聴解');
+ok('GA：exam_section 帶剛交的那科（文字・語彙 3 題、文法・読解 0 題）', ev('exam_section').map(e => e[1].section + ':' + e[1].answered).join() === '文字・語彙:3,文法・読解:0');
+ok('GA：exam_section 秒數是實際停留、不是時間到', ev('exam_section')[0][1].seconds >= 1 && ev('exam_section')[0][1].time_up === 'no');
+const fin = ev('exam_finish')[0][1];
+ok('GA：exam_finish 帶最後一科與全卷（聴解 0 題、全卷 3 題、未過半）', fin.section === '聴解' && fin.answered === 0 && fin.answered_total === 3 && fin.answered_band === 'under_half');
+ok('GA：total_seconds 是三科加總', fin.total_seconds === ev('exam_section')[0][1].seconds + ev('exam_section')[1][1].seconds + fin.seconds);
 ok('GA：exam_finish 帶分數與合格與否', ev('exam_finish').length === 1 && typeof ev('exam_finish')[0][1].score === 'number' && /^(yes|no)$/.test(ev('exam_finish')[0][1].passed));
 ok('GA：看詳解送出 exam_review', ev('exam_review').length === 1 && ev('exam_review')[0][1].paper === P2N);
+// 作答比例分級是判斷有沒有認真考的依據：全空 none、剛好一半 over_half、全答 all
+for (const [p, n, band] of [[2, 0, 'none'], [3, Math.ceil(N / 2), 'over_half'], [4, N, 'all']]) {
+  await page.click('#home'); await page.waitForTimeout(200);
+  await page.evaluate(() => { window.__ga = []; });
+  await page.click('[data-start="' + p + '"]'); await page.waitForTimeout(300);
+  await page.evaluate(n => { [...document.querySelectorAll('#quiz .card')].slice(0, n).forEach(c => c.querySelector('.ch').click()); }, n);
+  await page.click('#submit'); await page.waitForTimeout(200);
+  await page.click('#submit'); await page.waitForTimeout(200);
+  await page.click('#submit'); await page.waitForTimeout(300);
+  const f = await page.evaluate(() => window.__ga.find(a => a[1] === 'exam_finish')[2]);
+  ok('GA：答 ' + n + ' 題 → ' + band, f.answered_total === n && f.answered_band === band, f);
+}
 await page.click('#home'); await page.waitForTimeout(200);
 await page.click('[data-start="' + P2 + '"]'); await page.waitForTimeout(300);
 

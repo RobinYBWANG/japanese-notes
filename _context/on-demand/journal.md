@@ -837,3 +837,12 @@ ode_modules`)。
 - 同日：使用者說明筆記第二行是「でも＝不過」，第九課單字加 でも（第 80 個）。
 - 同日：朗讀總表（reading 99）重產 4 套、第9課朗讀改 4 套（一套 22 行，52 個樣板 3 套輪不完，お土産、2泊3日 沒出現過）。瀏覽器若存過 workbook.reading，要按換一套才會看到新內容。
 - 同日：build_total 每套改從不同段開始（原本四套幾乎重疊），朗讀總表 4 套的涵蓋變廣，第9課新句型大多進得去。
+
+## 2026-11-01 GA：判斷認真考試還是直接交卷（未 commit）
+- 三個模擬考的 `exam_section`、`exam_finish` 加 answered、seconds，`exam_finish` 再加 answered_total、total_seconds、answered_band。
+- `section` 改成「剛交的那科」（原本是要進去的那科，和新參數對不起來；GA 才上線 6 天，現在改代價最小），exam_finish 也帶 section。
+- N5 正式版的 exam_section 從 runSection() 移到 finishSection()：原本休息結束才送，休息時關頁會少資料；順便補 time_up，seconds 不含休息。
+- answered_band 是後加的維度：GA 指標只能看加總平均，看不出幾個人答 0 題。
+- GA 後台：新維度 作答比例，新指標 答題數／全卷答題數／全卷秒數；指標「休息秒數」改名「秒數」（共用參數 seconds）；更新 科目、時間到 的說明。
+- 使用者表明不看 GA、會直接問我：查法記在 CLAUDE.md。實測即時報表可用 Chrome 讀，能點到參數值（當下看到有人在考 full）。
+- 驗證：test_mock、test_n4mock、test_mockfull 全 PASS。

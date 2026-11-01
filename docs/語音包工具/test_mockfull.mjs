@@ -140,7 +140,7 @@ const musicOk = async n => music[n]
   : await page.locator('#brkmusic').isHidden();
 ok('第一次休息：有設定音樂就顯示「聽個音樂吧」和第一首，沒設定就不顯示', await musicOk(0));
 // 模擬使用者點了影片（焦點跑進 iframe、外層視窗 blur），第二次休息則不點
-await page.waitForTimeout(1100);
+await page.waitForTimeout(3100);
 await page.evaluate(() => { const f = document.querySelector('#brkyt iframe'); if (f) f.focus(); window.dispatchEvent(new Event('blur')); });
 await page.waitForTimeout(100);
 
@@ -215,8 +215,16 @@ const ga = await page.evaluate(() => window.__ga.filter(a => a[0] === 'event').m
 const ev = n => ga.filter(e => e[0] === n);
 ok('GA：exam_start（full、A 卷、第 1 次）', ev('exam_start').length === 1 && ev('exam_start')[0][1].exam_type === 'full'
    && ev('exam_start')[0][1].paper === 'A 卷' && ev('exam_start')[0][1].attempt === 1, ev('exam_start'));
-ok('GA：exam_section 兩次（第2科、聴解）', ev('exam_section').length === 2, ev('exam_section'));
+const secs = ev('exam_section').map(e => e[1]);
+ok('GA：exam_section 兩次，帶剛交的那科（第1科 21 題、第2科 22 題、沒時間到）',
+   secs.length === 2 && secs[0].section === '言語知識（文字・語彙）' && secs[1].section === '言語知識（文法）・読解'
+   && secs[0].answered === 21 && secs[1].answered === 22 && secs.every(s => s.time_up === 'no'), secs);
+ok('GA：exam_section 在交卷當下送（早於休息結束的 exam_break）',
+   ga.findIndex(e => e[0] === 'exam_section') < ga.findIndex(e => e[0] === 'exam_break'), ga.map(e => e[0]));
 ok('GA：exam_finish 180 分、合格', ev('exam_finish').length === 1 && ev('exam_finish')[0][1].score === 180 && ev('exam_finish')[0][1].passed === 'yes', ev('exam_finish'));
+const fin = ev('exam_finish')[0][1];
+ok('GA：exam_finish 帶聴解 24 題、全卷 67 題、全答', fin.section === '聴解' && fin.answered === 24 && fin.answered_total === 67 && fin.answered_band === 'all' && fin.time_up === 'no', fin);
+ok('GA：total_seconds 是三科加總', fin.total_seconds === secs[0].seconds + secs[1].seconds + fin.seconds, fin);
 ok('GA：看詳解送出 exam_review', ev('exam_review').length === 1, ev('exam_review'));
 const brk = ev('exam_break').map(e => e[1]);
 ok('GA：exam_break 兩次（第幾次休息、停留秒數、按了跳過、第一次有點影片／第二次沒點）',
@@ -224,6 +232,16 @@ ok('GA：exam_break 兩次（第幾次休息、停留秒數、按了跳過、第
    && brk.every(b => b.skipped === 'yes' && b.paper === 'A 卷')
    && (music[0] ? brk[0].video_clicked === 'yes' : brk[0].video_clicked === 'none')
    && (music[1] ? brk[1].video_clicked === 'no' : brk[1].video_clicked === 'none'), brk);
+
+ok('GA：第2科的秒數不含第一次休息', secs[1].seconds < brk[0].seconds, [secs[1], brk[0]]);
+
+// 時間到自動交卷：time_up 要是 yes，沒答的科目 answered 是 0
+await page.evaluate(() => { window.__ga = []; startExam('B'); finishSection(true); });
+await page.waitForTimeout(200);
+const tu = await page.evaluate(() => window.__ga.find(a => a[1] === 'exam_section')[2]);
+ok('GA：時間到 time_up=yes、答 0 題', tu.time_up === 'yes' && tu.answered === 0 && tu.paper === 'B 卷', tu);
+await page.evaluate(() => { clearInterval(timer); localStorage.removeItem(RUN_KEY); paper = null; state = null; renderHome(); });
+await page.waitForTimeout(200);
 
 // ───────── 考到一半重新整理 = 作廢 ─────────
 await page.click('[data-start="A"]');
