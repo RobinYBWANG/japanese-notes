@@ -848,3 +848,10 @@ ode_modules`)。
 - 驗證：test_mock、test_n4mock、test_mockfull 全 PASS。
 - 同日：使用者問「看詳解中或關掉了」分不出來，加心跳（未 commit）：三個模擬考＋minna、gogogo，顯示中每 2 分鐘 still_here（使用者要 2 分鐘試試）、切走或關掉 page_leave，帶 state 等；GA 後台登記維度 狀態 state。心跳測試用 Playwright 假時鐘。ntfy 手機推播使用者先不做（todo 已有）。
 - 同日：使用者想看三科各幾分，三個模擬考加 correct（每科答對題數）與 exam_finish 的 score_lang、score_listen（未 commit）；GA 後台登記指標 答對題數、言語知識分數、聴解分數。這之前的考試（含今天 A 卷 136 分那場）只有總分。
+
+## 2026-11-03 模擬考圖片載入失敗自動重試（未 commit）
+- 使用者轉來考生截圖：iPad Safari 的 N5 正式版 A 卷聽解，例題與第 1、2 題圖片顯示「?」（載入失敗）。圖檔線上都在、現在正常，判斷是抓圖當下失敗
+  （可能剛好在 Pages 部署，或與同時 150 個音檔預載搶線），而網頁不會自己重抓。
+- 三個模擬考加 document 捕捉階段的 img error 監聽：失敗就重試，最多 3 次（1.5／3／4.5 秒）。正式版另外在休息時就背景抓下一科的圖、音檔預載改成一次 6 個。
+- test_mockfull 加「每張圖第一次都失敗也能重試成功」（80 項全過）；test_mock 66、test_n4mock 66 全過。
+- 同日：休息前 1 分鐘不能跳過（使用者要求），按鈕顯示「準備考卷中…（N 秒後可以跳過）」，`BREAK_LOCK_SEC = 60`。第二次休息一開始就背景預載聴解音檔（preloadOnce，進聴解直接沿用同一份）。test_mockfull 83 項全過。

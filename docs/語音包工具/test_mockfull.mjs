@@ -145,7 +145,16 @@ await page.evaluate(() => { const f = document.querySelector('#brkyt iframe'); i
 await page.waitForTimeout(100);
 
 // ───────── 第2科 ─────────
+ok('休息前 1 分鐘：跳過鍵不能按、顯示「準備考卷中」', await page.locator('#brkskip').isDisabled()
+   && (await page.textContent('#brkskip')).includes('準備考卷中'));
+// 測試不等 60 秒：把鎖定時間改成 0，下一秒就開放
+const unlockBreak = async () => { await page.evaluate(() => { BREAK_LOCK_SEC = 0; }); await page.waitForTimeout(1100); };
+const relockBreak = () => page.evaluate(() => { BREAK_LOCK_SEC = 60; });
+await unlockBreak();
+ok('1 分鐘到了：跳過鍵恢復可以按', !(await page.locator('#brkskip').isDisabled())
+   && (await page.textContent('#brkskip')) === '跳過休息，直接開始');
 await page.click('#brkskip');
+await relockBreak();
 await page.waitForTimeout(300);
 ok('離開休息後影片拿掉（音樂不會播進下一科）', await page.locator('#brkyt iframe').count() === 0);
 ok('跳過休息後進入第2科、計時 40:00', (await page.textContent('#secname')).includes('文法')
@@ -161,6 +170,8 @@ ok('休息畫面提醒聴解不能重聽', (await page.textContent('#brknext')).
 ok('第二次休息放的是第二首', await musicOk(1));
 
 // ───────── 第3科 聴解 ─────────
+ok('第二次休息一樣先鎖 1 分鐘', await page.locator('#brkskip').isDisabled());
+await unlockBreak();
 await page.click('#brkskip');
 await page.waitForTimeout(600);
 await page.evaluate(() => { state.stop = true; if (window.player) player.pause(); });  // 測試不等 10 分鐘的音檔
@@ -331,6 +342,21 @@ await hb.evaluate(() => { finishExam({paper: 'B 卷'}); });
 await hb.clock.runFor(120000);
 ok('心跳：交卷後 state=review', (await hbEv()).join() === 'still_here:review:B 卷:undefined:undefined');
 await hb.close();
+
+// ───────── 圖片抓失敗會自動重試（2026-11-03：iPad Safari 聽解前幾題出現「?」）─────────
+{
+  const pg = await browser.newPage();
+  const seen = new Set();
+  await pg.route(/img\/mock\/.*\.png/, r => { const u = r.request().url().split('?')[0];
+    if (!seen.has(u)) { seen.add(u); return r.abort(); } return r.continue(); });   // 每張圖第一次一律失敗
+  await pg.goto(URL);
+  await pg.evaluate(() => { const d = document.createElement('div'); d.id = 'rt';
+    d.innerHTML = '<img src="img/mock/l1-10.png"><img src="img/mock/l3-02.png">'; document.body.appendChild(d); });
+  await pg.waitForTimeout(4000);
+  const w = await pg.evaluate(() => [...document.querySelectorAll('#rt img')].map(i => i.naturalWidth));
+  ok('圖片第一次抓失敗會自動重試成功', w.length === 2 && w.every(x => x > 200), w);
+  await pg.close();
+}
 
 await browser.close();
 console.log(fail ? ('\n' + fail + ' 項 FAIL') : '\n全部 PASS');

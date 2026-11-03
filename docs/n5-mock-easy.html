@@ -208,6 +208,18 @@
 <script>
 "use strict";
 
+/* 圖片載入失敗自動重試（2026-11-03：iPad Safari 聽解的例題與第 1、2 題出現「?」——抓圖那一刻失敗，瀏覽器不會自己重抓）。
+   error 事件不冒泡，所以在 document 用捕捉階段接；之後才插進畫面的圖也接得到。最多重試 3 次，每次多等一點。 */
+document.addEventListener("error", function(e){
+  var im = e.target;
+  if (!im || im.tagName !== "IMG") return;
+  var n = +(im.getAttribute("data-retry") || 0);
+  if (n >= 3) return;
+  im.setAttribute("data-retry", n + 1);
+  var src = im.getAttribute("src").split("?")[0];
+  setTimeout(function(){ im.src = src + "?retry=" + (n + 1); }, 1500 * (n + 1));
+}, true);
+
 /* ---------- 題庫 ----------
    sec  : 科目（1=文字語彙 2=文法讀解）
    type : 題型標題（同 type 連續時只顯示一次）

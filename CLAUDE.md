@@ -107,6 +107,7 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 管線:`paper_X.py`(題目原始檔)-> `build_mockfull.py`(嵌進頁面)-> `mockfull_audio.py`(音檔)
 -> `audit_paper.py X`(體檢)-> `test_mockfull.mjs`(驗證)。**改題目一律改 `paper_X.py`**,
 不要動 JSON 或 HTML(下次 build 會蓋掉)。
+休息的前 1 分鐘不能跳過(`BREAK_LOCK_SEC`,按鈕顯示「準備考卷中」),這段時間在背景抓下一科的圖與聴解音檔;圖片載入失敗會自動重試 3 次(三個模擬考都有)。
 兩科之間的休息畫面會播 YouTube 音樂(`BREAK_MUSIC` = [第一次, 第二次] 影片 ID,目前是 Ado「好きでいて」／IU「너의 의미」;空字串就不顯示),離開休息就拿掉 iframe。
 
 ## Folder map(本層)
