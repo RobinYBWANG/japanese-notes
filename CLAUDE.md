@@ -95,6 +95,8 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 `https://analytics.google.com/analytics/web/#/a412685377p559817851/realtime/overview`,`get_page_text` 讀過去 30 分鐘的人數、頁面標題、事件數;
 點事件名稱→參數名稱→看參數值(例:exam_break→exam_type→full)。看某人現在在做什麼,看 `still_here`、`page_leave` 的 state 與 page_title。**城市別當真**:GA 用 IP 推測,台北的手機會顯示台中,只講到國家。即時報表每個參數分開統計,多人同時考時配不起來;超過 30 分鐘的看報表(延遲約一天)。
 
+**網站統計頁**(2026-11-15):`docs/stats.html` 輸入密碼 → Cloudflare Worker `worker/ga-stats/`(服務帳號金鑰、密碼在 Cloudflare Secrets)→ GA Data API,頁面把資料翻成中文(現在誰在線、考試逐場重組、各頁停留分鐘)。這頁不載 GA。設定步驟與改法見 `worker/ga-stats/README.md`;測試 `node worker/ga-stats/test.mjs`、`docs/語音包工具/test_stats.mjs`。
+
 ## N5 模擬考（正式版）—— 2026-10-11 開始
 
 `docs\n5-mock-full.html`:**題目固定的 A/B/C 三份考卷**,比照正式 N5 的題數(67 題)、時間
@@ -115,6 +117,7 @@ n5-vocab 改內容後跑 `n5vocab_audio.py` + `test_n5vocab.mjs`;n5-grammar 跑 
 - ./input/        唯讀投放區(我丟檔案,你分析)
 - ./output/       你產出的交付物(_vN 版本化)
 - ./docs/         **GitHub Pages 發布來源(main /docs)**,所有筆記頁面與工具都在這裡,不歸 input/output 管。
+- ./worker/       Cloudflare Worker 原始碼(`ga-stats` = 網站統計頁的後端),用 `npx wrangler deploy` 上線,不在 Pages 上。
 - (整個專案資料夾 = git repo `RobinYBWANG/japanese-notes`(2026-10-02 帳號名大小寫改了);`output/ input/ _to_delete/` 在 .gitignore,不上 git。)
 - ./_to_delete/   待刪暫存區。**2026-08-22 起本機可直接刪檔**,這裡只放「不確定要不要留」的東西。
 
