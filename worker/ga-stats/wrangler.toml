@@ -1,0 +1,9 @@
+name = "japanese-notes-stats"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+GA_PROPERTY = "559817851"
+ALLOWED_ORIGINS = "https://robinybwang.github.io"
+
+# 金鑰與密碼不寫在這裡，用 npx wrangler secret put GA_KEY / STATS_PASSWORD 放進 Cloudflare

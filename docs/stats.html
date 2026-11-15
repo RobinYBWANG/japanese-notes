@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>網站統計</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<!-- 只有自己看的統計頁：輸入密碼 → 問 Cloudflare Worker（worker/ga-stats）→ 把 GA 資料翻成中文。
+     這頁刻意不載入 GA，自己來看不會被算進去。2026-11-15 -->
+<style>
+  :root{
+    --bg:#f7f5f0; --card:#ffffff; --ink:#2b2b2b; --sub:#6b6b6b;
+    --accent:#c0392b; --accent2:#2e7d6b; --line:#e6e2d8; --warn:#b26a00;
+    --jp:#1a3a5c; --shadow:0 1px 3px rgba(0,0,0,.07);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Hiragino Sans","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.7;font-size:16px}
+  .wrap{max-width:760px;margin:0 auto;padding:32px 16px 60px}
+  h2{font-size:19px;margin:0 0 10px;color:var(--jp)}
+  .sub{color:var(--sub);font-size:14px;margin-bottom:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+    padding:18px 18px;margin-bottom:16px}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  input[type=password],input[type=date]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;min-width:0}
+  input[type=password]{flex:1 1 200px}
+  button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--accent2);background:#fff;color:var(--accent2);cursor:pointer}
+  button.on,button.main{background:var(--accent2);color:#fff}
+  button:disabled{opacity:.5;cursor:default}
+  .login{max-width:420px;margin:18vh auto 0}
+  .msg{font-size:14px;color:var(--accent);margin-top:8px;min-height:1.4em}
+  .note{font-size:13px;color:var(--sub)}
+  .big{font-size:18px;margin:0 0 6px}
+  ul{margin:6px 0 0;padding-left:20px}
+  li{margin:2px 0}
+  .day{font-weight:700;margin:14px 0 2px;color:var(--jp)}
+  .day:first-child{margin-top:0}
+  .warn{color:var(--warn)}
+  .ok{color:var(--accent2)}
+  .ng{color:var(--accent)}
+  .att{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+  .att:first-of-type{border-top:0;padding-top:0;margin-top:0}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}
+  td.n,th.n{text-align:right}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 入口：只有密碼。對了才換到下面的查詢畫面 -->
+  <div class="card login" id="login">
+    <div class="row">
+      <input type="password" id="pw" placeholder="密碼" autocomplete="current-password">
+      <button class="main" id="go">進入</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="hide" id="main">
+    <div class="card">
+      <div class="row" id="ranges">
+        <button data-r="today">今天</button>
+        <button data-r="yesterday">昨天</button>
+        <button data-r="7" class="on">過去 7 天</button>
+        <button data-r="30">過去 30 天</button>
+        <button data-r="custom">自訂</button>
+      </div>
+      <div class="row hide" style="margin-top:8px" id="customRow">
+        <input type="date" id="from"> 到 <input type="date" id="to"> <button class="main" id="apply">查詢</button>
+      </div>
+      <div class="row" style="margin-top:4px;justify-content:space-between">
+        <div class="msg" id="msg2"></div>
+        <button id="logout">登出</button>
+      </div>
+    </div>
+    <div id="out"></div>
+  </div>
+</div>
+
+<script>
+/* Worker 部署好之後把網址填在這裡（https://japanese-notes-stats.<帳號>.workers.dev） */
+var WORKER_URL = 'https://japanese-notes-stats.ga-stats.workers.dev';
+var API = window.__STATS_API || WORKER_URL;   // 測試用：Playwright 會塞假的網址進來
+var PW_KEY = 'jp_stats_pw';
+
+var $ = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+
+var EXAM_NAME = { easy: 'N5 簡易版', full: 'N5 正式版', n4easy: 'N4 簡易版' };
+var DEVICE = { mobile: '手機', desktop: '電腦', tablet: '平板' };
+var EVENT_NAME = {
+  page_view: '開啟頁面', still_here: '開著頁面', page_leave: '切走或關掉', exam_start: '開始考試',
+  exam_section: '交了一科', exam_break: '休息結束', exam_finish: '交卷', exam_review: '看詳解',
+  exam_abandon: '考到一半離開（作廢）', history_clear: '清空紀錄'
+};
+var WEEK = '日一二三四五六';
+var range = '7';
+
+/* ───────── 日期與時間 ───────── */
+function ymd(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function dayLabel(s){   // "20261114" → "11/14（六）"
+  var d = new Date(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8));
+  return (d.getMonth() + 1) + '/' + d.getDate() + '（' + WEEK[d.getDay()] + '）';
+}
+function hm(s){ return s.slice(8, 10) + ':' + s.slice(10, 12); }   // "202611141905" → "19:05"
+function dur(sec){
+  if (sec < 60) return sec + ' 秒';
+  var m = Math.round(sec / 60);
+  return m < 60 ? m + ' 分鐘' : Math.floor(m / 60) + ' 小時 ' + (m % 60) + ' 分';
+}
+function rangeDates(){
+  if (range === 'today') return ['today', 'today'];
+  if (range === 'yesterday') return ['yesterday', 'yesterday'];
+  if (range === 'custom') return [$('from').value, $('to').value];
+  return [(+range - 1) + 'daysAgo', 'today'];
+}
+function dev(d){ return DEVICE[d] || d || '不明裝置'; }
+
+/* ───────── 進入與查詢 ───────── */
+/* 密碼只記在這個分頁（sessionStorage）：重新整理不用再打，關掉分頁就要重打 */
+var PW = '';
+function enter(){
+  var pw = $('pw').value;
+  if (!pw){ $('msg').textContent = '請輸入密碼。'; return; }
+  $('go').disabled = true; $('msg').textContent = '';
+  query(pw, rangeDates(), function(err, d){
+    $('go').disabled = false;
+    if (err){ $('msg').textContent = err; return; }
+    PW = pw;
+    try { sessionStorage.setItem(PW_KEY, pw); } catch(e){}
+    $('pw').value = '';
+    $('login').classList.add('hide'); $('main').classList.remove('hide');
+    render(d);
+  });
+}
+function load(){
+  var r = rangeDates();
+  if (!r[0] || !r[1]){ $('msg2').textContent = '請選好開始與結束日期。'; return; }
+  $('msg2').textContent = '查詢中…';
+  query(PW, r, function(err, d){
+    if (err === WRONG){ logout(); $('msg').textContent = '密碼已失效，請重新輸入。'; return; }
+    $('msg2').textContent = err || '';
+    if (!err) render(d);
+  });
+}
+var WRONG = '密碼不對。';
+function query(pw, r, cb){
+  if (!API) return cb('還沒設定 Worker 網址（stats.html 的 WORKER_URL）。');
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ password: pw, start: r[0], end: r[1] }) })
+    .then(function(res){ return res.json().then(function(d){ return { status: res.status, d: d }; }); })
+    .then(function(x){
+      if (x.status === 401) return cb(WRONG);
+      if (x.status !== 200) return cb('GA 查詢失敗：' + (x.d.detail || x.d.error || x.status));
+      cb(null, x.d);
+    })
+    .catch(function(){ cb('連不上統計服務，稍後再試。'); });
+}
+function logout(){
+  PW = '';
+  try { sessionStorage.removeItem(PW_KEY); } catch(e){}
+  $('out').innerHTML = ''; $('msg2').textContent = '';
+  $('main').classList.add('hide'); $('login').classList.remove('hide');
+}
+
+/* ───────── 畫面 ───────── */
+/* Worker 每一組資料可能是陣列，也可能是 {error}（那個查詢被 GA 拒絕）；失敗的當空的畫，另外列出原因 */
+var PART_NAME = { now: '目前人數', nowPages: '目前在看的頁面', nowEvents: '目前的動作', days: '每天人數', exams: '考試', pages: '看了哪些頁面' };
+function render(d){
+  var errs = [];
+  var part = function(k){ var v = d[k]; if (Array.isArray(v)) return v; if (v && v.error) errs.push(PART_NAME[k] + '：' + v.error); return []; };
+  var now = part('now'), nowPages = part('nowPages'), nowEvents = part('nowEvents'), days = part('days');
+  var attempts = buildAttempts(part('exams'));
+  var notes = buildPages(part('pages'));
+  var finished = attempts.filter(function(a){ return a.finish; }).length;
+  var h = '';
+  if (errs.length) h += '<div class="card"><h2 class="ng">有些資料沒查到</h2><ul>' + errs.map(function(e){ return '<li class="note">' + esc(e) + '</li>'; }).join('') + '</ul></div>';
+  h += '<div class="card"><h2>這段期間</h2><p class="big">' + summaryLine(days, attempts, finished, notes) + '</p>'
+     + '<p class="note">人數是每天各自計算後相加，同一個人隔天再來會算兩次；換手機或清掉瀏覽器資料也會算成新的人。</p></div>';
+  h += '<div class="card"><h2>現在（最近 30 分鐘）</h2>' + renderNow(now, nowPages, nowEvents) + '</div>';
+  h += '<div class="card"><h2>考試</h2>' + renderAttempts(attempts) + '</div>';
+  h += '<div class="card"><h2>看了哪些頁面</h2>' + renderPages(notes) + '</div>';
+  h += '<div class="card"><h2>每天人數</h2>' + renderDays(days) + '</div>';
+  $('out').innerHTML = h;
+}
+
+function summaryLine(days, attempts, finished, notes){
+  var users = days.reduce(function(a, r){ return a + r.activeUsers; }, 0);
+  if (!users) return '沒有人來過。';
+  var mins = 0;
+  notes.forEach(function(day){ day.list.forEach(function(p){ mins += p.minutes; }); });
+  var n = attempts.filter(function(a){ return !a.lone; }).length;   // 單獨一筆看詳解、作廢不算一次考試
+  return '共 ' + users + ' 人次來過；考試 ' + n + ' 次（交卷 ' + finished + ' 次）；'
+       + '頁面開著約 ' + mins + ' 分鐘。';
+}
+
+/* 現在：GA 的即時報表不能把頁面和事件一起查，所以頁面（誰在哪頁、幾分鐘前）與事件（心跳、離開、考試動作）
+   分開來，再用裝置對起來：同一台裝置最近的心跳比離開新 → 還開著 */
+function renderNow(now, pages, events){
+  var active = now.length ? now[0].activeUsers : 0;
+  if (!active && !pages.length && !events.length) return '<p>沒有人在線上。</p>';
+  var dv = {};
+  events.forEach(function(r){
+    var d = dv[r.deviceCategory] || (dv[r.deviceCategory] = { alive: 99, left: 99, exams: [] });
+    var m = +r.minutesAgo;
+    if (r.eventName === 'still_here' || r.eventName === 'page_view') d.alive = Math.min(d.alive, m);
+    if (r.eventName === 'page_leave') d.left = Math.min(d.left, m);
+    if (/^exam_/.test(r.eventName)) d.exams.push({ m: m, name: EVENT_NAME[r.eventName] || r.eventName });
+  });
+  var by = {};
+  pages.forEach(function(r){
+    var k = r.unifiedScreenName + '|' + r.deviceCategory;
+    var p = by[k] || (by[k] = { title: r.unifiedScreenName, device: r.deviceCategory, last: 99 });
+    p.last = Math.min(p.last, +r.minutesAgo);
+  });
+  var list = Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return a.last - b.last; });
+  var seen = {};
+  var h = '<p>最近 30 分鐘有 <b>' + active + '</b> 人。</p><ul>';
+  list.forEach(function(p){
+    var d = dv[p.device] || { alive: 99, left: 99 };
+    var newest = !seen[p.device]; seen[p.device] = 1;   // 同一台裝置只有最近那一頁可能「還開著」
+    var st = !newest ? '<span class="sub">' + p.last + ' 分鐘前看過</span>'
+           : d.left < d.alive ? '<span class="sub">' + d.left + ' 分鐘前離開</span>'
+           : d.alive <= 3 ? '<span class="ok">還開著</span>'
+           : '<span class="sub">' + p.last + ' 分鐘前最後有動作</span>';
+    h += '<li>' + dev(p.device) + '・' + esc(p.title) + '：' + st + '</li>';
+  });
+  h += '</ul>';
+  var ex = [];
+  Object.keys(dv).forEach(function(k){ dv[k].exams.forEach(function(e){ ex.push({ m: e.m, t: dev(k) + ' ' + e.m + ' 分鐘前：' + e.name }); }); });
+  if (ex.length) h += '<p style="margin-bottom:0">考試動作：</p><ul>' + ex.sort(function(a, b){ return a.m - b.m; })
+    .map(function(e){ return '<li>' + esc(e.t) + '</li>'; }).join('') + '</ul>';
+  return h;
+}
+
+/* 考試：同一份考卷＋同一台裝置的事件依時間排好，exam_start 起算一次考試 */
+var ORDER = { exam_start: 0, exam_section: 1, exam_break: 2, exam_finish: 3, exam_review: 4, exam_abandon: 5, history_clear: 6 };
+function buildAttempts(rows){
+  var evs = [];
+  rows.forEach(function(r){ for (var i = 0; i < (r.eventCount || 1); i++) evs.push(r); });
+  evs.sort(function(a, b){ return a.dateHourMinute < b.dateHourMinute ? -1 : a.dateHourMinute > b.dateHourMinute ? 1 : ORDER[a.eventName] - ORDER[b.eventName]; });
+  var open = {}, out = [];
+  evs.forEach(function(e){
+    var k = e.exam_type + '|' + e.paper + '|' + e.deviceCategory;
+    if (e.eventName === 'exam_start'){
+      open[k] = { at: e.dateHourMinute, type: e.exam_type, paper: e.paper, device: e.deviceCategory, sections: [], breaks: [], extra: [] };
+      out.push(open[k]); return;
+    }
+    var a = open[k];
+    if (e.eventName === 'exam_abandon'){
+      if (a && !a.finish && !a.abandoned){ a.abandoned = e.dateHourMinute; return; }
+    }
+    if (!a || (a.finish && e.eventName !== 'exam_review') || a.abandoned){
+      out.push({ at: e.dateHourMinute, type: e.exam_type, paper: e.paper, device: e.deviceCategory, lone: e.eventName });
+      return;
+    }
+    if (e.eventName === 'exam_section') a.sections.push(e);
+    else if (e.eventName === 'exam_break') a.breaks.push(e);
+    else if (e.eventName === 'exam_finish'){ a.finish = e; a.sections.push(e); }
+    else if (e.eventName === 'exam_review') a.reviewed = true;
+  });
+  return out.filter(function(a){ return !a.lone; }).concat(out.filter(function(a){ return a.lone; }))
+            .sort(function(a, b){ return a.at < b.at ? 1 : -1; });
+}
+
+function renderAttempts(list){
+  if (!list.length) return '<p>沒有人考試。</p>';
+  var h = '', lastDay = '';
+  list.forEach(function(a){
+    var day = a.at.slice(0, 8);
+    if (day !== lastDay){ h += '<div class="day">' + dayLabel(day) + '</div>'; lastDay = day; }
+    var head = hm(a.at) + '　' + dev(a.device) + '・' + (EXAM_NAME[a.type] || esc(a.type)) + ' ' + esc(a.paper);
+    if (a.lone){ h += '<div class="att note">' + head + '：' + (EVENT_NAME[a.lone] || esc(a.lone)) + '</div>'; return; }
+    var lines = [];
+    /* 2026-11-01 改版前的事件沒有各科題數與秒數（全是 0），只能列出休息 */
+    var oldVersion = a.sections.length && a.sections.every(function(s){ return !s.seconds && !s.answered; });
+    var brk = function(b){ return '休息 ' + dur(b.seconds) + (b.skipped === 'yes' ? '（按了跳過）' : ''); };
+    if (oldVersion){
+      lines.push('<span class="sub">舊版紀錄，沒有各科題數與時間</span>');
+      a.breaks.forEach(function(b){ lines.push(brk(b)); });
+    } else a.sections.forEach(function(s, i){
+      lines.push(esc(s.section) + '：答 ' + s.answered + ' 題、對 ' + s.correct + ' 題，' + dur(s.seconds)
+                 + (s.answered === 0 ? ' <span class="warn">沒作答</span>' : ''));
+      if (a.breaks[i] && i < a.sections.length - 1) lines.push(brk(a.breaks[i]));
+    });
+    var res;
+    if (a.finish){
+      var f = a.finish;
+      res = '<b>交卷：' + f.score + ' 分 ' + (f.passed === 'yes' ? '<span class="ok">合格</span>' : '<span class="ng">不合格</span>') + '</b>';
+      if (f.score_lang || f.score_listen) res += '（言語知識・読解 ' + f.score_lang + '／聴解 ' + f.score_listen + '）';
+      if (f.total_seconds) res += '，作答共 ' + dur(f.total_seconds);
+      if (f.answered_band === 'none') res += ' <span class="warn">一題都沒答就交卷</span>';
+      else if (f.answered_band === 'under_half') res += ' <span class="warn">答不到一半</span>';
+      if (a.reviewed) res += '；之後看了詳解';
+    } else if (a.abandoned){
+      res = '<span class="ng">' + hm(a.abandoned) + ' 考到一半離開，這次作廢</span>';
+    } else {
+      res = '<span class="sub">沒有交卷紀錄（可能還在考，或直接關掉了）</span>';
+    }
+    var quick = !oldVersion && a.sections.length && a.sections.every(function(s){ return s.seconds < 60 && !s.answered; });
+    h += '<div class="att">' + head + (quick ? ' <span class="warn">看起來只是點過去試試</span>' : '')
+       + '<ul>' + lines.map(function(l){ return '<li>' + l + '</li>'; }).join('') + '<li>' + res + '</li></ul></div>';
+  });
+  return h;
+}
+
+/* 頁面：每天每頁開了幾次、心跳幾次（一次 2 分鐘）、哪些裝置、幾點 */
+function buildPages(rows){
+  var days = {};
+  rows.forEach(function(r){
+    var day = r.dateHour.slice(0, 8), title = r.pageTitle || '(不明頁面)';
+    var d = days[day] || (days[day] = {});
+    var p = d[title] || (d[title] = { title: title, opens: 0, beats: 0, devices: {}, hours: {} });
+    if (r.eventName === 'page_view') p.opens += r.eventCount; else p.beats += r.eventCount;
+    p.devices[dev(r.deviceCategory)] = 1;
+    p.hours[+r.dateHour.slice(8, 10)] = 1;
+  });
+  return Object.keys(days).sort().reverse().map(function(day){
+    var list = Object.keys(days[day]).map(function(t){ var p = days[day][t]; p.minutes = p.beats * 2; return p; })
+      .sort(function(a, b){ return b.minutes - a.minutes || b.opens - a.opens; });
+    return { day: day, list: list };
+  });
+}
+
+function renderPages(days){
+  if (!days.length) return '<p>沒有人開過頁面。</p>';
+  var h = '';
+  days.forEach(function(d){
+    h += '<div class="day">' + dayLabel(d.day) + '</div><ul>';
+    d.list.forEach(function(p){
+      var hours = Object.keys(p.hours).map(Number).sort(function(a, b){ return a - b; }).map(function(x){ return x + ' 點'; });
+      h += '<li>' + esc(p.title) + '：'
+         + (p.opens ? '開 ' + p.opens + ' 次' : '')
+         + (p.minutes ? (p.opens ? '，' : '') + '約 ' + p.minutes + ' 分鐘' : '')
+         + '（' + Object.keys(p.devices).join('、') + '；' + hours.join('、') + '）</li>';
+    });
+    h += '</ul>';
+  });
+  return h + '<p class="note">分鐘數是用「頁面開著時每 2 分鐘回報一次」算的，不到 2 分鐘就離開會算 0。</p>';
+}
+
+function renderDays(rows){
+  if (!rows.length) return '<p>沒有資料。</p>';
+  var h = '<table><tr><th>日期</th><th class="n">人數</th><th class="n">新訪客</th><th class="n">造訪次數</th></tr>';
+  rows.slice().sort(function(a, b){ return a.date < b.date ? 1 : -1; }).forEach(function(r){
+    h += '<tr><td>' + dayLabel(r.date) + '</td><td class="n">' + r.activeUsers + '</td><td class="n">' + r.newUsers + '</td><td class="n">' + r.sessions + '</td></tr>';
+  });
+  return h + '</table>';
+}
+
+/* ───────── 事件 ───────── */
+$('go').addEventListener('click', enter);
+$('pw').addEventListener('keydown', function(e){ if (e.key === 'Enter') enter(); });
+$('apply').addEventListener('click', load);
+$('logout').addEventListener('click', logout);
+Array.prototype.forEach.call(document.querySelectorAll('#ranges button'), function(b){
+  b.addEventListener('click', function(){
+    range = b.dataset.r;
+    Array.prototype.forEach.call(document.querySelectorAll('#ranges button'), function(x){ x.classList.toggle('on', x === b); });
+    $('customRow').classList.toggle('hide', range !== 'custom');
+    if (range !== 'custom') load();
+  });
+});
+(function init(){
+  var t = new Date(), w = new Date(t.getTime() - 6 * 864e5);
+  $('to').value = ymd(t); $('from').value = ymd(w);
+  var saved = null;
+  try { saved = sessionStorage.getItem(PW_KEY); } catch(e){}
+  if (saved){ $('pw').value = saved; enter(); }
+})();
+</script>
+</body>
+</html>
