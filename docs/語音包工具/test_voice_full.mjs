@@ -136,8 +136,8 @@ ok('有形容詞的課仍保留形容詞分頁', [1, 2, 3, 8].every(n => subTabs
 // 所以「第8課存著就載入失敗」這種 bug 之前整組測試都抓不到（2026-10-18 線上出包）。
 // 每一課每一個分頁都存進去重載一次，確認沒有 JS 例外、畫面有出來。
 const boot = await page.evaluate(async () => {
-  const secs = ['vocab','verb','adj','adv','grammar','joshi','read','quiz',
-                'all','gram','allverb','alladj','alljoshi','allread','num','counter','time'];
+  const secs = ['vocab','verb','adj','adv','grammar','joshi','conj','read','quiz',
+                'all','gram','allverb','alladj','alljoshi','allconj','allread','num','counter','time'];
   const bad = [];
   for (let n = 1; n <= LESSONS; n++) {
     for (const s of secs) {
