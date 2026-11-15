@@ -98,6 +98,28 @@ ok('掀開答案顯示日文', gq.sample.shown && /[ぁ-んァ-ン一-鿿]/.test
 ok('題目是中文', /[一-鿿]/.test(gq.sample.zh) && !/[ぁ-んァ-ン]/.test(gq.sample.zh));
 ok('沒有內容的課顯示提示', /還沒有文法小考/.test(gq.empty || ''));
 
+// 連接詞小考（2026-11-15）：只出學過的、答錯會標出正解、第3課還不夠出題
+const cq = await page.evaluate(() => {
+  const res = {};
+  switchLesson(10); switchSection('conj');
+  const box = document.getElementById('conj-cq');
+  res.q = box.querySelector('.cq-q').innerHTML.includes('cq-blank');
+  res.opts = box.querySelectorAll('.cq-opts button').length;
+  res.learnedOnly = cqPool(false).every(x => x.les <= 10) && cqPool(true).every(x => x.les < 99);
+  res.say = cqPool(true).every(x => x.say && vvClip(x.say, 'A'));
+  const wrong = [...box.querySelectorAll('.cq-opts button')].find(b => b.textContent !== box.querySelector('.cq-opts .ok, .cq-opts button')?.textContent);
+  box.querySelectorAll('.cq-opts button')[0].click();
+  res.marked = box.querySelectorAll('.cq-opts .ok').length === 1 && !!box.querySelector('.cq-fb').textContent;
+  switchLesson(3); switchSection('conj');
+  res.l3 = /還不夠/.test(document.getElementById('conj-cq').textContent);
+  switchLesson(14); switchSection('allconj');
+  res.all = document.getElementById('allconj-cq').querySelectorAll('.cq-opts button').length;
+  return res;
+});
+ok('連接詞小考：有挖空題、4 個選項、只出學過的', cq.q && cq.opts === 4 && cq.learnedOnly, cq);
+ok('連接詞小考：作答後標出正解、例句都有音檔', cq.marked && cq.say, cq);
+ok('連接詞小考：第3課學過的不夠就不出題、總表也能考', cq.l3 && cq.all === 4, cq);
+
 // 形容詞分頁（2026-10-04）：各課一個，總學習一個；表格與小考的音檔都要查得到
 const aj = await page.evaluate(() => {
   const subs8 = (switchLesson(8), [...document.querySelectorAll('#subtabs .subtab')].map(e => e.textContent));
