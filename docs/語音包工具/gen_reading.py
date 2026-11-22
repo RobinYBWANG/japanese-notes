@@ -390,7 +390,34 @@ def rtmpl10(rows, rng):
     ]
 
 
-TMPL = {'4': rtmpl4, '5': rtmpl5, '6': rtmpl6, '7': rtmpl7, '8': rtmpl8, '9': rtmpl9, '10': rtmpl10}
+# 第11課（2026-11-22 上課筆記）：〜が かかります／數量詞放在助詞後面、動詞前面
+def rtmpl11(rows, rng):
+    c = rng.choice
+    people = ['1人', '2人', '3人', '4人', '5人', '10人']
+    count = ['1つ', '2つ', '3つ', '4つ', '5つ', '6つ']
+    food = ['りんご', 'みかん', 'サンドイッチ', 'アイスクリーム']
+    family = ['兄', '姉', '弟', '妹']
+    return [
+        lambda: ['お金が かかります。'],
+        lambda: ['時間が かかります。'],
+        lambda: ['教室に 学生が います。'],
+        lambda: ['教室に 10人 います。'],
+        lambda: ['教室に 学生が 10人 います。'],
+        lambda: ['教室に ' + c(['学生', '留学生']) + 'が ' + c(people) + ' います。'],
+        lambda: [c(family) + 'が ' + c(people[:3]) + ' います。'],
+        lambda: ['机の 上に ' + c(food[:3]) + 'が ' + c(count) + ' あります。'],
+        lambda: ['机の 上に 封筒が ' + c(['2枚', '3枚', '5枚']) + ' あります。'],
+        lambda: ['私は りんごを 2つ 食べました。'],
+        lambda: ['私は ' + c(food) + 'を ' + c(count[:3]) + ' 食べました。'],
+        lambda: [c(['切手', 'はがき']) + 'を ' + c(['2枚', '3枚', '5枚']) + ' 買いました。'],
+        lambda: ['コーラを 1杯 ください。'],
+        lambda: ['コーラを 1つ ください。'],
+        lambda: ['A: ポテトフライの ' + c(['Lを', 'Sを']) + ' ' + c(count[:2]) + ' ください。', 'B: かしこまりました。'],
+        lambda: ['A: ' + c(food) + 'を ' + c(count) + ' ください。', 'B: かしこまりました。'],
+    ]
+
+
+TMPL = {'4': rtmpl4, '5': rtmpl5, '6': rtmpl6, '7': rtmpl7, '8': rtmpl8, '9': rtmpl9, '10': rtmpl10, '11': rtmpl11}
 
 
 def build_total(VV, rng, nset=2, target=150):

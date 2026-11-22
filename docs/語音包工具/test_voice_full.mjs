@@ -77,7 +77,7 @@ ok('單字/假名全覆蓋', vocabCover.length === 0);
 // 各課文法小考
 const gq = await page.evaluate(() => {
   const out = { counts: {}, miss: [], sample: null, empty: null };
-  for (let n = 1; n <= 10; n++) {
+  for (let n = 1; n <= 11; n++) {
     switchLesson(n); switchSection('grammar');
     out.counts[n] = gqPool().length;
     for (const q of gqPool()) if (!vvClip(q.say || q.jp, 'A')) out.miss.push(q.say || q.jp);
@@ -88,15 +88,38 @@ const gq = await page.evaluate(() => {
   gqReveal();
   out.sample = { zh: q, jp: document.getElementById('gq-a').textContent,
     shown: document.getElementById('gq-a').classList.contains('shown') };
-  switchLesson(11); switchSection('grammar');  // 第11課還沒有內容（2026-11-07 第10課補上後改）
+  switchLesson(12); switchSection('grammar');  // 第12課還沒有內容（2026-11-22 第11課補上後改）
   out.empty = document.getElementById('gq-q').textContent;
   return out;
 });
-ok('第1〜10課都有文法小考題目', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].every(n => gq.counts[n] > 10));
+ok('第1〜11課都有文法小考題目', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].every(n => gq.counts[n] > 10));
 ok('文法小考句子全有音檔', gq.miss.length === 0);
 ok('掀開答案顯示日文', gq.sample.shown && /[ぁ-んァ-ン一-鿿]/.test(gq.sample.jp));
 ok('題目是中文', /[一-鿿]/.test(gq.sample.zh) && !/[ぁ-んァ-ン]/.test(gq.sample.zh));
 ok('沒有內容的課顯示提示', /還沒有文法小考/.test(gq.empty || ''));
+
+// 量詞小考（2026-11-22）：只考勾選的範圍、一輪上限、全不選不出題；量詞頁會念的都要有音檔（不准退回瀏覽器語音）
+const ct = await page.evaluate(() => {
+  const keep = ctOff, one = COUNTER_DATA.find(c => c.unit === '枚').name, res = {};
+  ctOff = new Set();
+  const all = ctPool(), round = gqDraw(all, CT_ROUND);
+  res.round = round.length === CT_ROUND && new Set(round.map(x => x.g)).size === COUNTER_DATA.length;
+  res.miss = all.map(x => sayOf(x.a)).concat(all.filter(x => /^[0-9]+歳$/.test(x.q)).map(x => x.a + 'です'))
+    .filter(t => !['2', '11', '13'].every(v => VV_SAY[vvNorm(t)] && VV_SAY[vvNorm(t)][v]));
+  ctOff = new Set(COUNTER_DATA.map(c => c.name).filter(n => n !== one));
+  ctRestart();
+  const seen = [ctRow].concat(ctQueue);
+  res.scope = seen.length === 11 && seen.every(x => x.g === one);
+  ctOff = new Set(COUNTER_DATA.map(c => c.name));
+  ctRestart();
+  res.none = ctRow === null && document.getElementById('ct-q').textContent === '請至少勾選一項';
+  ctOff = keep; ctRestart();
+  return res;
+});
+ok('量詞小考：一輪 30 題、每個分類都抽得到', ct.round);
+ok('量詞小考：只考勾選的範圍', ct.scope);
+ok('量詞小考：全不選不出題', ct.none);
+ok('量詞頁唸法全有三個聲音的音檔', ct.miss.length === 0);
 
 // 連接詞小考（2026-11-15）：只出學過的、答錯會標出正解、第3課還不夠出題
 const cq = await page.evaluate(() => {

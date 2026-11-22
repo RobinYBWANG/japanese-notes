@@ -217,6 +217,19 @@ if kana:
         for f in ('hiraex', 'kataex'):     # 例詞要去掉「（中文）」
             add((r.get(f) or '').split('（')[0])
 
+# J. 量詞頁（表格、量詞小考、年齡小練習）：都是從 COUNTER_DATA 即時組的，掃 B 掃不到（2026-11-22 查到 247 個唸法一直沒有音檔）。
+#    唸法規則同 HTML 的 sayOf()：有「・」只念第一個；年齡小練習另外念「〜さいです」（ageExampleHTML）。
+_m = re.search(r'const COUNTER_DATA=\[(.*?)\n\];', h, re.S)
+if _m:
+    for _d, _k in re.findall(r'\[\s*"([^"]+)",\s*"([^"]+)"\]', _m.group(1)):     # rows 與 q
+        _k = _k.split('・')[0]
+        add(_k)
+        if re.fullmatch(r'\d+歳', _d):
+            add(_k + 'です')
+    for _lst in re.findall(r'\bk:(\[[^\]]*\])', _m.group(1)):
+        for _k in json.loads(_lst):
+            add(_k.split('・')[0])
+
 # B. data-say
 for t in re.findall(r'data-say="([^"]*)"', h):
     if not CODEY.search(t):

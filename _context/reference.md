@@ -85,3 +85,4 @@
 ## 指標(P)
 - P1 | 語音包重建管線與 vv-data 結構 -> `docs\語音包工具\README.md` + 專案記憶 `tts.md` | ACTIVE
 - P2 | 追蹤系統本身怎麼用 -> 專案記憶 `context-system.md` | ACTIVE
+- 量詞小考(2026-11-22):題庫＝頁面的 `COUNTER_DATA`(改表格就跟著改);一輪 `CT_ROUND`=30、各分類輪流抽;範圍存 localStorage `jp_ctopt`(存沒勾的分類,新分類預設會考)。改 COUNTER_DATA 後要跑 本機補音檔.py。
