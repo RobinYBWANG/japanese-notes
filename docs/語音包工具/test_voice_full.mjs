@@ -121,6 +121,10 @@ ok('量詞小考：只考勾選的範圍', ct.scope);
 ok('量詞小考：全不選不出題', ct.none);
 ok('量詞頁唸法全有三個聲音的音檔', ct.miss.length === 0);
 
+// 助詞小考題庫：每一格的答案都要在選單裡、也都有說明（2026-11-22：どのくらい 被切成「どの［くらい］」，那格根本答不了）
+const jqBad = await page.evaluate(() => jqBank().filter(q => q.slots.some(s => !s.e || s.a.some(a => JQ_ORDER.indexOf(a) < 0))).map(q => q.say));
+ok('助詞小考：每格答案都選得到、都有說明', jqBad.length === 0);
+
 // 連接詞小考（2026-11-15）：只出學過的、答錯會標出正解、第3課還不夠出題
 const cq = await page.evaluate(() => {
   const res = {};
