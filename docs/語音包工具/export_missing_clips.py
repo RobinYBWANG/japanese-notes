@@ -94,7 +94,8 @@ if vd:
             add(say_text(r))
             add(r.get('kana'))
             ka = r.get('kana') or ''
-            if ka.endswith('ます') and 2 < len(ka) <= 9:   # 動詞活用形（排除長片語）
+            # 動詞活用形（排除長片語；pos=verb 的「りょうりをつくります」這種長動詞片語前端也有活用按鈕，要收，GOGOGO 第7課）
+            if ka.endswith('ます') and 2 < len(ka) and (len(ka) <= 9 or r.get('pos') == 'verb'):
                 stem = ka[:-2]
                 for s in VERB_SUFS:
                     add(stem + s)

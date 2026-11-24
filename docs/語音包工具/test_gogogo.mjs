@@ -51,7 +51,7 @@ const browser = await chromium.launch();
   });
   ok('真頁面：頁籤圖都是 GOGOGO 的、全部載得到（' + icons.length + ' 張）',
      icons.length === r.lessons + 1 && icons.every(x => x.ok && /^img\/tab\/gogogo\/\d{2}\.png$/.test(x.src)));
-  ok('真頁面：每個 🔊 都有音檔（' + r.says + ' 句，缺 ' + r.miss.length + '）', r.miss.length === 0);
+  ok('真頁面：每個 🔊 都有音檔（' + r.says + ' 句，缺 ' + r.miss.length + '）' + (r.miss.length ? ' ' + r.miss.slice(0, 10).join('｜') : ''), r.miss.length === 0);
   if (r.miss.length) console.log('  缺音檔：', r.miss.slice(0, 10));
 
   // ⚙ 語音設定：在「共 N 筆單字」右邊；三個角色＋語速；存進 jp_tts_vv（跟大家的日本語共用，別的欄位要保留）
