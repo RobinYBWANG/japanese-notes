@@ -30,6 +30,8 @@ def Q2(pre, post, c, e):
 
 
 GAP12, GAP34 = 10, 8
+LOOK = 3            # 問題1・2 唸完題目到對話開始的留白（秒）
+PRE4 = 1.5          # 問題4 唸完那句話、到唸選項之前的停頓（秒）
 INSTR = {
  1: '問題1では、はじめに しつもんを 聞いて ください。それから 話を 聞いて、'
     'もんだいようしの 1から4の 中から、いちばん いい ものを 一つ えらんで ください。',
@@ -45,8 +47,10 @@ INSTR = {
 def C1(n, img, a, lines, q, zh, e):
     """問題1・2：印出四格圖或文字選項；旁白在對話前後各唸一次題目。
        第一次唸完問題後有一段留白讓你看圖／看選項 —— 正式考試就是這樣，
-       問題2（文字選項）給得比問題1（圖）久。{'p': 秒數} 是播放器認得的靜默。"""
-    look = 12 if isinstance(img, list) else 5
+       {'p': 秒數} 是播放器認得的靜默。
+       2026-11-28：原本問題1 留 5 秒、問題2 留 12 秒，使用者考 A 卷時覺得等太久。正式 N5 的說明沒有
+       「讀選項的時間」（N4 以上的ポイント理解才有），題目唸完很快就開始對話，兩個大題都改成 3 秒。"""
+    look = LOOK
     play = ([{'r': 'N', 't': '%dばん。' % n}, {'r': 'N', 't': q}, {'p': look}]
             + lines + [{'r': 'N', 't': q}])
     it = {'n': n, 'play': play, 'q': q, 'a': a, 'gap': GAP12, 'zh': zh, 'e': e}
@@ -67,9 +71,11 @@ def C3(n, img, narr, c, a, zh, e):
 
 
 def C4(n, role, line, c, a, zh, e):
-    play = [{'r': 'N', 't': '%dばん。' % n}, {'r': role, 't': line}]
+    # 2026-11-28：選項前面補唸「1ばん。2ばん。3ばん。」（和問題3 同一套），不然聽不出來已經開始念選項；
+    # 那句話唸完先停 PRE4 秒再進選項
+    play = [{'r': 'N', 't': '%dばん。' % n}, {'r': role, 't': line}, {'p': PRE4}]
     for i, t in enumerate(c, 1):
-        play += [{'r': '%s' % ('F' if role == 'M' else 'M'), 't': t}]
+        play += [{'r': 'N', 't': '%dばん。' % i}, {'r': '%s' % ('F' if role == 'M' else 'M'), 't': t}]
     return {'n': n, 'play': play, 'q': '（へんじを えらんで ください）', 'c': c, 'a': a,
             'gap': GAP34, 'zh': zh, 'e': e, 'hideChoices': True}
 
@@ -82,7 +88,7 @@ ANS = lambda a: {'r': 'N', 't': 'いちばん いい ものは %dばんです。
 
 def EX1(img, q, lines, c, a, zh):
     """例題（問題1・2）：有四格圖或文字選項"""
-    look = 12 if not img else 5          # 例題也照正式考試留看圖／看選項的時間
+    look = LOOK                          # 例題也和正式題一樣
     e = {'ex': True, 'q': q, 'c': c, 'a': a, 'zh': zh,
          'play': ([{'r': 'N', 't': 'れい。'}, {'r': 'N', 't': q}, {'p': look}]
                   + lines + [{'r': 'N', 't': q}, ANS(a)])}
@@ -101,7 +107,9 @@ def EX3(img, narr, c, a, zh):
 
 def EX4(role, line, c, a, zh):
     other = 'F' if role == 'M' else 'M'
-    play = [{'r': 'N', 't': 'れい。'}, {'r': role, 't': line}] + [{'r': other, 't': t} for t in c]
+    play = [{'r': 'N', 't': 'れい。'}, {'r': role, 't': line}, {'p': PRE4}]
+    for i, t in enumerate(c, 1):
+        play += [{'r': 'N', 't': '%dばん。' % i}, {'r': other, 't': t}]
     return {'ex': True, 'q': '（へんじを えらんで ください）', 'c': c, 'a': a, 'zh': zh,
             'play': play + [ANS(a)]}
 
@@ -191,8 +199,18 @@ def build(PAPER, OUT):
                 rest = [x for x in it['c'] if x != ans]
                 t = k % len(it['c'])
                 k += 1
+                old = it['c']
                 it['c'] = rest[:t] + [ans] + rest[t:]
                 it['a'] = t
+                if it.get('hideChoices') and old != it['c']:
+                    # 問題3・4 的選項是用唸的：唸的順序要跟著換，不然「1ばん」唸的不是畫面上的第 1 個（2026-11-28 修）。
+                    # 唸的位置（第幾個、誰的聲音）不動，只換成新順序的那句話。
+                    seq = iter(it['c'])
+                    for ln in it['play']:
+                        if ln.get('r') != 'N' and ln.get('t') in old and ln is not it['play'][1]:
+                            ln['t'] = next(seq)
+                    # 2026-11-28 以前存的紀錄是照「舊的唸法順序」選的：legacy[舊位置] = 新位置，頁面拿來換算舊紀錄
+                    it['legacy'] = [it['c'].index(x) for x in old]
 
     n, pos = 0, collections.Counter()
     for sec in PAPER['sections']:

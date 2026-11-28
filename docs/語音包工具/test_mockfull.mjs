@@ -60,9 +60,18 @@ const pau = await page.evaluate(() => {
   });
   return {out, closing: !!sec.closing, opening: !!sec.opening};
 });
-ok('問題1 每題留 5 秒看圖', Object.values(pau.out)[0].every(v => v === 5), pau.out);
-ok('問題2 每題留 12 秒看文字選項', Object.values(pau.out)[1].every(v => v === 12), pau.out);
-ok('問題3・4 沒有看選項的留白', Object.values(pau.out)[2].concat(Object.values(pau.out)[3]).every(v => v === 0));
+// 2026-11-28：正式 N5 沒有「讀選項時間」，題目唸完 3 秒就開始對話；問題4 那句話唸完停 1.5 秒才唸選項
+ok('問題1・2 每題唸完題目留 3 秒', Object.values(pau.out)[0].concat(Object.values(pau.out)[1]).every(v => v === 3), pau.out);
+ok('問題3 沒有留白、問題4 唸完那句話停 1.5 秒', Object.values(pau.out)[2].every(v => v === 0)
+   && Object.values(pau.out)[3].every(v => v === 1.5), pau.out);
+const opt4 = await page.evaluate(() => ['A', 'B', 'C'].map(id => {
+  const p4 = PAPERS[id].sections[2].parts[3];
+  return [p4.ex].concat(p4.items).every(it => {
+    const t = it.play.map(l => l.p ? '·' : l.t), k = t.indexOf('·');
+    return k > 0 && [1, 2, 3].every(i => t[k + 2 * i - 1] === i + 'ばん。' && t[k + 2 * i] === it.c[i - 1]);
+  });
+}));
+ok('問題4（含例題）每個選項前面都唸「1ばん。2ばん。3ばん。」', opt4.every(Boolean), opt4);
 ok('聴解有開頭總說明與結束語', pau.opening && pau.closing);
 
 // 圖片檔存在
@@ -214,8 +223,32 @@ ok('聴解有「重聽這一題」的按鈕（24 題）', await page.locator('#r
 ok('読解有全文翻譯', (await page.textContent('#review')).includes('passZh') === false
    && await page.locator('#review .zh').count() >= 24);
 
+// 三科分頁＋題號表
+ok('新紀錄帶 v: 2（不再換算）', await page.evaluate(() => loadHist('A')[0].v === 2));
+const rv = await page.evaluate(() => {
+  const vis = () => [...document.querySelectorAll('#review .rsec')].map(d => !d.hidden);
+  const out = {tabs: document.querySelectorAll('#review [data-tab]').length, vis0: vis().join()};
+  out.maps = [...document.querySelectorAll('#review .qmap')].map(m => [...m.querySelectorAll('[data-go]')].map(b => b.textContent).join(','));
+  out.allOk = document.querySelectorAll('#review .qmap button.ok').length;
+  document.querySelector('#review [data-tab="2"]').click();
+  out.vis2 = vis().join();
+  out.no = [...document.querySelectorAll('#review .rsec[data-si="2"] .q .no')].map(x => x.textContent).slice(5, 9).join(',');
+  return out;
+});
+ok('詳解分成三個分頁、一次只顯示一科', rv.tabs === 3 && rv.vis0 === 'true,false,false' && rv.vis2 === 'false,false,true', rv);
+ok('題號表：文字語彙 1〜21、文法読解 1〜22 連號，聴解每大題從 1 重算（7+6+5+6）',
+   rv.maps[0] === Array.from({length: 21}, (_, i) => i + 1).join() && rv.maps[1].split(',').length === 22
+   && rv.maps[2] === '1,2,3,4,5,6,7,1,2,3,4,5,6,1,2,3,4,5,1,2,3,4,5,6' && rv.allOk === 67, rv);
+ok('聴解卡片題號跟著音檔唸的「Nばん」走', rv.no === '6ばん,7ばん,1ばん,2ばん', rv.no);
+await page.click('#review .rsec[data-si="2"] [data-go="2-1-0"]');
+await page.waitForTimeout(2000);
+const jump = await page.evaluate(() => { const r = document.querySelector('#review #q-2-1-0').getBoundingClientRect(); return [Math.round(r.top), innerHeight]; });
+ok('點題號會捲到那一題（不被上面的分頁列擋住）', jump[0] > 40 && jump[0] < 200, jump);
+const rtx = await page.textContent('#review .score');
+ok('詳解頁上面也有各科答對與合格標準', rtx.includes('試験Ⅲ　聴解') && rtx.includes('24 / 24') && rtx.includes('≥ 80') && rtx.includes('≥ 38'), rtx.slice(0, 120));
+
 // ───────── 歷史紀錄 ─────────
-await page.click('#foot button');   // 回選卷頁
+await page.click('#foot button:has-text("回選卷頁")');
 await page.waitForTimeout(300);
 ok('回到選卷頁、歷史多一筆', (await page.textContent('#home')).includes('180 / 180'));
 const hist = await page.evaluate(() => JSON.parse(localStorage.getItem('mf_hist_A') || '[]'));
@@ -355,6 +388,42 @@ await hb.close();
   await pg.waitForTimeout(4000);
   const w = await pg.evaluate(() => [...document.querySelectorAll('#rt img')].map(i => i.naturalWidth));
   ok('圖片第一次抓失敗會自動重試成功', w.length === 2 && w.every(x => x > 200), w);
+  await pg.close();
+}
+
+// ───────── 改版前就存好的紀錄（2026-11-28：使用者考完 A 卷才改版，紀錄不能壞）─────────
+{
+  const pg = await browser.newPage();
+  await pg.goto(URL);
+  await pg.evaluate(() => {
+    const p = PAPERS.A, ans = {};
+    // 文字語彙全對、文法読解前 10 題對、聴解錯 3 題、最後一題沒答 —— 用改版前 finishExam 存的同一個格式
+    allItems(p).forEach((o, i) => {
+      if (o.si === 0) ans[o.key] = o.it.a;
+      else if (o.si === 1) ans[o.key] = i < 31 ? o.it.a : (o.it.a + 1) % o.it.c.length;
+      else if (o.key !== '2-3-5') {
+        const want = ['2-0-0', '2-1-2', '2-2-4'].includes(o.key) ? (o.it.a + 1) % o.it.c.length : o.it.a;
+        ans[o.key] = o.it.legacy ? o.it.legacy.indexOf(want) : want;   // 舊版是照「聽到的第幾個」選
+      }
+    });
+    const g = grade(p, ans);   // 舊版存的分數（照舊的錯誤對法算的），頁面不該拿來顯示
+    localStorage.setItem('mf_hist_A', JSON.stringify([{date: '2026-11-28 10:00', void: true},
+      {date: '2026-11-28 09:00', ans, total: g.total, sa: g.sa, sb: g.sb, pass: g.pass}]));
+  });
+  await pg.reload(); await pg.waitForTimeout(400);
+  const home = await pg.textContent('#home');
+  ok('舊紀錄：問題3・4 照當時聽到的順序重新對答案（頁面重算，不用存的分數）',
+   await pg.evaluate(() => { const r = loadHist('A')[1]; return r.v === undefined && grade(PAPERS.A, recAns(PAPERS.A, r)).b === 20 && grade(PAPERS.A, r.ans).b !== 20; }));
+ok('舊紀錄：選卷頁每筆列出三科答對與兩個區分、合格標準',
+     home.includes('文字・語彙 21/21・文法・読解 10/22・聴解 20/24') && home.includes('言語知識・読解 87/120（要 38）')
+     && home.includes('聴解 50/60（要 19）') && home.includes('合格標準：總分 ≥ 80') && home.includes('未完成（作廢）'), home.slice(0, 400));
+  await pg.click('[data-review="A:1"]'); await pg.waitForTimeout(400);
+  const q = await pg.evaluate(() => {
+    const m = document.querySelector('#review .qmap[id="qmap-2"]');
+    return {ng: [...m.querySelectorAll('button.ng')].map(b => b.dataset.go).join(), na: [...m.querySelectorAll('button.na')].map(b => b.dataset.go).join(),
+            tab: document.querySelector('[data-tab="1"]').textContent};
+  });
+  ok('舊紀錄：詳解題號表標出聴解錯的 3 題（紅）與沒答的 1 題（紅框）', q.ng === '2-0-0,2-1-2,2-2-4' && q.na === '2-3-5' && q.tab.includes('10 / 22'), q);
   await pg.close();
 }
 
