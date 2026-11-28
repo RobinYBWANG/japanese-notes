@@ -220,6 +220,9 @@ ok('詳解頁出現、67 題都有解說（例題不列進去）', await page.lo
    && await page.locator('#review .q.exq').count() === 0);
 ok('詳解標出正解', await page.locator('#review ol.ch button.ok').count() === 67);
 ok('聴解有「重聽這一題」的按鈕（24 題）', await page.locator('#review [data-replay]').count() === 24);
+const scr = await page.evaluate(() => [document.querySelectorAll('#review .script').length,
+  document.querySelector('#review #q-2-3-0 .script').innerText.replace(/\s+/g, ' ')]);
+ok('聴解詳解有日文原文（24 題），選項前標號碼、不列題號', scr[0] === 24 && /1\.ええ、/.test(scr[1]) && scr[1].startsWith("女：") && !/^\d+ばん/.test(scr[1].trim()), scr);
 ok('読解有全文翻譯', (await page.textContent('#review')).includes('passZh') === false
    && await page.locator('#review .zh').count() >= 24);
 

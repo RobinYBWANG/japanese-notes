@@ -91,6 +91,9 @@
   .exp{margin-top:10px;padding:10px 12px;background:#fbf9f4;border-left:3px solid var(--accent2);
     border-radius:0 6px 6px 0;font-size:14px;line-height:1.9;color:#3a4750}
   .exp b{color:var(--jp)}
+  .script{font-size:15px;color:var(--jp);margin-top:8px;padding:8px 12px;background:#f3f6fa;border-radius:6px;line-height:1.9}
+  .script div{display:flex}
+  .script .who{flex:0 0 36px;color:var(--sub);font-size:13px;padding-top:1px}
   .zh{font-size:14px;color:#3a4750;margin-top:8px;padding:8px 12px;background:#f4f7f5;border-radius:6px}
   .playone{font-size:13px;padding:4px 10px;margin-top:8px}
   .q.exq{background:#fbf9f4;border-style:dashed}
@@ -442,6 +445,7 @@ function itemHTML(o, n, mode, ans, res){
   }
   if (mode === 'review'){
     if (it.play) h += '<button class="playone" data-replay="' + k + '">🔊 重聽這一題</button>';
+    if (it.play) h += scriptHTML(it);
     if (it.zh) h += '<div class="zh">' + esc(it.zh) + '</div>';
     h += '<div class="exp"><b>正解：' + (it.a + 1) + '</b>　' + it.e + '</div>';
   }
@@ -466,6 +470,19 @@ function renderSection(si, mode, ans, res){
   return h;
 }
 
+/* 聴解詳解的日文原文：照播放的順序列出來（男／女／旁白），選項前的「1ばん。」併成號碼；開頭的題號與靜默不列 */
+function scriptHTML(it){
+  const WHO = {M: '男', F: '女', N: ''};
+  let h = '', num = '';
+  it.play.forEach((l, i) => {
+    if (l.p || (i === 0 && /^\d+ばん。$/.test(l.t))) return;
+    const m = l.r === 'N' && /^(\d)ばん。$/.exec(l.t);
+    if (m){ num = m[1]; return; }
+    h += '<div><span class="who">' + (num ? num + '.' : WHO[l.r] ? WHO[l.r] + '：' : '') + '</span><span>' + esc(l.t) + '</span></div>';
+    num = '';
+  });
+  return '<div class="script">' + h + '</div>';
+}
 const qLabel = (sec, n) => sec.key === 'choukai' ? n + 'ばん' : n + '.';
 
 function wirePicks(root, ans, onPick){
